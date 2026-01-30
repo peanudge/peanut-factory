@@ -103,28 +103,28 @@ public sealed class GrabChannel : IDisposable
     private void CreateChannel(GrabChannelOptions options)
     {
         // Create channel instance
-        int status = _hal.Create(MultiCamNative.MC_CHANNEL, out _channelHandle);
+        int status = _hal.Create(MultiCamApi.MC_CHANNEL, out _channelHandle);
         ThrowOnError(status, "McCreate(MC_CHANNEL)");
 
         try
         {
             // Set driver index (board selection)
-            status = _hal.SetParamInt(_channelHandle, MultiCamNative.PN_DriverIndex, options.DriverIndex);
+            status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_DriverIndex, options.DriverIndex);
             ThrowOnError(status, $"SetParam(DriverIndex={options.DriverIndex})");
 
             // Set connector
-            status = _hal.SetParamStr(_channelHandle, MultiCamNative.PN_Connector, options.Connector);
+            status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_Connector, options.Connector);
             ThrowOnError(status, $"SetParam(Connector={options.Connector})");
 
             // Load .cam file if specified
             if (!string.IsNullOrEmpty(options.CamFilePath))
             {
-                status = _hal.SetParamStr(_channelHandle, MultiCamNative.PN_CamFile, options.CamFilePath);
+                status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, options.CamFilePath);
                 ThrowOnError(status, $"SetParam(CamFile={options.CamFilePath})");
             }
 
             // Configure surface cluster
-            status = _hal.SetParamInt(_channelHandle, MultiCamNative.PN_SurfaceCount, options.SurfaceCount);
+            status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SurfaceCount, options.SurfaceCount);
             ThrowOnError(status, $"SetParam(SurfaceCount={options.SurfaceCount})");
 
             _surfaceCount = options.SurfaceCount;
@@ -132,13 +132,13 @@ public sealed class GrabChannel : IDisposable
             // Set trigger mode
             string trigModeStr = options.TriggerMode switch
             {
-                McTrigMode.MC_TrigMode_IMMEDIATE => MultiCamNative.MC_TrigMode_IMMEDIATE_STR,
-                McTrigMode.MC_TrigMode_HARD => MultiCamNative.MC_TrigMode_HARD_STR,
-                McTrigMode.MC_TrigMode_SOFT => MultiCamNative.MC_TrigMode_SOFT_STR,
-                McTrigMode.MC_TrigMode_COMBINED => MultiCamNative.MC_TrigMode_COMBINED_STR,
-                _ => MultiCamNative.MC_TrigMode_IMMEDIATE_STR
+                McTrigMode.MC_TrigMode_IMMEDIATE => MultiCamApi.MC_TrigMode_IMMEDIATE_STR,
+                McTrigMode.MC_TrigMode_HARD => MultiCamApi.MC_TrigMode_HARD_STR,
+                McTrigMode.MC_TrigMode_SOFT => MultiCamApi.MC_TrigMode_SOFT_STR,
+                McTrigMode.MC_TrigMode_COMBINED => MultiCamApi.MC_TrigMode_COMBINED_STR,
+                _ => MultiCamApi.MC_TrigMode_IMMEDIATE_STR
             };
-            status = _hal.SetParamStr(_channelHandle, MultiCamNative.PN_TrigMode, trigModeStr);
+            status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_TrigMode, trigModeStr);
             ThrowOnError(status, $"SetParam(TrigMode={trigModeStr})");
 
             // Enable surface processing signal
@@ -191,7 +191,7 @@ public sealed class GrabChannel : IDisposable
         if (info.Context == IntPtr.Zero)
             return;
 
-        GrabChannel? channel = null;
+        GrabChannel? channel;
         try
         {
             GCHandle handle = GCHandle.FromIntPtr(info.Context);
@@ -257,15 +257,15 @@ public sealed class GrabChannel : IDisposable
     private SurfaceData GetSurfaceData(int surfaceIndex)
     {
         // Set surface index for parameter access
-        int status = _hal.SetParamInt(_channelHandle, MultiCamNative.PN_SurfaceIndex, surfaceIndex);
-        if (status != MultiCamNative.MC_OK)
+        int status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SurfaceIndex, surfaceIndex);
+        if (status != MultiCamApi.MC_OK)
         {
             return new SurfaceData { SurfaceIndex = surfaceIndex };
         }
 
         // Get surface address
-        status = _hal.GetParamPtr(_channelHandle, MultiCamNative.PN_SurfaceAddr, out IntPtr address);
-        if (status != MultiCamNative.MC_OK)
+        status = _hal.GetParamPtr(_channelHandle, MultiCamApi.PN_SurfaceAddr, out IntPtr address);
+        if (status != MultiCamApi.MC_OK)
             address = IntPtr.Zero;
 
         return new SurfaceData
@@ -282,10 +282,10 @@ public sealed class GrabChannel : IDisposable
     private void ReleaseSurface(int surfaceIndex)
     {
         // Set surface state back to FREE
-        int status = _hal.SetParamInt(_channelHandle, MultiCamNative.PN_SurfaceIndex, surfaceIndex);
-        if (status == MultiCamNative.MC_OK)
+        int status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SurfaceIndex, surfaceIndex);
+        if (status == MultiCamApi.MC_OK)
         {
-            _hal.SetParamInt(_channelHandle, MultiCamNative.PN_SurfaceState, (int)McSurfaceState.MC_SurfaceState_FREE);
+            _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SurfaceState, (int)McSurfaceState.MC_SurfaceState_FREE);
         }
     }
 
@@ -299,10 +299,10 @@ public sealed class GrabChannel : IDisposable
         {
             ThrowIfDisposed();
 
-            _hal.GetParamInt(_channelHandle, MultiCamNative.PN_ImageSizeX, out _imageWidth);
-            _hal.GetParamInt(_channelHandle, MultiCamNative.PN_ImageSizeY, out _imageHeight);
-            _hal.GetParamInt(_channelHandle, MultiCamNative.PN_BufferPitch, out _bufferPitch);
-            _hal.GetParamInt(_channelHandle, MultiCamNative.PN_BufferSize, out _bufferSize);
+            _hal.GetParamInt(_channelHandle, MultiCamApi.PN_ImageSizeX, out _imageWidth);
+            _hal.GetParamInt(_channelHandle, MultiCamApi.PN_ImageSizeY, out _imageHeight);
+            _hal.GetParamInt(_channelHandle, MultiCamApi.PN_BufferPitch, out _bufferPitch);
+            _hal.GetParamInt(_channelHandle, MultiCamApi.PN_BufferSize, out _bufferSize);
         }
     }
 
@@ -330,12 +330,12 @@ public sealed class GrabChannel : IDisposable
                 return;
 
             // Set sequence length
-            int status = _hal.SetParamInt(_channelHandle, MultiCamNative.PN_SeqLength_Fr, frameCount);
+            int status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SeqLength_Fr, frameCount);
             ThrowOnError(status, $"SetParam(SeqLength_Fr={frameCount})");
 
             // Activate channel
-            status = _hal.SetParamStr(_channelHandle, MultiCamNative.PN_ChannelState,
-                MultiCamNative.MC_ChannelState_ACTIVE_STR);
+            status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_ChannelState,
+                MultiCamApi.MC_ChannelState_ACTIVE_STR);
             ThrowOnError(status, "SetParam(ChannelState=ACTIVE)");
 
             _isActive = true;
@@ -353,11 +353,11 @@ public sealed class GrabChannel : IDisposable
                 return;
 
             // Set sequence length to 0 to stop
-            _hal.SetParamInt(_channelHandle, MultiCamNative.PN_SeqLength_Fr, 0);
+            _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SeqLength_Fr, 0);
 
             // Set channel state to IDLE
-            _hal.SetParamStr(_channelHandle, MultiCamNative.PN_ChannelState,
-                MultiCamNative.MC_ChannelState_IDLE_STR);
+            _hal.SetParamStr(_channelHandle, MultiCamApi.PN_ChannelState,
+                MultiCamApi.MC_ChannelState_IDLE_STR);
 
             _isActive = false;
         }
@@ -372,8 +372,8 @@ public sealed class GrabChannel : IDisposable
         {
             ThrowIfDisposed();
 
-            int status = _hal.SetParamStr(_channelHandle, MultiCamNative.PN_ForceTrig,
-                MultiCamNative.MC_ForceTrig_STR);
+            int status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_ForceTrig,
+                MultiCamApi.MC_ForceTrig_STR);
             ThrowOnError(status, "SetParam(ForceTrig=TRIG)");
         }
     }
@@ -417,8 +417,8 @@ public sealed class GrabChannel : IDisposable
 
     private void SetSignalEnable(McSignal signal, bool enable)
     {
-        string paramName = $"{signal}+{MultiCamNative.PN_SignalEnable}";
-        string value = enable ? MultiCamNative.MC_SignalEnable_ON_STR : MultiCamNative.MC_SignalEnable_OFF_STR;
+        string paramName = $"{signal}+{MultiCamApi.PN_SignalEnable}";
+        string value = enable ? MultiCamApi.MC_SignalEnable_ON_STR : MultiCamApi.MC_SignalEnable_OFF_STR;
 
         _hal.SetParamStr(_channelHandle, paramName, value);
         // Don't throw - some signals may not be available on all boards
@@ -523,7 +523,7 @@ public sealed class GrabChannel : IDisposable
         {
             ThrowIfDisposed();
 
-            int status = _hal.SetParamStr(_channelHandle, MultiCamNative.PN_BlackCalibration, "ON");
+            int status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_BlackCalibration, "ON");
             ThrowOnError(status, "BlackCalibration");
         }
     }
@@ -538,7 +538,7 @@ public sealed class GrabChannel : IDisposable
         {
             ThrowIfDisposed();
 
-            int status = _hal.SetParamStr(_channelHandle, MultiCamNative.PN_WhiteCalibration, "ON");
+            int status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_WhiteCalibration, "ON");
             ThrowOnError(status, "WhiteCalibration");
         }
     }
@@ -553,7 +553,7 @@ public sealed class GrabChannel : IDisposable
             ThrowIfDisposed();
 
             string value = enable ? "ON" : "OFF";
-            int status = _hal.SetParamStr(_channelHandle, MultiCamNative.PN_FlatFieldCorrection, value);
+            int status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_FlatFieldCorrection, value);
             ThrowOnError(status, $"SetFlatFieldCorrection({value})");
         }
     }
@@ -567,7 +567,7 @@ public sealed class GrabChannel : IDisposable
         {
             ThrowIfDisposed();
 
-            int status = _hal.SetParamStr(_channelHandle, MultiCamNative.PN_BalanceWhiteAuto, "ONCE");
+            int status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_BalanceWhiteAuto, "ONCE");
             ThrowOnError(status, "BalanceWhiteAuto=ONCE");
         }
     }
@@ -581,9 +581,9 @@ public sealed class GrabChannel : IDisposable
         {
             ThrowIfDisposed();
 
-            _hal.GetParamFloat(_channelHandle, MultiCamNative.PN_BalanceRatioRed, out double red);
-            _hal.GetParamFloat(_channelHandle, MultiCamNative.PN_BalanceRatioGreen, out double green);
-            _hal.GetParamFloat(_channelHandle, MultiCamNative.PN_BalanceRatioBlue, out double blue);
+            _hal.GetParamFloat(_channelHandle, MultiCamApi.PN_BalanceRatioRed, out double red);
+            _hal.GetParamFloat(_channelHandle, MultiCamApi.PN_BalanceRatioGreen, out double green);
+            _hal.GetParamFloat(_channelHandle, MultiCamApi.PN_BalanceRatioBlue, out double blue);
 
             return (red, green, blue);
         }
@@ -598,9 +598,9 @@ public sealed class GrabChannel : IDisposable
         {
             ThrowIfDisposed();
 
-            _hal.SetParamFloat(_channelHandle, MultiCamNative.PN_BalanceRatioRed, red);
-            _hal.SetParamFloat(_channelHandle, MultiCamNative.PN_BalanceRatioGreen, green);
-            _hal.SetParamFloat(_channelHandle, MultiCamNative.PN_BalanceRatioBlue, blue);
+            _hal.SetParamFloat(_channelHandle, MultiCamApi.PN_BalanceRatioRed, red);
+            _hal.SetParamFloat(_channelHandle, MultiCamApi.PN_BalanceRatioGreen, green);
+            _hal.SetParamFloat(_channelHandle, MultiCamApi.PN_BalanceRatioBlue, blue);
         }
     }
 
@@ -613,7 +613,7 @@ public sealed class GrabChannel : IDisposable
     /// </summary>
     public double GetExposureUs()
     {
-        return GetParamFloat(MultiCamNative.PN_Expose_us);
+        return GetParamFloat(MultiCamApi.PN_Expose_us);
     }
 
     /// <summary>
@@ -621,7 +621,7 @@ public sealed class GrabChannel : IDisposable
     /// </summary>
     public void SetExposureUs(double exposureUs)
     {
-        SetParamFloat(MultiCamNative.PN_Expose_us, exposureUs);
+        SetParamFloat(MultiCamApi.PN_Expose_us, exposureUs);
     }
 
     /// <summary>
@@ -629,8 +629,8 @@ public sealed class GrabChannel : IDisposable
     /// </summary>
     public (double Min, double Max) GetExposureRange()
     {
-        double min = GetParamFloat(MultiCamNative.PN_ExposeMin_us);
-        double max = GetParamFloat(MultiCamNative.PN_ExposeMax_us);
+        double min = GetParamFloat(MultiCamApi.PN_ExposeMin_us);
+        double max = GetParamFloat(MultiCamApi.PN_ExposeMax_us);
         return (min, max);
     }
 
@@ -639,7 +639,7 @@ public sealed class GrabChannel : IDisposable
     /// </summary>
     public double GetGainDb()
     {
-        return GetParamFloat(MultiCamNative.PN_Gain_dB);
+        return GetParamFloat(MultiCamApi.PN_Gain_dB);
     }
 
     /// <summary>
@@ -647,7 +647,7 @@ public sealed class GrabChannel : IDisposable
     /// </summary>
     public void SetGainDb(double gainDb)
     {
-        SetParamFloat(MultiCamNative.PN_Gain_dB, gainDb);
+        SetParamFloat(MultiCamApi.PN_Gain_dB, gainDb);
     }
 
     #endregion
@@ -656,7 +656,7 @@ public sealed class GrabChannel : IDisposable
 
     private void ThrowOnError(int status, string operation)
     {
-        if (status != MultiCamNative.MC_OK)
+        if (status != MultiCamApi.MC_OK)
         {
             throw new MultiCamException(status, operation);
         }
@@ -691,9 +691,9 @@ public sealed class GrabChannel : IDisposable
             {
                 try
                 {
-                    _hal.SetParamInt(_channelHandle, MultiCamNative.PN_SeqLength_Fr, 0);
-                    _hal.SetParamStr(_channelHandle, MultiCamNative.PN_ChannelState,
-                        MultiCamNative.MC_ChannelState_IDLE_STR);
+                    _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SeqLength_Fr, 0);
+                    _hal.SetParamStr(_channelHandle, MultiCamApi.PN_ChannelState,
+                        MultiCamApi.MC_ChannelState_IDLE_STR);
                 }
                 catch { /* Ignore cleanup errors */ }
                 _isActive = false;

@@ -49,7 +49,7 @@ public class MockMultiCamHAL : IMultiCamHAL
             _driverOpen = true;
         }
 
-        return MultiCamNative.MC_OK;
+        return MultiCamApi.MC_OK;
     }
 
     public int CloseDriver()
@@ -61,7 +61,7 @@ public class MockMultiCamHAL : IMultiCamHAL
             _driverOpen = false;
         }
 
-        return MultiCamNative.MC_OK;
+        return MultiCamApi.MC_OK;
     }
 
     #endregion
@@ -93,7 +93,7 @@ public class MockMultiCamHAL : IMultiCamHAL
             _instances[instance] = mockInstance;
         }
 
-        return MultiCamNative.MC_OK;
+        return MultiCamApi.MC_OK;
     }
 
     public int CreateNm(string modelName, out uint instance)
@@ -119,7 +119,7 @@ public class MockMultiCamHAL : IMultiCamHAL
             _instances[instance] = mockInstance;
         }
 
-        return MultiCamNative.MC_OK;
+        return MultiCamApi.MC_OK;
     }
 
     public int Delete(uint instance)
@@ -131,30 +131,30 @@ public class MockMultiCamHAL : IMultiCamHAL
             return (int)McStatus.MC_INVALID_HANDLE;
         }
 
-        return MultiCamNative.MC_OK;
+        return MultiCamApi.MC_OK;
     }
 
     private void InitializeInstanceDefaults(MockInstance instance)
     {
         // Set default image parameters
-        instance.Parameters[MultiCamNative.PN_ImageSizeX] = Configuration.DefaultImageWidth;
-        instance.Parameters[MultiCamNative.PN_ImageSizeY] = Configuration.DefaultImageHeight;
-        instance.Parameters[MultiCamNative.PN_BufferPitch] = Configuration.DefaultImageWidth * 3; // RGB
-        instance.Parameters[MultiCamNative.PN_BufferSize] = Configuration.DefaultImageWidth * Configuration.DefaultImageHeight * 3;
-        instance.Parameters[MultiCamNative.PN_SurfaceCount] = 4;
-        instance.Parameters[MultiCamNative.PN_ChannelState] = MultiCamNative.MC_ChannelState_IDLE_STR;
-        instance.Parameters[MultiCamNative.PN_TrigMode] = MultiCamNative.MC_TrigMode_IMMEDIATE_STR;
+        instance.Parameters[MultiCamApi.PN_ImageSizeX] = Configuration.DefaultImageWidth;
+        instance.Parameters[MultiCamApi.PN_ImageSizeY] = Configuration.DefaultImageHeight;
+        instance.Parameters[MultiCamApi.PN_BufferPitch] = Configuration.DefaultImageWidth * 3; // RGB
+        instance.Parameters[MultiCamApi.PN_BufferSize] = Configuration.DefaultImageWidth * Configuration.DefaultImageHeight * 3;
+        instance.Parameters[MultiCamApi.PN_SurfaceCount] = 4;
+        instance.Parameters[MultiCamApi.PN_ChannelState] = MultiCamApi.MC_ChannelState_IDLE_STR;
+        instance.Parameters[MultiCamApi.PN_TrigMode] = MultiCamApi.MC_TrigMode_IMMEDIATE_STR;
 
         // Calibration defaults
-        instance.Parameters[MultiCamNative.PN_BalanceRatioRed] = 1.0;
-        instance.Parameters[MultiCamNative.PN_BalanceRatioGreen] = 1.0;
-        instance.Parameters[MultiCamNative.PN_BalanceRatioBlue] = 1.0;
+        instance.Parameters[MultiCamApi.PN_BalanceRatioRed] = 1.0;
+        instance.Parameters[MultiCamApi.PN_BalanceRatioGreen] = 1.0;
+        instance.Parameters[MultiCamApi.PN_BalanceRatioBlue] = 1.0;
 
         // Exposure defaults
-        instance.Parameters[MultiCamNative.PN_Expose_us] = 10000.0;
-        instance.Parameters[MultiCamNative.PN_ExposeMin_us] = 10.0;
-        instance.Parameters[MultiCamNative.PN_ExposeMax_us] = 1000000.0;
-        instance.Parameters[MultiCamNative.PN_Gain_dB] = 0.0;
+        instance.Parameters[MultiCamApi.PN_Expose_us] = 10000.0;
+        instance.Parameters[MultiCamApi.PN_ExposeMin_us] = 10.0;
+        instance.Parameters[MultiCamApi.PN_ExposeMax_us] = 1000000.0;
+        instance.Parameters[MultiCamApi.PN_Gain_dB] = 0.0;
     }
 
     #endregion
@@ -166,16 +166,16 @@ public class MockMultiCamHAL : IMultiCamHAL
         CallLog.GetParamCalls++;
 
         // Handle configuration object
-        if (instance == MultiCamNative.MC_CONFIGURATION)
+        if (instance == MultiCamApi.MC_CONFIGURATION)
         {
             return GetConfigurationParam(paramName, out value);
         }
 
         // Handle board objects
-        if (instance >= MultiCamNative.MC_BOARD && instance < MultiCamNative.MC_BOARD + 100)
+        if (instance >= MultiCamApi.MC_BOARD && instance < MultiCamApi.MC_BOARD + 100)
         {
             value = 0;
-            return MultiCamNative.MC_OK;
+            return MultiCamApi.MC_OK;
         }
 
         if (!_instances.TryGetValue(instance, out var inst))
@@ -187,7 +187,7 @@ public class MockMultiCamHAL : IMultiCamHAL
         if (inst.Parameters.TryGetValue(paramName, out var obj) && obj is int intValue)
         {
             value = intValue;
-            return MultiCamNative.MC_OK;
+            return MultiCamApi.MC_OK;
         }
 
         value = 0;
@@ -207,7 +207,7 @@ public class MockMultiCamHAL : IMultiCamHAL
         if (inst.Parameters.TryGetValue(paramName, out var obj) && obj is long longValue)
         {
             value = longValue;
-            return MultiCamNative.MC_OK;
+            return MultiCamApi.MC_OK;
         }
 
         value = 0;
@@ -227,7 +227,7 @@ public class MockMultiCamHAL : IMultiCamHAL
         if (inst.Parameters.TryGetValue(paramName, out var obj) && obj is double doubleValue)
         {
             value = doubleValue;
-            return MultiCamNative.MC_OK;
+            return MultiCamApi.MC_OK;
         }
 
         value = 0;
@@ -239,13 +239,13 @@ public class MockMultiCamHAL : IMultiCamHAL
         CallLog.GetParamCalls++;
 
         // Handle configuration object
-        if (instance == MultiCamNative.MC_CONFIGURATION)
+        if (instance == MultiCamApi.MC_CONFIGURATION)
         {
             return GetConfigurationParamStr(paramName, out value);
         }
 
         // Handle board objects
-        if (instance >= MultiCamNative.MC_BOARD && instance < MultiCamNative.MC_BOARD + 100)
+        if (instance >= MultiCamApi.MC_BOARD && instance < MultiCamApi.MC_BOARD + 100)
         {
             return GetBoardParamStr(instance, paramName, out value);
         }
@@ -259,7 +259,7 @@ public class MockMultiCamHAL : IMultiCamHAL
         if (inst.Parameters.TryGetValue(paramName, out var obj) && obj is string strValue)
         {
             value = strValue;
-            return MultiCamNative.MC_OK;
+            return MultiCamApi.MC_OK;
         }
 
         value = string.Empty;
@@ -277,16 +277,16 @@ public class MockMultiCamHAL : IMultiCamHAL
         }
 
         // For surface address, return a simulated address
-        if (paramName == MultiCamNative.PN_SurfaceAddr)
+        if (paramName == MultiCamApi.PN_SurfaceAddr)
         {
             value = Configuration.SimulatedSurfaceAddress;
-            return MultiCamNative.MC_OK;
+            return MultiCamApi.MC_OK;
         }
 
         if (inst.Parameters.TryGetValue(paramName, out var obj) && obj is IntPtr ptrValue)
         {
             value = ptrValue;
-            return MultiCamNative.MC_OK;
+            return MultiCamApi.MC_OK;
         }
 
         value = IntPtr.Zero;
@@ -295,10 +295,10 @@ public class MockMultiCamHAL : IMultiCamHAL
 
     private int GetConfigurationParam(string paramName, out int value)
     {
-        if (paramName == MultiCamNative.PN_BoardCount)
+        if (paramName == MultiCamApi.PN_BoardCount)
         {
             value = Configuration.BoardCount;
-            return MultiCamNative.MC_OK;
+            return MultiCamApi.MC_OK;
         }
 
         value = 0;
@@ -307,10 +307,10 @@ public class MockMultiCamHAL : IMultiCamHAL
 
     private int GetConfigurationParamStr(string paramName, out string value)
     {
-        if (paramName == MultiCamNative.PN_DriverVersion)
+        if (paramName == MultiCamApi.PN_DriverVersion)
         {
             value = Configuration.DriverVersion;
-            return MultiCamNative.MC_OK;
+            return MultiCamApi.MC_OK;
         }
 
         value = string.Empty;
@@ -319,7 +319,7 @@ public class MockMultiCamHAL : IMultiCamHAL
 
     private int GetBoardParamStr(uint boardHandle, string paramName, out string value)
     {
-        int boardIndex = (int)(boardHandle - MultiCamNative.MC_BOARD);
+        int boardIndex = (int)(boardHandle - MultiCamApi.MC_BOARD);
 
         if (boardIndex < 0 || boardIndex >= Configuration.BoardCount)
         {
@@ -329,14 +329,14 @@ public class MockMultiCamHAL : IMultiCamHAL
 
         value = paramName switch
         {
-            MultiCamNative.PN_BoardName => Configuration.BoardNames.ElementAtOrDefault(boardIndex) ?? "MockBoard",
-            MultiCamNative.PN_BoardType => Configuration.BoardTypes.ElementAtOrDefault(boardIndex) ?? "MockType",
-            MultiCamNative.PN_SerialNumber => $"MOCK{boardIndex:D4}",
-            MultiCamNative.PN_PciPosition => $"0:{boardIndex}:0",
+            MultiCamApi.PN_BoardName => Configuration.BoardNames.ElementAtOrDefault(boardIndex) ?? "MockBoard",
+            MultiCamApi.PN_BoardType => Configuration.BoardTypes.ElementAtOrDefault(boardIndex) ?? "MockType",
+            MultiCamApi.PN_SerialNumber => $"MOCK{boardIndex:D4}",
+            MultiCamApi.PN_PciPosition => $"0:{boardIndex}:0",
             _ => string.Empty
         };
 
-        return MultiCamNative.MC_OK;
+        return MultiCamApi.MC_OK;
     }
 
     #endregion
@@ -354,7 +354,7 @@ public class MockMultiCamHAL : IMultiCamHAL
         }
 
         inst.Parameters[paramName] = value;
-        return MultiCamNative.MC_OK;
+        return MultiCamApi.MC_OK;
     }
 
     public int SetParamInt64(uint instance, string paramName, long value)
@@ -368,7 +368,7 @@ public class MockMultiCamHAL : IMultiCamHAL
         }
 
         inst.Parameters[paramName] = value;
-        return MultiCamNative.MC_OK;
+        return MultiCamApi.MC_OK;
     }
 
     public int SetParamFloat(uint instance, string paramName, double value)
@@ -382,7 +382,7 @@ public class MockMultiCamHAL : IMultiCamHAL
         }
 
         inst.Parameters[paramName] = value;
-        return MultiCamNative.MC_OK;
+        return MultiCamApi.MC_OK;
     }
 
     public int SetParamStr(uint instance, string paramName, string value)
@@ -396,44 +396,44 @@ public class MockMultiCamHAL : IMultiCamHAL
         }
 
         // Handle special parameters
-        if (paramName == MultiCamNative.PN_ChannelState)
+        if (paramName == MultiCamApi.PN_ChannelState)
         {
-            if (value == MultiCamNative.MC_ChannelState_ACTIVE_STR)
+            if (value == MultiCamApi.MC_ChannelState_ACTIVE_STR)
             {
                 CallLog.AcquisitionStarted = true;
             }
-            else if (value == MultiCamNative.MC_ChannelState_IDLE_STR)
+            else if (value == MultiCamApi.MC_ChannelState_IDLE_STR)
             {
                 CallLog.AcquisitionStopped = true;
             }
         }
 
-        if (paramName == MultiCamNative.PN_ForceTrig)
+        if (paramName == MultiCamApi.PN_ForceTrig)
         {
             CallLog.SoftwareTriggerCount++;
         }
 
-        if (paramName == MultiCamNative.PN_BlackCalibration && value == "ON")
+        if (paramName == MultiCamApi.PN_BlackCalibration && value == "ON")
         {
             CallLog.BlackCalibrationPerformed = true;
         }
 
-        if (paramName == MultiCamNative.PN_WhiteCalibration && value == "ON")
+        if (paramName == MultiCamApi.PN_WhiteCalibration && value == "ON")
         {
             CallLog.WhiteCalibrationPerformed = true;
         }
 
-        if (paramName == MultiCamNative.PN_BalanceWhiteAuto && value == "ONCE")
+        if (paramName == MultiCamApi.PN_BalanceWhiteAuto && value == "ONCE")
         {
             CallLog.WhiteBalancePerformed = true;
             // Simulate auto white balance adjustment
-            inst.Parameters[MultiCamNative.PN_BalanceRatioRed] = 1.05;
-            inst.Parameters[MultiCamNative.PN_BalanceRatioGreen] = 1.0;
-            inst.Parameters[MultiCamNative.PN_BalanceRatioBlue] = 0.95;
+            inst.Parameters[MultiCamApi.PN_BalanceRatioRed] = 1.05;
+            inst.Parameters[MultiCamApi.PN_BalanceRatioGreen] = 1.0;
+            inst.Parameters[MultiCamApi.PN_BalanceRatioBlue] = 0.95;
         }
 
         inst.Parameters[paramName] = value;
-        return MultiCamNative.MC_OK;
+        return MultiCamApi.MC_OK;
     }
 
     public int SetParamPtr(uint instance, string paramName, IntPtr value)
@@ -446,7 +446,7 @@ public class MockMultiCamHAL : IMultiCamHAL
         }
 
         inst.Parameters[paramName] = value;
-        return MultiCamNative.MC_OK;
+        return MultiCamApi.MC_OK;
     }
 
     #endregion
@@ -466,7 +466,7 @@ public class MockMultiCamHAL : IMultiCamHAL
         inst.CallbackPtr = callbackPtr;
         inst.CallbackContext = context;
 
-        return MultiCamNative.MC_OK;
+        return MultiCamApi.MC_OK;
     }
 
     public int WaitSignal(uint instance, int signal, uint timeout, out McSignalInfo info)
@@ -488,7 +488,7 @@ public class MockMultiCamHAL : IMultiCamHAL
             Context = IntPtr.Zero
         };
 
-        return MultiCamNative.MC_OK;
+        return MultiCamApi.MC_OK;
     }
 
     #endregion

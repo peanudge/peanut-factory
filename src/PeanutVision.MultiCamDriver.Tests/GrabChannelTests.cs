@@ -31,8 +31,8 @@ public class GrabChannelTests
 
         using var channel = new GrabChannel(options, _mockHal);
 
-        Assert.True(_mockHal.CallLog.LastSetParams.ContainsKey(MultiCamNative.PN_DriverIndex));
-        Assert.Equal(2, _mockHal.CallLog.LastSetParams[MultiCamNative.PN_DriverIndex]);
+        Assert.True(_mockHal.CallLog.LastSetParams.ContainsKey(MultiCamApi.PN_DriverIndex));
+        Assert.Equal(2, _mockHal.CallLog.LastSetParams[MultiCamApi.PN_DriverIndex]);
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public class GrabChannelTests
 
         using var channel = new GrabChannel(options, _mockHal);
 
-        Assert.Equal("A", _mockHal.CallLog.LastSetParams[MultiCamNative.PN_Connector]);
+        Assert.Equal("A", _mockHal.CallLog.LastSetParams[MultiCamApi.PN_Connector]);
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class GrabChannelTests
 
         using var channel = new GrabChannel(options, _mockHal);
 
-        Assert.Equal("test.cam", _mockHal.CallLog.LastSetParams[MultiCamNative.PN_CamFile]);
+        Assert.Equal("test.cam", _mockHal.CallLog.LastSetParams[MultiCamApi.PN_CamFile]);
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class GrabChannelTests
 
         using var channel = new GrabChannel(options, _mockHal);
 
-        Assert.Equal(8, _mockHal.CallLog.LastSetParams[MultiCamNative.PN_SurfaceCount]);
+        Assert.Equal(8, _mockHal.CallLog.LastSetParams[MultiCamApi.PN_SurfaceCount]);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class GrabChannelTests
 
         using var channel = new GrabChannel(options, _mockHal);
 
-        Assert.Equal(MultiCamNative.MC_TrigMode_IMMEDIATE_STR, _mockHal.CallLog.LastSetParams[MultiCamNative.PN_TrigMode]);
+        Assert.Equal(MultiCamApi.MC_TrigMode_IMMEDIATE_STR, _mockHal.CallLog.LastSetParams[MultiCamApi.PN_TrigMode]);
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class GrabChannelTests
 
         using var channel = new GrabChannel(options, _mockHal);
 
-        Assert.Equal(MultiCamNative.MC_TrigMode_SOFT_STR, _mockHal.CallLog.LastSetParams[MultiCamNative.PN_TrigMode]);
+        Assert.Equal(MultiCamApi.MC_TrigMode_SOFT_STR, _mockHal.CallLog.LastSetParams[MultiCamApi.PN_TrigMode]);
     }
 
     [Fact]
@@ -151,7 +151,7 @@ public class GrabChannelTests
 
         channel.StartAcquisition(100);
 
-        Assert.Equal(100, _mockHal.CallLog.LastSetParams[MultiCamNative.PN_SeqLength_Fr]);
+        Assert.Equal(100, _mockHal.CallLog.LastSetParams[MultiCamApi.PN_SeqLength_Fr]);
     }
 
     [Fact]
@@ -262,7 +262,7 @@ public class GrabChannelTests
 
         channel.SetFlatFieldCorrection(true);
 
-        Assert.Equal("ON", _mockHal.CallLog.LastSetParams[MultiCamNative.PN_FlatFieldCorrection]);
+        Assert.Equal("ON", _mockHal.CallLog.LastSetParams[MultiCamApi.PN_FlatFieldCorrection]);
     }
 
     [Fact]
@@ -390,7 +390,7 @@ public class GrabChannelTests
         var options = new GrabChannelOptions();
         using var channel = new GrabChannel(options, _mockHal);
 
-        var width = channel.GetParamInt(MultiCamNative.PN_ImageSizeX);
+        var width = channel.GetParamInt(MultiCamApi.PN_ImageSizeX);
 
         Assert.Equal(1920, width);
     }
@@ -401,9 +401,9 @@ public class GrabChannelTests
         var options = new GrabChannelOptions();
         using var channel = new GrabChannel(options, _mockHal);
 
-        channel.SetParamInt(MultiCamNative.PN_SurfaceCount, 16);
+        channel.SetParamInt(MultiCamApi.PN_SurfaceCount, 16);
 
-        Assert.Equal(16, _mockHal.CallLog.LastSetParams[MultiCamNative.PN_SurfaceCount]);
+        Assert.Equal(16, _mockHal.CallLog.LastSetParams[MultiCamApi.PN_SurfaceCount]);
     }
 
     [Fact]
@@ -412,7 +412,7 @@ public class GrabChannelTests
         var options = new GrabChannelOptions();
         using var channel = new GrabChannel(options, _mockHal);
 
-        var exposure = channel.GetParamFloat(MultiCamNative.PN_Expose_us);
+        var exposure = channel.GetParamFloat(MultiCamApi.PN_Expose_us);
 
         Assert.Equal(10000.0, exposure);
     }
@@ -423,9 +423,9 @@ public class GrabChannelTests
         var options = new GrabChannelOptions();
         using var channel = new GrabChannel(options, _mockHal);
 
-        channel.SetParamFloat(MultiCamNative.PN_Expose_us, 20000.0);
+        channel.SetParamFloat(MultiCamApi.PN_Expose_us, 20000.0);
 
-        Assert.Equal(20000.0, _mockHal.CallLog.LastSetParams[MultiCamNative.PN_Expose_us]);
+        Assert.Equal(20000.0, _mockHal.CallLog.LastSetParams[MultiCamApi.PN_Expose_us]);
     }
 
     [Fact]
@@ -434,9 +434,9 @@ public class GrabChannelTests
         var options = new GrabChannelOptions();
         using var channel = new GrabChannel(options, _mockHal);
 
-        var state = channel.GetParamStr(MultiCamNative.PN_ChannelState);
+        var state = channel.GetParamStr(MultiCamApi.PN_ChannelState);
 
-        Assert.Equal(MultiCamNative.MC_ChannelState_IDLE_STR, state);
+        Assert.Equal(MultiCamApi.MC_ChannelState_IDLE_STR, state);
     }
 
     [Fact]
@@ -445,9 +445,9 @@ public class GrabChannelTests
         var options = new GrabChannelOptions();
         using var channel = new GrabChannel(options, _mockHal);
 
-        channel.SetParamStr(MultiCamNative.PN_TrigMode, MultiCamNative.MC_TrigMode_HARD_STR);
+        channel.SetParamStr(MultiCamApi.PN_TrigMode, MultiCamApi.MC_TrigMode_HARD_STR);
 
-        Assert.Equal(MultiCamNative.MC_TrigMode_HARD_STR, _mockHal.CallLog.LastSetParams[MultiCamNative.PN_TrigMode]);
+        Assert.Equal(MultiCamApi.MC_TrigMode_HARD_STR, _mockHal.CallLog.LastSetParams[MultiCamApi.PN_TrigMode]);
     }
 
     #endregion
@@ -508,7 +508,7 @@ public class GrabChannelTests
         channel.Dispose();
 
         Assert.Throws<ObjectDisposedException>(() =>
-            channel.GetParamInt(MultiCamNative.PN_ImageSizeX));
+            channel.GetParamInt(MultiCamApi.PN_ImageSizeX));
     }
 
     #endregion

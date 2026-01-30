@@ -103,8 +103,8 @@ public class GrabServiceTests
             TriggerMode = McTrigMode.MC_TrigMode_SOFT
         });
 
-        Assert.True(_mockHal.CallLog.LastSetParams.ContainsKey(MultiCamNative.PN_CamFile));
-        Assert.Equal("camera.cam", _mockHal.CallLog.LastSetParams[MultiCamNative.PN_CamFile]);
+        Assert.True(_mockHal.CallLog.LastSetParams.ContainsKey(MultiCamApi.PN_CamFile));
+        Assert.Equal("camera.cam", _mockHal.CallLog.LastSetParams[MultiCamApi.PN_CamFile]);
     }
 
     [Fact]

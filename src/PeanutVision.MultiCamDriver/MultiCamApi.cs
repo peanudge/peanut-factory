@@ -126,7 +126,7 @@ public delegate void McCallback(ref McSignalInfo signalInfo);
 /// Native P/Invoke declarations for MultiCam library functions.
 /// Uses modern LibraryImport with source-generated marshalling for AOT compatibility.
 /// </summary>
-public static partial class MultiCamNative
+public static partial class MultiCamApi
 {
 	private const string LibraryName = "MultiCam";
 

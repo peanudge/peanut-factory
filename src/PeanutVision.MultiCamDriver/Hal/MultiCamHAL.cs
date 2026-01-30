@@ -20,12 +20,12 @@ public sealed class MultiCamHAL : IMultiCamHAL
 
     public int OpenDriver(string? driverName)
     {
-        return MultiCamNative.McOpenDriver(driverName);
+        return MultiCamApi.McOpenDriver(driverName);
     }
 
     public int CloseDriver()
     {
-        return MultiCamNative.McCloseDriver();
+        return MultiCamApi.McCloseDriver();
     }
 
     #endregion
@@ -34,17 +34,17 @@ public sealed class MultiCamHAL : IMultiCamHAL
 
     public int Create(uint model, out uint instance)
     {
-        return MultiCamNative.McCreate(model, out instance);
+        return MultiCamApi.McCreate(model, out instance);
     }
 
     public int CreateNm(string modelName, out uint instance)
     {
-        return MultiCamNative.McCreateNm(modelName, out instance);
+        return MultiCamApi.McCreateNm(modelName, out instance);
     }
 
     public int Delete(uint instance)
     {
-        return MultiCamNative.McDelete(instance);
+        return MultiCamApi.McDelete(instance);
     }
 
     #endregion
@@ -53,25 +53,25 @@ public sealed class MultiCamHAL : IMultiCamHAL
 
     public int GetParamInt(uint instance, string paramName, out int value)
     {
-        return MultiCamNative.McGetParamNmInt(instance, paramName, out value);
+        return MultiCamApi.McGetParamNmInt(instance, paramName, out value);
     }
 
     public int GetParamInt64(uint instance, string paramName, out long value)
     {
-        return MultiCamNative.McGetParamNmInt64(instance, paramName, out value);
+        return MultiCamApi.McGetParamNmInt64(instance, paramName, out value);
     }
 
     public int GetParamFloat(uint instance, string paramName, out double value)
     {
-        return MultiCamNative.McGetParamNmFloat(instance, paramName, out value);
+        return MultiCamApi.McGetParamNmFloat(instance, paramName, out value);
     }
 
     public int GetParamStr(uint instance, string paramName, out string value)
     {
         byte[] buffer = new byte[MaxStringLength];
-        int status = MultiCamNative.McGetParamNmStr(instance, paramName, buffer, MaxStringLength);
+        int status = MultiCamApi.McGetParamNmStr(instance, paramName, buffer, MaxStringLength);
 
-        if (status == MultiCamNative.MC_OK)
+        if (status == MultiCamApi.MC_OK)
         {
             int length = Array.IndexOf(buffer, (byte)0);
             if (length < 0) length = MaxStringLength;
@@ -87,7 +87,7 @@ public sealed class MultiCamHAL : IMultiCamHAL
 
     public int GetParamPtr(uint instance, string paramName, out IntPtr value)
     {
-        return MultiCamNative.McGetParamNmPtr(instance, paramName, out value);
+        return MultiCamApi.McGetParamNmPtr(instance, paramName, out value);
     }
 
     #endregion
@@ -96,27 +96,27 @@ public sealed class MultiCamHAL : IMultiCamHAL
 
     public int SetParamInt(uint instance, string paramName, int value)
     {
-        return MultiCamNative.McSetParamNmInt(instance, paramName, value);
+        return MultiCamApi.McSetParamNmInt(instance, paramName, value);
     }
 
     public int SetParamInt64(uint instance, string paramName, long value)
     {
-        return MultiCamNative.McSetParamNmInt64(instance, paramName, value);
+        return MultiCamApi.McSetParamNmInt64(instance, paramName, value);
     }
 
     public int SetParamFloat(uint instance, string paramName, double value)
     {
-        return MultiCamNative.McSetParamNmFloat(instance, paramName, value);
+        return MultiCamApi.McSetParamNmFloat(instance, paramName, value);
     }
 
     public int SetParamStr(uint instance, string paramName, string value)
     {
-        return MultiCamNative.McSetParamNmStr(instance, paramName, value);
+        return MultiCamApi.McSetParamNmStr(instance, paramName, value);
     }
 
     public int SetParamPtr(uint instance, string paramName, IntPtr value)
     {
-        return MultiCamNative.McSetParamNmPtr(instance, paramName, value);
+        return MultiCamApi.McSetParamNmPtr(instance, paramName, value);
     }
 
     #endregion
@@ -125,12 +125,12 @@ public sealed class MultiCamHAL : IMultiCamHAL
 
     public int RegisterCallback(uint instance, IntPtr callbackPtr, IntPtr context)
     {
-        return MultiCamNative.McRegisterCallback(instance, callbackPtr, context);
+        return MultiCamApi.McRegisterCallback(instance, callbackPtr, context);
     }
 
     public int WaitSignal(uint instance, int signal, uint timeout, out McSignalInfo info)
     {
-        return MultiCamNative.McWaitSignal(instance, signal, timeout, out info);
+        return MultiCamApi.McWaitSignal(instance, signal, timeout, out info);
     }
 
     #endregion

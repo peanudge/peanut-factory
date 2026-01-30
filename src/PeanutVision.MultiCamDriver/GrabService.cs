@@ -63,7 +63,7 @@ public sealed class GrabService : IGrabService
 
             // Open driver with NULL (reserved parameter)
             int status = _hal.OpenDriver(null);
-            if (status != MultiCamNative.MC_OK)
+            if (status != MultiCamApi.MC_OK)
             {
                 throw new MultiCamException(status, "McOpenDriver",
                     "Failed to initialize MultiCam driver. Ensure the driver is installed and hardware is connected.");
@@ -74,11 +74,11 @@ public sealed class GrabService : IGrabService
             // Query system information
             try
             {
-                status = _hal.GetParamInt(MultiCamNative.MC_CONFIGURATION,
-                    MultiCamNative.PN_BoardCount, out _boardCount);
+                status = _hal.GetParamInt(MultiCamApi.MC_CONFIGURATION,
+                    MultiCamApi.PN_BoardCount, out _boardCount);
 
-                status = _hal.GetParamStr(MultiCamNative.MC_CONFIGURATION,
-                    MultiCamNative.PN_DriverVersion, out _driverVersion);
+                status = _hal.GetParamStr(MultiCamApi.MC_CONFIGURATION,
+                    MultiCamApi.PN_DriverVersion, out _driverVersion);
             }
             catch
             {
@@ -137,12 +137,12 @@ public sealed class GrabService : IGrabService
                     $"Board index must be between 0 and {_boardCount - 1}");
             }
 
-            uint boardHandle = MultiCamNative.MC_BOARD + (uint)boardIndex;
+            uint boardHandle = MultiCamApi.MC_BOARD + (uint)boardIndex;
 
-            _hal.GetParamStr(boardHandle, MultiCamNative.PN_BoardType, out string boardType);
-            _hal.GetParamStr(boardHandle, MultiCamNative.PN_BoardName, out string boardName);
-            _hal.GetParamStr(boardHandle, MultiCamNative.PN_SerialNumber, out string serialNumber);
-            _hal.GetParamStr(boardHandle, MultiCamNative.PN_PciPosition, out string pciPosition);
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardType, out string boardType);
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardName, out string boardName);
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_SerialNumber, out string serialNumber);
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_PciPosition, out string pciPosition);
 
             return new BoardInfo
             {

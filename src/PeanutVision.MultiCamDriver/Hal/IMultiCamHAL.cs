@@ -71,7 +71,7 @@ public static class MultiCamHalExtensions
     public static int GetParamIntOrThrow(this IMultiCamHAL hal, uint instance, string paramName)
     {
         int status = hal.GetParamInt(instance, paramName, out int value);
-        if (status != MultiCamNative.MC_OK)
+        if (status != MultiCamApi.MC_OK)
             throw new MultiCamException(status, $"GetParam({paramName})");
         return value;
     }
@@ -82,7 +82,7 @@ public static class MultiCamHalExtensions
     public static double GetParamFloatOrThrow(this IMultiCamHAL hal, uint instance, string paramName)
     {
         int status = hal.GetParamFloat(instance, paramName, out double value);
-        if (status != MultiCamNative.MC_OK)
+        if (status != MultiCamApi.MC_OK)
             throw new MultiCamException(status, $"GetParam({paramName})");
         return value;
     }
@@ -93,7 +93,7 @@ public static class MultiCamHalExtensions
     public static string GetParamStrOrThrow(this IMultiCamHAL hal, uint instance, string paramName)
     {
         int status = hal.GetParamStr(instance, paramName, out string value);
-        if (status != MultiCamNative.MC_OK)
+        if (status != MultiCamApi.MC_OK)
             throw new MultiCamException(status, $"GetParam({paramName})");
         return value;
     }
@@ -104,7 +104,7 @@ public static class MultiCamHalExtensions
     public static void SetParamIntOrThrow(this IMultiCamHAL hal, uint instance, string paramName, int value)
     {
         int status = hal.SetParamInt(instance, paramName, value);
-        if (status != MultiCamNative.MC_OK)
+        if (status != MultiCamApi.MC_OK)
             throw new MultiCamException(status, $"SetParam({paramName}={value})");
     }
 
@@ -114,7 +114,7 @@ public static class MultiCamHalExtensions
     public static void SetParamFloatOrThrow(this IMultiCamHAL hal, uint instance, string paramName, double value)
     {
         int status = hal.SetParamFloat(instance, paramName, value);
-        if (status != MultiCamNative.MC_OK)
+        if (status != MultiCamApi.MC_OK)
             throw new MultiCamException(status, $"SetParam({paramName}={value})");
     }
 
@@ -124,7 +124,7 @@ public static class MultiCamHalExtensions
     public static void SetParamStrOrThrow(this IMultiCamHAL hal, uint instance, string paramName, string value)
     {
         int status = hal.SetParamStr(instance, paramName, value);
-        if (status != MultiCamNative.MC_OK)
+        if (status != MultiCamApi.MC_OK)
             throw new MultiCamException(status, $"SetParam({paramName}={value})");
     }
 }

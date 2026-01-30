@@ -6,30 +6,30 @@ public class MultiCamDriverTests
     public void MultiCamNative_Constants_HaveExpectedValues()
     {
         // System object handles
-        Assert.Equal(0x10000000u, MultiCamNative.MC_CONFIGURATION);
-        Assert.Equal(0x20000000u, MultiCamNative.MC_BOARD);
-        Assert.Equal(0x00000001u, MultiCamNative.MC_CHANNEL);
-        Assert.Equal(0xFFFFFFFFu, MultiCamNative.MC_DEFAULT_SURFACE_HANDLE);
-        Assert.Equal(0, MultiCamNative.MC_OK);
+        Assert.Equal(0x10000000u, MultiCamApi.MC_CONFIGURATION);
+        Assert.Equal(0x20000000u, MultiCamApi.MC_BOARD);
+        Assert.Equal(0x00000001u, MultiCamApi.MC_CHANNEL);
+        Assert.Equal(0xFFFFFFFFu, MultiCamApi.MC_DEFAULT_SURFACE_HANDLE);
+        Assert.Equal(0, MultiCamApi.MC_OK);
     }
 
     [Fact]
     public void MultiCamNative_ParameterNames_AreDefined()
     {
         // Configuration parameters
-        Assert.Equal("BoardCount", MultiCamNative.PN_BoardCount);
-        Assert.Equal("DriverVersion", MultiCamNative.PN_DriverVersion);
+        Assert.Equal("BoardCount", MultiCamApi.PN_BoardCount);
+        Assert.Equal("DriverVersion", MultiCamApi.PN_DriverVersion);
 
         // Channel parameters
-        Assert.Equal("DriverIndex", MultiCamNative.PN_DriverIndex);
-        Assert.Equal("CamFile", MultiCamNative.PN_CamFile);
-        Assert.Equal("ChannelState", MultiCamNative.PN_ChannelState);
-        Assert.Equal("TrigMode", MultiCamNative.PN_TrigMode);
+        Assert.Equal("DriverIndex", MultiCamApi.PN_DriverIndex);
+        Assert.Equal("CamFile", MultiCamApi.PN_CamFile);
+        Assert.Equal("ChannelState", MultiCamApi.PN_ChannelState);
+        Assert.Equal("TrigMode", MultiCamApi.PN_TrigMode);
 
         // Calibration parameters
-        Assert.Equal("BlackCalibration", MultiCamNative.PN_BlackCalibration);
-        Assert.Equal("WhiteCalibration", MultiCamNative.PN_WhiteCalibration);
-        Assert.Equal("BalanceWhiteAuto", MultiCamNative.PN_BalanceWhiteAuto);
+        Assert.Equal("BlackCalibration", MultiCamApi.PN_BlackCalibration);
+        Assert.Equal("WhiteCalibration", MultiCamApi.PN_WhiteCalibration);
+        Assert.Equal("BalanceWhiteAuto", MultiCamApi.PN_BalanceWhiteAuto);
     }
 
     [Fact]
