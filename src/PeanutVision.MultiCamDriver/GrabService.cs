@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using PeanutVision.MultiCamDriver.Camera;
 using PeanutVision.MultiCamDriver.Hal;
 
 namespace PeanutVision.MultiCamDriver;
@@ -155,22 +156,24 @@ public sealed class GrabService : IGrabService
     }
 
     /// <summary>
-    /// Creates a new grab channel using an embedded camera configuration file.
-    /// The cam file is extracted from embedded resources to a temp directory.
+    /// Creates a new grab channel using a camera profile.
     /// </summary>
-    public GrabChannel CreateChannelFromEmbeddedCamFile(string embeddedCamFileName, int driverIndex = 0)
+    public GrabChannel CreateChannel(CameraProfile profile, int driverIndex = 0)
     {
-        string camFilePath = CamFileResource.GetCamFilePath(embeddedCamFileName);
-        return CreateChannel(camFilePath, driverIndex);
+        ArgumentNullException.ThrowIfNull(profile);
+        var options = profile.ToChannelOptions(driverIndex);
+        return CreateChannel(options);
     }
 
     /// <summary>
-    /// Creates a new grab channel using the default TC-A160K FreeRun RGB8 configuration.
+    /// Gets the default camera profile from the registry.
     /// </summary>
-    public GrabChannel CreateChannelForTC_A160K(int driverIndex = 0)
-    {
-        return CreateChannelFromEmbeddedCamFile(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8, driverIndex);
-    }
+    public CameraProfile? DefaultCameraProfile => CameraRegistry.Default.DefaultProfile;
+
+    /// <summary>
+    /// Gets the camera profile registry.
+    /// </summary>
+    public CameraRegistry CameraProfiles => CameraRegistry.Default;
 
     private void EnsureInitialized()
     {

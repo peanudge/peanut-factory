@@ -4,12 +4,14 @@ A modern C# wrapper for the Euresys MultiCam SDK, designed for high-speed image 
 
 ## Features
 
-- Modern P/Invoke using `LibraryImportAttribute` (.NET 7+ AOT compatible)
+- Modern P/Invoke using `LibraryImportAttribute` (.NET 9+ AOT compatible)
 - Hardware Abstraction Layer (HAL) for unit testing without hardware
+- **Camera Profile System** for abstract, extensible camera configurations
+- **Image Saving** to PNG, BMP, RAW formats (using ImageSharp)
 - Thread-safe callback handling with proper GCHandle management
 - ASP.NET Core Dependency Injection support
 - Embedded camera configuration files
-- Comprehensive test coverage (134+ unit tests)
+- Comprehensive test coverage (205+ unit tests)
 
 ## Project Structure
 
@@ -17,15 +19,30 @@ A modern C# wrapper for the Euresys MultiCam SDK, designed for high-speed image 
 peanut-factory/
 ├── src/
 │   ├── PeanutVision.MultiCamDriver/           # Core driver library
-│   │   ├── MultiCamDriver.cs                  # P/Invoke declarations & enums
+│   │   ├── MultiCamNative.cs                  # P/Invoke declarations & enums
 │   │   ├── GrabService.cs                     # Main service (singleton, DI-ready)
 │   │   ├── GrabChannel.cs                     # Channel lifecycle & acquisition
 │   │   ├── AcquisitionStatistics.cs           # Performance monitoring
 │   │   ├── CamFileResource.cs                 # Embedded resource extraction
-│   │   └── Hal/                               # Hardware Abstraction Layer
-│   │       ├── IMultiCamHAL.cs               # HAL interface
-│   │       ├── MultiCamHAL.cs                # Production implementation
-│   │       └── MockMultiCamHAL.cs            # Mock for testing
+│   │   ├── ImageSaver.cs                      # Static facade for saving images
+│   │   ├── Hal/                               # Hardware Abstraction Layer
+│   │   │   ├── IMultiCamHAL.cs               # HAL interface
+│   │   │   ├── MultiCamHAL.cs                # Production implementation
+│   │   │   └── MockMultiCamHAL.cs            # Mock for testing
+│   │   ├── Camera/                            # Camera Profile System
+│   │   │   ├── CameraProfile.cs              # Immutable camera configuration
+│   │   │   ├── CameraRegistry.cs             # Profile registry
+│   │   │   └── Profiles/
+│   │   │       └── CrevisProfiles.cs         # Built-in Crevis profiles
+│   │   └── Imaging/                           # Image Processing
+│   │       ├── ImageData.cs                  # Image value object
+│   │       ├── IImageEncoder.cs              # Encoder strategy interface
+│   │       ├── ImageEncoderRegistry.cs       # Encoder registry
+│   │       ├── ImageWriter.cs                # Main image writer
+│   │       └── Encoders/                     # Format encoders
+│   │           ├── PngEncoder.cs
+│   │           ├── BmpEncoder.cs
+│   │           └── RawEncoder.cs
 │   │
 │   ├── PeanutVision.Console/                  # Demo console application
 │   │   ├── Program.cs                         # Entry point
@@ -37,7 +54,8 @@ peanut-factory/
 │   │       ├── SoftwareTriggerCommand.cs
 │   │       ├── CalibrationCommand.cs
 │   │       ├── BenchmarkCommand.cs
-│   │       └── CamFileInfoCommand.cs
+│   │       ├── CamFileInfoCommand.cs
+│   │       └── SaveImageCommand.cs            # Capture & save to file
 │   │
 │   ├── PeanutVision.MultiCamDriver.Tests/     # Unit tests
 │   └── PeanutVision.MultiCamDriver.IntegrationTests/  # Hardware tests
@@ -53,11 +71,13 @@ peanut-factory/
 ## Prerequisites
 
 ### Hardware
+
 - **Frame Grabber**: Euresys Grablink Full (PC1622)
 - **Camera**: Crevis TC-A160K (Area-Scan, Camera Link)
 - **Cable**: Standard Camera Link cable
 
 ### Software
+
 - **Driver**: Euresys MultiCam 6.19.4 or higher
 - **Runtime**: .NET 9.0
 - **OS**: Windows 10/11 or Linux
@@ -79,6 +99,7 @@ dotnet run -- --mock
 
 ```csharp
 using PeanutVision.MultiCamDriver;
+using PeanutVision.MultiCamDriver.Camera;
 
 // Initialize service
 using var service = new GrabService();
@@ -86,8 +107,8 @@ service.Initialize();
 
 Console.WriteLine($"Driver: {service.DriverVersion}, Boards: {service.BoardCount}");
 
-// Create channel with embedded cam file
-using var channel = service.CreateChannelForTC_A160K();
+// Create channel using camera profile
+using var channel = service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
 
 // Subscribe to frame events
 channel.FrameAcquired += (sender, args) =>
@@ -105,13 +126,11 @@ channel.StopAcquisition();
 ### Software Trigger Mode
 
 ```csharp
-using var channel = service.CreateChannel(new GrabChannelOptions
-{
-    CamFilePath = CamFileResource.GetCamFilePath(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8),
-    TriggerMode = McTrigMode.MC_TrigMode_SOFT,
-    UseCallback = false
-});
+// Use software trigger profile
+var profile = CrevisProfiles.TC_A160K_SoftwareTrigger_RGB8;
+var options = profile.ToChannelOptions(McTrigMode.MC_TrigMode_SOFT, useCallback: false);
 
+using var channel = service.CreateChannel(options);
 channel.StartAcquisition();
 
 channel.SendSoftwareTrigger();
@@ -123,23 +142,107 @@ if (surface.HasValue)
 }
 ```
 
+### Saving Images
+
+```csharp
+using PeanutVision.MultiCamDriver;
+using PeanutVision.MultiCamDriver.Imaging;
+
+// Simple static API
+ImageSaver.Save(surfaceData, "capture.png");
+ImageSaver.SaveAsPng(surfaceData, "output.png");
+ImageSaver.SaveAsBmp(surfaceData, "output.bmp");
+ImageSaver.SaveAsRaw(surfaceData, "output.raw");
+
+// OOP API with custom configuration
+var writer = new ImageWriter();
+var imageData = ImageData.FromSurface(surfaceData);
+writer.Save(imageData, "output.png");
+
+// Custom encoder settings
+var registry = new ImageEncoderRegistry()
+    .Register(new PngEncoder(PngCompressionLevel.BestCompression));
+var customWriter = new ImageWriter(registry);
+```
+
 ### ASP.NET Core Integration
 
 ```csharp
 // In Program.cs
 builder.Services.AddSingleton<IGrabService, GrabService>();
+builder.Services.AddSingleton(CameraRegistry.Default);
+builder.Services.AddTransient<ImageWriter>();
 
 // In your service
 public class VisionService
 {
     private readonly IGrabService _grabService;
+    private readonly ImageWriter _imageWriter;
 
-    public VisionService(IGrabService grabService)
+    public VisionService(IGrabService grabService, ImageWriter imageWriter)
     {
         _grabService = grabService;
+        _imageWriter = imageWriter;
         _grabService.Initialize();
     }
 }
+```
+
+## Camera Profile System
+
+The Camera Profile System abstracts camera-specific details into reusable, extensible configurations.
+
+### Available Profiles
+
+| Profile ID | Description |
+|------------|-------------|
+| `crevis-tc-a160k-freerun-rgb8` | Standard continuous acquisition |
+| `crevis-tc-a160k-freerun-1tap-rgb8` | Single-tap configuration |
+| `crevis-tc-a160k-softtrig-rgb8` | Software-triggered capture |
+
+### Using Profiles
+
+```csharp
+// Use predefined profile
+using var channel = service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
+
+// Lookup by ID
+var profile = service.CameraProfiles.GetProfile("crevis-tc-a160k-freerun-rgb8");
+
+// List all available profiles
+foreach (var p in service.CameraProfiles.Profiles)
+{
+    Console.WriteLine($"{p.Id}: {p.DisplayName}");
+}
+
+// Filter by manufacturer
+var crevisProfiles = service.CameraProfiles.GetByManufacturer("Crevis");
+```
+
+### Creating Custom Profiles
+
+```csharp
+var customProfile = new CameraProfile.Builder()
+    .WithId("my-camera-v1")
+    .WithDisplayName("My Custom Camera")
+    .WithManufacturer("MyBrand")
+    .WithModel("CAM-500")
+    .WithCamFile("mybrand_cam500.cam")
+    .WithConnector("A")
+    .WithTriggerMode(McTrigMode.MC_TrigMode_IMMEDIATE)
+    .WithSurfaceCount(8)
+    .WithPixelFormat(PixelFormat.Rgb24)
+    .WithResolution(2048, 1536)
+    .WithDescription("High-speed industrial camera")
+    .Build();
+
+// Register globally
+CameraRegistry.Default.Register(customProfile);
+
+// Or use custom registry
+var myRegistry = new CameraRegistry()
+    .Register(customProfile)
+    .Register(anotherProfile);
 ```
 
 ## Architecture Patterns
@@ -166,107 +269,44 @@ The HAL pattern decouples business logic from native P/Invoke calls, enabling co
                 └──────────────┘
 ```
 
-**Usage:**
-```csharp
-// Production (default)
-using var service = new GrabService();
+### 2. Strategy Pattern (Image Encoders)
 
-// Testing with mock
-var mockHal = new MockMultiCamHAL();
-mockHal.Configuration.BoardCount = 2;
-using var service = new GrabService(mockHal);
-```
-
-### 2. Command Pattern (Console App)
-
-The console application uses the Command pattern for modular, extensible menu operations.
+Image encoding uses the Strategy pattern for extensible format support.
 
 ```
-┌─────────────┐     ┌───────────────┐     ┌──────────────┐
-│   Program   │────▶│ CommandRunner │────▶│  ICommand    │
-└─────────────┘     └───────────────┘     └──────┬───────┘
-                            │                    │
-                    ┌───────▼───────┐    ┌───────┴────────────┐
-                    │CommandContext │    │                    │
-                    │ (shared state)│    ▼                    ▼
-                    └───────────────┘  SystemStatus    Calibration
-                                       Acquisition     Benchmark
-                                       ...
+┌─────────────┐     ┌────────────────────┐
+│ ImageWriter │────▶│ ImageEncoderRegistry│
+└─────────────┘     └─────────┬──────────┘
+                              │
+              ┌───────────────┼───────────────┐
+              │               │               │
+       ┌──────▼─────┐  ┌──────▼─────┐  ┌──────▼─────┐
+       │ PngEncoder │  │ BmpEncoder │  │ RawEncoder │
+       └────────────┘  └────────────┘  └────────────┘
 ```
 
-**Adding a new command:**
-```csharp
-public sealed class MyCommand : CommandBase
-{
-    public override string Name => "My Command";
-    public override string Description => "Does something";
-    public override char Key => '7';
+### 3. Builder Pattern (Camera Profiles)
 
-    public override void Execute(CommandContext context)
-    {
-        PrintHeader("MY COMMAND");
-        // Implementation...
-        PrintFooter();
-        WaitForKey();
-    }
-}
-
-// Register in CommandRunner
-Register(new MyCommand());
-```
-
-### 3. Thread-Safe Callback Handling
-
-Native callbacks require careful GCHandle management to prevent garbage collection.
+Camera profiles use the Builder pattern for fluent, type-safe construction.
 
 ```csharp
-// Pin delegate and 'this' reference
-_nativeCallback = OnNativeCallback;
-_callbackHandle = GCHandle.Alloc(_nativeCallback);
-_thisHandle = GCHandle.Alloc(this);
-
-// Get function pointer
-IntPtr callbackPtr = Marshal.GetFunctionPointerForDelegate(_nativeCallback);
-IntPtr contextPtr = GCHandle.ToIntPtr(_thisHandle);
-
-// Register with native API
-_hal.RegisterCallback(_channelHandle, callbackPtr, contextPtr);
-
-// In static callback, recover 'this'
-private static void OnNativeCallback(ref McSignalInfo info)
-{
-    var channel = GCHandle.FromIntPtr(info.Context).Target as GrabChannel;
-    channel?.ProcessSignal(ref info);
-}
-
-// Free handles in Dispose()
-if (_callbackHandle.IsAllocated) _callbackHandle.Free();
-if (_thisHandle.IsAllocated) _thisHandle.Free();
+var profile = new CameraProfile.Builder()
+    .WithId("my-camera")
+    .WithManufacturer("Acme")
+    .WithCamFile("acme.cam")
+    .Build();
 ```
 
-### 4. Embedded Resource Pattern
+### 4. Registry Pattern (Open/Closed Principle)
 
-Camera configuration files are embedded in the assembly and extracted on-demand.
-
-```xml
-<!-- In .csproj -->
-<ItemGroup>
-  <EmbeddedResource Include="..\..\setup\camfiles\*.cam">
-    <LogicalName>CamFiles.%(Filename)%(Extension)</LogicalName>
-  </EmbeddedResource>
-</ItemGroup>
-```
+Both `CameraRegistry` and `ImageEncoderRegistry` support adding new items without modifying existing code.
 
 ```csharp
-// Extract and get path
-string camPath = CamFileResource.GetCamFilePath("TC-A160K-SEM_freerun_RGB8.cam");
+// Add new camera without changing library code
+CameraRegistry.Default.Register(myNewCameraProfile);
 
-// Or use known constants
-string camPath = CamFileResource.GetCamFilePath(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8);
-
-// List available files
-foreach (var file in CamFileResource.GetAvailableCamFiles())
-    Console.WriteLine(file);
+// Add new image format without changing library code
+ImageEncoderRegistry.Default.Register(new TiffEncoder());
 ```
 
 ## Camera Calibration
@@ -319,11 +359,19 @@ dotnet test
 ```
 
 ### Test Coverage
-- **GrabServiceTests** - Service lifecycle, initialization
-- **GrabChannelTests** - Channel operations, callbacks, calibration
-- **MockMultiCamHalTests** - Mock behavior verification
-- **CamFileResourceTests** - Embedded resource extraction
-- **AcquisitionStatisticsTests** - Performance monitoring
+
+| Module | Tests |
+|--------|-------|
+| GrabService | Service lifecycle, initialization |
+| GrabChannel | Channel operations, callbacks, calibration |
+| MockMultiCamHAL | Mock behavior verification |
+| CamFileResource | Embedded resource extraction |
+| AcquisitionStatistics | Performance monitoring |
+| CameraProfile | Profile builder, options conversion |
+| CameraRegistry | Profile lookup, filtering |
+| ImageSaver | Format detection, file saving |
+| ImageWriter | OOP image writing |
+| ImageEncoderRegistry | Encoder registration |
 
 ## Performance Monitoring
 

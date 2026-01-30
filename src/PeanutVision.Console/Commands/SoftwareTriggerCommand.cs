@@ -1,4 +1,5 @@
 using PeanutVision.MultiCamDriver;
+using PeanutVision.MultiCamDriver.Camera;
 
 namespace PeanutVision.Console.Commands;
 
@@ -20,17 +21,10 @@ public sealed class SoftwareTriggerCommand : CommandBase
 
         try
         {
-            var camPath = CamFileResource.GetCamFilePath(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8);
+            var profile = CrevisProfiles.TC_A160K_SoftwareTrigger_RGB8;
+            var options = profile.ToChannelOptions(McTrigMode.MC_TrigMode_SOFT, useCallback: false);
 
-            using var channel = context.Service.CreateChannel(new GrabChannelOptions
-            {
-                DriverIndex = 0,
-                Connector = "M",
-                CamFilePath = camPath,
-                SurfaceCount = 2,
-                UseCallback = false,
-                TriggerMode = McTrigMode.MC_TrigMode_SOFT
-            });
+            using var channel = context.Service.CreateChannel(options);
 
             Print($"\n  Image Size: {channel.ImageWidth} x {channel.ImageHeight}");
             Print("  Trigger Mode: SOFTWARE");

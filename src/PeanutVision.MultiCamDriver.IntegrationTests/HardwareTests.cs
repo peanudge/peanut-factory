@@ -1,3 +1,5 @@
+using PeanutVision.MultiCamDriver.Camera;
+
 namespace PeanutVision.MultiCamDriver.IntegrationTests;
 
 /// <summary>
@@ -70,7 +72,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannelForTC_A160K(driverIndex: 0);
+        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
 
         Assert.True(channel.Handle != 0);
         Assert.True(channel.ImageWidth > 0);
@@ -82,7 +84,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannelForTC_A160K(driverIndex: 0);
+        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
 
         channel.StartAcquisition();
         Assert.True(channel.IsActive);
@@ -98,7 +100,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannelForTC_A160K(driverIndex: 0);
+        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
 
         var stats = new AcquisitionStatistics();
         int frameCount = 0;
@@ -174,7 +176,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannelForTC_A160K(driverIndex: 0);
+        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
 
         try
         {
@@ -205,7 +207,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannelForTC_A160K(driverIndex: 0);
+        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
 
         try
         {
@@ -227,7 +229,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannelForTC_A160K(driverIndex: 0);
+        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
 
         var stats = new AcquisitionStatistics();
         int targetFrames = 500;

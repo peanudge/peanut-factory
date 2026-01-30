@@ -1,3 +1,5 @@
+using PeanutVision.MultiCamDriver.Camera;
+
 namespace PeanutVision.MultiCamDriver;
 
 /// <summary>
@@ -48,20 +50,22 @@ public interface IGrabService : IDisposable
     BoardInfo GetBoardInfo(int boardIndex);
 
     /// <summary>
-    /// Creates a new grab channel using an embedded camera configuration file.
-    /// The cam file is extracted from embedded resources to a temp directory.
+    /// Creates a new grab channel using a camera profile.
     /// </summary>
-    /// <param name="embeddedCamFileName">Name of the embedded .cam file (e.g., "TC-A160K-SEM_freerun_RGB8.cam")</param>
+    /// <param name="profile">Camera profile with configuration settings</param>
     /// <param name="driverIndex">Board index (default 0)</param>
     /// <returns>Configured grab channel ready for acquisition</returns>
-    GrabChannel CreateChannelFromEmbeddedCamFile(string embeddedCamFileName, int driverIndex = 0);
+    GrabChannel CreateChannel(CameraProfile profile, int driverIndex = 0);
 
     /// <summary>
-    /// Creates a new grab channel using the default TC-A160K FreeRun RGB8 configuration.
+    /// Gets the default camera profile (first available from registry).
     /// </summary>
-    /// <param name="driverIndex">Board index (default 0)</param>
-    /// <returns>Configured grab channel ready for acquisition</returns>
-    GrabChannel CreateChannelForTC_A160K(int driverIndex = 0);
+    CameraProfile? DefaultCameraProfile { get; }
+
+    /// <summary>
+    /// Gets the camera profile registry.
+    /// </summary>
+    CameraRegistry CameraProfiles { get; }
 }
 
 /// <summary>

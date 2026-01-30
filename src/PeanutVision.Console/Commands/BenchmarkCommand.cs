@@ -1,4 +1,5 @@
 using PeanutVision.MultiCamDriver;
+using PeanutVision.MultiCamDriver.Camera;
 
 namespace PeanutVision.Console.Commands;
 
@@ -23,7 +24,7 @@ public sealed class BenchmarkCommand : CommandBase
 
         try
         {
-            using var channel = context.Service.CreateChannelForTC_A160K(driverIndex: 0);
+            using var channel = context.Service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
 
             var stats = new AcquisitionStatistics();
             int receivedFrames = 0;
