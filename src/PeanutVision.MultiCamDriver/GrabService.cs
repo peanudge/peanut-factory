@@ -43,9 +43,9 @@ public sealed class GrabService : IGrabService
 
     /// <summary>
     /// Gets the HAL instance used by this service.
-    /// Useful for testing scenarios.
+    /// Useful for testing and simulation scenarios.
     /// </summary>
-    internal IMultiCamHAL Hal => _hal;
+    public IMultiCamHAL Hal => _hal;
 
     /// <summary>
     /// Initializes the MultiCam driver.
