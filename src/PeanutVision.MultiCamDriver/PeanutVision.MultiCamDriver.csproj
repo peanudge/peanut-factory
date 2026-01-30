@@ -13,6 +13,11 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
   </ItemGroup>
 
+  <!-- Image processing for saving captured frames -->
+  <ItemGroup>
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+  </ItemGroup>
+
   <!-- Embed camera configuration files as resources -->
   <ItemGroup>
     <EmbeddedResource Include="..\..\setup\camfiles\*.cam" Link="CamFiles\%(Filename)%(Extension)">

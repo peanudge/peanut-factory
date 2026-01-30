@@ -27,6 +27,7 @@ public sealed class CommandRunner
         Register(new CalibrationCommand());
         Register(new BenchmarkCommand());
         Register(new CamFileInfoCommand());
+        Register(new SaveImageCommand());
     }
 
     /// <summary>
