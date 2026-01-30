@@ -1,1 +1,3 @@
-﻿Console.WriteLine("Hello, PeanutVision!");
+﻿using PeanutVision.Console;
+
+Console.WriteLine($"Current Process ID: {PInvokeTest.GetProcessId()}");

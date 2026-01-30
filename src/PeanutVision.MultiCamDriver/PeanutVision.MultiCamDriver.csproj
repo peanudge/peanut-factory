@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Description>C# wrapper for Euresys MultiCam frame grabber SDK with modern P/Invoke</Description>
+  </PropertyGroup>
+
+  <!-- Optional DI support for ASP.NET Core integration -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
+  </ItemGroup>
+
+  <!-- Embed camera configuration files as resources -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\setup\camfiles\*.cam" Link="CamFiles\%(Filename)%(Extension)">
+      <LogicalName>CamFiles.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>
