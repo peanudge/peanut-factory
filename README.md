@@ -25,58 +25,6 @@
 • Color Method: RGB.
 • Acquisition Mode: SNAPSHOT 또는 VIDEO.
 
-## 💻 하드웨어 상태 조회 코드 예제 (C#)
-
-```cs
-using System;
-using Euresys.MultiCam;
-
-namespace VisionSystem
-{
-class Program
-{
-static void Main(string[] args)
-{
-try
-{
-// 드라이버 통신 시작 [21, 22]
-Mc.OpenDriver();
-
-                // 설치된 보드 개수 조회 [23, 24]
-                int boardCount;
-                Mc.GetParamInt(Mc.Configuration, MC.BoardCount, out boardCount);
-                Console.WriteLine($"Detected Boards: {boardCount}");
-
-                for (int i = 0; i < boardCount; i++)
-                {
-                    uint boardHandle = Mc.Board + (uint)i; // 보드 핸들 [25, 26]
-
-                    string boardName;
-                    Mc.GetParamStr(boardHandle, MC.BoardName, out boardName);
-
-                    // PoCL 상태 확인 [7, 8]
-                    int poclStatus;
-                    Mc.GetParamInt(boardHandle, MC.PoCL_Status, out poclStatus);
-
-                    Console.WriteLine($"Board [{i}]: {boardName}");
-                    Console.WriteLine($"PoCL Status: {poclStatus}");
-                }
-            }
-            catch (MultiCamException e)
-            {
-                Console.WriteLine($"Error: {e.Message}"); [27, 28]
-            }
-            finally
-            {
-                // 자원 해제 [21, 29]
-                Mc.CloseDriver();
-            }
-        }
-    }
-
-}
-```
-
 # 📚 관련 문서 및 링크 (Documentation)
 
 모든 최신 문서는 Euresys 지원 페이지에서 확인 가능합니다.
