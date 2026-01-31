@@ -69,15 +69,21 @@ public sealed class GrabService : IGrabService
 
             _openCount = 1;
 
-            // Query system information
+            // Assume single board at index 0 (MC_CONFIGURATION not reliable)
+            // Try to verify board exists by querying board info
             try
             {
-                status = _hal.GetParamInt(MultiCamApi.MC_CONFIGURATION,
-                    MultiCamApi.PN_BoardCount, out _boardCount);
+                uint boardHandle = MultiCamApi.MC_BOARD; // Board index 0
+                status = _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardName, out string boardName);
+                if (status == MultiCamApi.MC_OK && !string.IsNullOrEmpty(boardName))
+                {
+                    _boardCount = 1;
+                }
             }
             catch
             {
                 // Non-critical - continue even if we can't read info
+                _boardCount = 0;
             }
 
             _initialized = true;

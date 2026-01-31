@@ -23,14 +23,15 @@ public class GrabServiceTests
     }
 
     [Fact]
-    public void Initialize_QueriesBoardCount()
+    public void Initialize_DetectsBoard()
     {
-        _mockHal.Configuration.BoardCount = 2;
+        _mockHal.Configuration.BoardCount = 1;
         using var service = new GrabService(_mockHal);
 
         service.Initialize();
 
-        Assert.Equal(2, service.BoardCount);
+        // Only checks if board 0 exists (assumes single board)
+        Assert.Equal(1, service.BoardCount);
     }
 
     [Fact]
