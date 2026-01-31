@@ -482,3 +482,5 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+# Large documentation files
+doc/D412EN-MultiCam_Parameters-6.19.4.4059.pdf
