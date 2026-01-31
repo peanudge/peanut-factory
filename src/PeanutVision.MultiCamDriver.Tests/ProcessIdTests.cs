@@ -5,11 +5,11 @@ public class MultiCamDriverTests
     [Fact]
     public void MultiCamNative_Constants_HaveExpectedValues()
     {
-        // System object handles
-        Assert.Equal(0x10000000u, MultiCamApi.MC_CONFIGURATION);
-        Assert.Equal(0x20000000u, MultiCamApi.MC_BOARD);
-        Assert.Equal(0x00000001u, MultiCamApi.MC_CHANNEL);
-        Assert.Equal(0xFFFFFFFFu, MultiCamApi.MC_DEFAULT_SURFACE_HANDLE);
+        // System object handles (values from multicam.h)
+        Assert.Equal(0x20000000u, MultiCamApi.MC_CONFIGURATION);  // MC_CONFIG_CLASS << 28
+        Assert.Equal(0xE0000000u, MultiCamApi.MC_BOARD);          // MC_BOARD_CLASS << 28
+        Assert.Equal(0x8000FFFFu, MultiCamApi.MC_CHANNEL);        // MC_CHANNEL_CLASS << 28 | 0xFFFF
+        Assert.Equal(0x4FFFFFFFu, MultiCamApi.MC_DEFAULT_SURFACE_HANDLE);  // MC_SURFACE_CLASS << 28 | 0x0FFFFFFF
         Assert.Equal(0, MultiCamApi.MC_OK);
     }
 
@@ -42,7 +42,7 @@ public class MultiCamDriverTests
             Instance = 123,
             Signal = (int)McSignal.MC_SIG_SURFACE_PROCESSING,
             SignalInfo = 456,
-            Reserved = 789
+            SignalContext = 789
         };
 
         Assert.Equal(123u, info.Instance);
@@ -71,18 +71,20 @@ public class MultiCamDriverTests
     [Fact]
     public void McTrigMode_HasExpectedValues()
     {
-        Assert.Equal(0, (int)McTrigMode.MC_TrigMode_IMMEDIATE);
-        Assert.Equal(1, (int)McTrigMode.MC_TrigMode_HARD);
-        Assert.Equal(2, (int)McTrigMode.MC_TrigMode_SOFT);
-        Assert.Equal(3, (int)McTrigMode.MC_TrigMode_COMBINED);
+        // Values from McParams.h
+        Assert.Equal(3, (int)McTrigMode.MC_TrigMode_SOFT);
+        Assert.Equal(6, (int)McTrigMode.MC_TrigMode_IMMEDIATE);
+        Assert.Equal(7, (int)McTrigMode.MC_TrigMode_HARD);
+        Assert.Equal(8, (int)McTrigMode.MC_TrigMode_COMBINED);
     }
 
     [Fact]
     public void McChannelState_HasExpectedValues()
     {
-        Assert.Equal(0, (int)McChannelState.MC_ChannelState_ORPHAN);
+        // Values from McParams.h
         Assert.Equal(1, (int)McChannelState.MC_ChannelState_IDLE);
         Assert.Equal(2, (int)McChannelState.MC_ChannelState_ACTIVE);
+        Assert.Equal(5, (int)McChannelState.MC_ChannelState_ORPHAN);
     }
 
     [Fact]

@@ -46,10 +46,11 @@ public enum McSignal
 /// </summary>
 public enum McChannelState
 {
-	MC_ChannelState_ORPHAN = 0,
 	MC_ChannelState_IDLE = 1,
 	MC_ChannelState_ACTIVE = 2,
-	MC_ChannelState_LONGEXPOSURE = 3,
+	MC_ChannelState_READY = 3,
+	MC_ChannelState_FREE = 4,
+	MC_ChannelState_ORPHAN = 5,
 }
 
 /// <summary>
@@ -57,10 +58,17 @@ public enum McChannelState
 /// </summary>
 public enum McTrigMode
 {
-	MC_TrigMode_IMMEDIATE = 0,
-	MC_TrigMode_HARD = 1,
-	MC_TrigMode_SOFT = 2,
-	MC_TrigMode_COMBINED = 3,
+	MC_TrigMode_INT = 1,
+	MC_TrigMode_EXT = 2,
+	MC_TrigMode_SOFT = 3,
+	MC_TrigMode_EXTRC = 4,
+	MC_TrigMode_AUTO = 5,
+	MC_TrigMode_IMMEDIATE = 6,
+	MC_TrigMode_HARD = 7,
+	MC_TrigMode_COMBINED = 8,
+	MC_TrigMode_PAUSE = 9,
+	MC_TrigMode_MASTER_CHANNEL = 10,
+	MC_TrigMode_SLAVE = 11,
 }
 
 /// <summary>
@@ -68,9 +76,13 @@ public enum McTrigMode
 /// </summary>
 public enum McAcquisitionMode
 {
-	MC_AcquisitionMode_PAGE = 0,
-	MC_AcquisitionMode_WEB = 1,
-	MC_AcquisitionMode_LONGPAGE = 2,
+	MC_AcquisitionMode_SNAPSHOT = 1,
+	MC_AcquisitionMode_HFR = 2,
+	MC_AcquisitionMode_PAGE = 3,
+	MC_AcquisitionMode_WEB = 4,
+	MC_AcquisitionMode_LONGPAGE = 5,
+	MC_AcquisitionMode_INVALID = 6,
+	MC_AcquisitionMode_VIDEO = 7,
 }
 
 /// <summary>
@@ -94,7 +106,7 @@ public enum McSurfaceState
 }
 
 /// <summary>
-/// Signal information structure returned by wait/callback operations
+/// Signal information structure returned by wait/callback operations (MCSIGNALINFO)
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct McSignalInfo
@@ -107,8 +119,8 @@ public struct McSignalInfo
 	public int Signal;
 	/// <summary>Additional signal-specific information (e.g., surface index for SURFACE_PROCESSING)</summary>
 	public uint SignalInfo;
-	/// <summary>Reserved for future use</summary>
-	public uint Reserved;
+	/// <summary>Signal context information</summary>
+	public uint SignalContext;
 }
 
 /// <summary>
@@ -132,20 +144,26 @@ public static partial class MultiCamApi
 
 	#region Constants - System Objects
 
-	/// <summary>Configuration object handle (MC_CONFIGURATION)</summary>
-	public const uint MC_CONFIGURATION = 0x10000000;
+	// Object class constants (from multicam.h)
+	private const uint MC_SURFACE_CLASS = 0x4;
+	private const uint MC_CHANNEL_CLASS = 0x8;
+	private const uint MC_CONFIG_CLASS = 0x2;
+	private const uint MC_BOARD_CLASS = 0xE;
 
-	/// <summary>Board object handle base (add board index)</summary>
-	public const uint MC_BOARD = 0x20000000;
+	/// <summary>Configuration object handle (MC_CONFIGURATION)</summary>
+	public const uint MC_CONFIGURATION = (MC_CONFIG_CLASS << 28) | 0;  // 0x20000000
+
+	/// <summary>Board object handle base (add board index for specific board)</summary>
+	public const uint MC_BOARD = (MC_BOARD_CLASS << 28) | 0;  // 0xE0000000
 
 	/// <summary>Channel model for creating channels</summary>
-	public const uint MC_CHANNEL = 0x00000001;
+	public const uint MC_CHANNEL = (MC_CHANNEL_CLASS << 28) | 0x0000FFFF;  // 0x8000FFFF
 
 	/// <summary>Surface model for creating surfaces</summary>
-	public const uint MC_SURFACE = 0x00000002;
+	public const uint MC_SURFACE = (MC_SURFACE_CLASS << 28) | 0x0000FFFF;  // 0x4000FFFF
 
 	/// <summary>Default/automatic surface handle</summary>
-	public const uint MC_DEFAULT_SURFACE_HANDLE = 0xFFFFFFFF;
+	public const uint MC_DEFAULT_SURFACE_HANDLE = (MC_SURFACE_CLASS << 28) | 0x0FFFFFFF;  // 0x4FFFFFFF
 
 	#endregion
 
