@@ -9,7 +9,7 @@ namespace PeanutVision.MultiCamDriver.Hal;
 public class MockMultiCamHAL : IMultiCamHAL
 {
     private readonly object _lock = new();
-    private bool _driverOpen;
+    private bool _driverOpen = true; // Default to open for unit testing convenience
     private uint _nextInstanceId = 1;
 
     // Track created instances
@@ -80,6 +80,12 @@ public class MockMultiCamHAL : IMultiCamHAL
 
         lock (_lock)
         {
+            if (!_driverOpen)
+            {
+                instance = 0;
+                return (int)McStatus.MC_NOT_READY;
+            }
+
             instance = _nextInstanceId++;
             var mockInstance = new MockInstance
             {
@@ -108,6 +114,12 @@ public class MockMultiCamHAL : IMultiCamHAL
 
         lock (_lock)
         {
+            if (!_driverOpen)
+            {
+                instance = 0;
+                return (int)McStatus.MC_NOT_READY;
+            }
+
             instance = _nextInstanceId++;
             var mockInstance = new MockInstance
             {
@@ -538,7 +550,7 @@ public class MockMultiCamHAL : IMultiCamHAL
     {
         lock (_lock)
         {
-            _driverOpen = false;
+            _driverOpen = true; // Reset to default open state for testing
             _nextInstanceId = 1;
             _instances.Clear();
             CallLog.Reset();
