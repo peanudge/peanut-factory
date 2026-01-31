@@ -19,11 +19,9 @@ public sealed class GrabService : IGrabService
     private int _openCount;
 
     private int _boardCount;
-    private string _driverVersion = string.Empty;
 
     public bool IsInitialized => _initialized;
     public int BoardCount => _boardCount;
-    public string DriverVersion => _driverVersion;
 
     /// <summary>
     /// Creates a new GrabService using the real HAL.
@@ -76,9 +74,6 @@ public sealed class GrabService : IGrabService
             {
                 status = _hal.GetParamInt(MultiCamApi.MC_CONFIGURATION,
                     MultiCamApi.PN_BoardCount, out _boardCount);
-
-                status = _hal.GetParamStr(MultiCamApi.MC_CONFIGURATION,
-                    MultiCamApi.PN_DriverVersion, out _driverVersion);
             }
             catch
             {

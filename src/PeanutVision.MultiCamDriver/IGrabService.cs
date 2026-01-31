@@ -19,11 +19,6 @@ public interface IGrabService : IDisposable
     int BoardCount { get; }
 
     /// <summary>
-    /// Gets the driver version string.
-    /// </summary>
-    string DriverVersion { get; }
-
-    /// <summary>
     /// Initializes the MultiCam driver.
     /// Must be called before any other operations.
     /// </summary>

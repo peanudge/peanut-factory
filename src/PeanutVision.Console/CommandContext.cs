@@ -28,7 +28,6 @@ public sealed class CommandContext : IDisposable
         {
             var mockHal = new MockMultiCamHAL();
             mockHal.Configuration.BoardCount = 1;
-            mockHal.Configuration.DriverVersion = "6.19.4.4059 (Mock)";
             mockHal.Configuration.DefaultImageWidth = 4096;
             mockHal.Configuration.DefaultImageHeight = 3072;
             service = new GrabService(mockHal);

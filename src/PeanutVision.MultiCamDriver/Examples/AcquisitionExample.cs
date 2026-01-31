@@ -18,7 +18,6 @@ public static class AcquisitionExample
         using var service = new GrabService();
         service.Initialize();
 
-        Console.WriteLine($"Driver Version: {service.DriverVersion}");
         Console.WriteLine($"Boards Detected: {service.BoardCount}");
 
         if (service.BoardCount == 0)

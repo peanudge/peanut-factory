@@ -34,17 +34,6 @@ public class GrabServiceTests
     }
 
     [Fact]
-    public void Initialize_QueriesDriverVersion()
-    {
-        _mockHal.Configuration.DriverVersion = "6.19.4.4059 (Test)";
-        using var service = new GrabService(_mockHal);
-
-        service.Initialize();
-
-        Assert.Equal("6.19.4.4059 (Test)", service.DriverVersion);
-    }
-
-    [Fact]
     public void Initialize_CalledMultipleTimes_OnlyOpensOnce()
     {
         using var service = new GrabService(_mockHal);

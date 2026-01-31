@@ -18,7 +18,8 @@ public class MultiCamDriverTests
     {
         // Configuration parameters
         Assert.Equal("BoardCount", MultiCamApi.PN_BoardCount);
-        Assert.Equal("DriverVersion", MultiCamApi.PN_DriverVersion);
+        Assert.Equal("ErrorHandling", MultiCamApi.PN_ErrorHandling);
+        Assert.Equal("ErrorLog", MultiCamApi.PN_ErrorLog);
 
         // Channel parameters
         Assert.Equal("DriverIndex", MultiCamApi.PN_DriverIndex);

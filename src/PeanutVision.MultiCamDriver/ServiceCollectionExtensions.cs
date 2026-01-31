@@ -78,7 +78,6 @@ public static class ServiceCollectionExtensions
     /// <code>
     /// builder.Services.AddGrabService(service =>
     /// {
-    ///     Console.WriteLine($"Driver version: {service.DriverVersion}");
     ///     Console.WriteLine($"Boards detected: {service.BoardCount}");
     /// });
     /// </code>

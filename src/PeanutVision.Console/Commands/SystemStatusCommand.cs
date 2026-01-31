@@ -15,8 +15,7 @@ public sealed class SystemStatusCommand : CommandBase
 
         var service = context.Service;
 
-        Print($"\n  Driver Version : {service.DriverVersion}");
-        Print($"  Boards Detected: {service.BoardCount}");
+        Print($"\n  Boards Detected: {service.BoardCount}");
         Print($"  Mode           : {(context.UseMockHal ? "MOCK (Simulation)" : "HARDWARE")}");
 
         if (service.BoardCount > 0)

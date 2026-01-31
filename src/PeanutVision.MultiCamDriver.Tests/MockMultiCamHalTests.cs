@@ -20,12 +20,6 @@ public class MockMultiCamHalTests
     }
 
     [Fact]
-    public void Configuration_DriverVersion_DefaultsToMock()
-    {
-        Assert.Contains("Mock", _mockHal.Configuration.DriverVersion);
-    }
-
-    [Fact]
     public void Configuration_ImageSize_DefaultsTo1920x1080()
     {
         Assert.Equal(1920, _mockHal.Configuration.DefaultImageWidth);
@@ -36,12 +30,10 @@ public class MockMultiCamHalTests
     public void Configuration_CanBeModified()
     {
         _mockHal.Configuration.BoardCount = 3;
-        _mockHal.Configuration.DriverVersion = "Test Version";
         _mockHal.Configuration.DefaultImageWidth = 640;
         _mockHal.Configuration.DefaultImageHeight = 480;
 
         Assert.Equal(3, _mockHal.Configuration.BoardCount);
-        Assert.Equal("Test Version", _mockHal.Configuration.DriverVersion);
         Assert.Equal(640, _mockHal.Configuration.DefaultImageWidth);
         Assert.Equal(480, _mockHal.Configuration.DefaultImageHeight);
     }
@@ -138,20 +130,6 @@ public class MockMultiCamHalTests
 
         Assert.Equal(MultiCamApi.MC_OK, result);
         Assert.Equal(2, value);
-    }
-
-    [Fact]
-    public void GetParamStr_Configuration_DriverVersion()
-    {
-        _mockHal.Configuration.DriverVersion = "Test 1.0";
-
-        int result = _mockHal.GetParamStr(
-            MultiCamApi.MC_CONFIGURATION,
-            MultiCamApi.PN_DriverVersion,
-            out string value);
-
-        Assert.Equal(MultiCamApi.MC_OK, result);
-        Assert.Equal("Test 1.0", value);
     }
 
     [Fact]

@@ -307,12 +307,6 @@ public class MockMultiCamHAL : IMultiCamHAL
 
     private int GetConfigurationParamStr(string paramName, out string value)
     {
-        if (paramName == MultiCamApi.PN_DriverVersion)
-        {
-            value = Configuration.DriverVersion;
-            return MultiCamApi.MC_OK;
-        }
-
         value = string.Empty;
         return (int)McStatus.MC_INVALID_PARAM;
     }
@@ -561,9 +555,6 @@ public class MockHalConfiguration
 {
     /// <summary>Number of simulated boards.</summary>
     public int BoardCount { get; set; } = 1;
-
-    /// <summary>Simulated driver version.</summary>
-    public string DriverVersion { get; set; } = "6.19.4.4059 (Mock)";
 
     /// <summary>Board names for each simulated board.</summary>
     public List<string> BoardNames { get; set; } = new() { "Grablink Full" };

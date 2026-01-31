@@ -47,11 +47,10 @@ public class HardwareTests : IDisposable
     }
 
     [Fact]
-    public void Initialize_WithHardware_ReturnsDriverVersion()
+    public void Initialize_WithHardware_DetectsBoards()
     {
         SkipIfNoHardware();
 
-        Assert.NotEmpty(_service.DriverVersion);
         Assert.True(_service.BoardCount > 0);
     }
 

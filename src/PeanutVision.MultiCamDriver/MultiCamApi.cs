@@ -180,7 +180,8 @@ public static partial class MultiCamApi
 
 	// Configuration parameters
 	public const string PN_BoardCount = "BoardCount";
-	public const string PN_DriverVersion = "DriverVersion";
+	public const string PN_ErrorHandling = "ErrorHandling";
+	public const string PN_ErrorLog = "ErrorLog";
 
 	// Board parameters
 	public const string PN_BoardType = "BoardType";
