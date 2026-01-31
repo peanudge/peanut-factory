@@ -332,7 +332,7 @@ public class MockMultiCamHAL : IMultiCamHAL
             MultiCamApi.PN_BoardName => Configuration.BoardNames.ElementAtOrDefault(boardIndex) ?? "MockBoard",
             MultiCamApi.PN_BoardType => Configuration.BoardTypes.ElementAtOrDefault(boardIndex) ?? "MockType",
             MultiCamApi.PN_SerialNumber => $"MOCK{boardIndex:D4}",
-            MultiCamApi.PN_PciPosition => $"0:{boardIndex}:0",
+            MultiCamApi.PN_PCIPosition => $"0:{boardIndex}:0",
             _ => string.Empty
         };
 

@@ -86,5 +86,5 @@ public readonly struct BoardInfo
     public string SerialNumber { get; init; }
 
     /// <summary>PCI bus position</summary>
-    public string PciPosition { get; init; }
+    public string PCIPosition { get; init; }
 }

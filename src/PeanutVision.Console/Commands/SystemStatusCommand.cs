@@ -32,7 +32,7 @@ public sealed class SystemStatusCommand : CommandBase
                     Print($"  [{i}] {info.BoardName}");
                     Print($"      Type    : {info.BoardType}");
                     Print($"      Serial  : {info.SerialNumber}");
-                    Print($"      PCI     : {info.PciPosition}");
+                    Print($"      PCI     : {info.PCIPosition}");
                 }
                 catch (Exception ex)
                 {

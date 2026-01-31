@@ -142,7 +142,7 @@ public sealed class GrabService : IGrabService
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardType, out string boardType);
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardName, out string boardName);
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_SerialNumber, out string serialNumber);
-            _hal.GetParamStr(boardHandle, MultiCamApi.PN_PciPosition, out string pciPosition);
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_PCIPosition, out string pciPosition);
 
             return new BoardInfo
             {
@@ -150,7 +150,7 @@ public sealed class GrabService : IGrabService
                 BoardType = boardType,
                 BoardName = boardName,
                 SerialNumber = serialNumber,
-                PciPosition = pciPosition
+                PCIPosition = pciPosition
             };
         }
     }

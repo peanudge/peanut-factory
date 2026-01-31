@@ -186,7 +186,7 @@ public static partial class MultiCamApi
 	public const string PN_BoardType = "BoardType";
 	public const string PN_BoardName = "BoardName";
 	public const string PN_SerialNumber = "SerialNumber";
-	public const string PN_PciPosition = "PciPosition";
+	public const string PN_PCIPosition = "PCIPosition";
 
 	// Channel configuration
 	public const string PN_DriverIndex = "DriverIndex";
@@ -244,7 +244,7 @@ public static partial class MultiCamApi
 
 	// Line rate
 	public const string PN_LineRate_Hz = "LineRate_Hz";
-	public const string PN_FrameRate_Hz = "FrameRate_Hz";
+	public const string PN_FrameRate_mHz = "FrameRate_mHz";
 
 	#endregion
 

@@ -169,7 +169,7 @@ public class MultiCamDriverTests
             BoardType = "Grablink Full",
             BoardName = "PC1622",
             SerialNumber = "12345",
-            PciPosition = "0:1:0"
+            PCIPosition = "0:1:0"
         };
 
         Assert.Equal(0, info.Index);
