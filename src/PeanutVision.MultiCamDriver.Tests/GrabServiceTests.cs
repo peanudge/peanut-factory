@@ -63,7 +63,7 @@ public class GrabServiceTests
         using var service = new GrabService(_mockHal);
 
         Assert.Throws<InvalidOperationException>(() =>
-            service.CreateChannel("test.cam"));
+            service.CreateChannel(new GrabChannelOptions { CamFilePath = "test.cam" }));
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class GrabServiceTests
         using var service = new GrabService(_mockHal);
         service.Initialize();
 
-        using var channel = service.CreateChannel("test.cam");
+        using var channel = service.CreateChannel(new GrabChannelOptions { CamFilePath = "test.cam" });
 
         Assert.NotNull(channel);
         Assert.True(channel.Handle > 0);
@@ -141,8 +141,8 @@ public class GrabServiceTests
         using var service = new GrabService(_mockHal);
         service.Initialize();
 
-        var channel1 = service.CreateChannel("test1.cam");
-        var channel2 = service.CreateChannel("test2.cam");
+        var channel1 = service.CreateChannel(new GrabChannelOptions { CamFilePath = "test1.cam" });
+        var channel2 = service.CreateChannel(new GrabChannelOptions { CamFilePath = "test2.cam" });
 
         service.Dispose();
 
@@ -179,6 +179,6 @@ public class GrabServiceTests
         service.Initialize();
         service.Dispose();
 
-        Assert.Throws<ObjectDisposedException>(() => service.CreateChannel("test.cam"));
+        Assert.Throws<ObjectDisposedException>(() => service.CreateChannel(new GrabChannelOptions { CamFilePath = "test.cam" }));
     }
 }

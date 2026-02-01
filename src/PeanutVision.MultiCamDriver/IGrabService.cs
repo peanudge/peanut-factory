@@ -32,25 +32,9 @@ public interface IGrabService : IDisposable
     GrabChannel CreateChannel(GrabChannelOptions options);
 
     /// <summary>
-    /// Creates a new grab channel with default options and the specified .cam file.
-    /// </summary>
-    /// <param name="camFilePath">Path to the .cam configuration file</param>
-    /// <param name="driverIndex">Board index (default 0)</param>
-    /// <returns>Configured grab channel ready for acquisition</returns>
-    GrabChannel CreateChannel(string camFilePath, int driverIndex = 0);
-
-    /// <summary>
     /// Gets board information for the specified board index.
     /// </summary>
     BoardInfo GetBoardInfo(int boardIndex);
-
-    /// <summary>
-    /// Creates a new grab channel using a camera profile.
-    /// </summary>
-    /// <param name="profile">Camera profile with configuration settings</param>
-    /// <param name="driverIndex">Board index (default 0)</param>
-    /// <returns>Configured grab channel ready for acquisition</returns>
-    GrabChannel CreateChannel(CameraProfile profile, int driverIndex = 0);
 
     /// <summary>
     /// Gets the default camera profile (first available from registry).

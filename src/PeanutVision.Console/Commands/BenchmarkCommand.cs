@@ -24,7 +24,7 @@ public sealed class BenchmarkCommand : CommandBase
 
         try
         {
-            using var channel = context.Service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
+            using var channel = context.Service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
 
             var stats = new AcquisitionStatistics();
             int receivedFrames = 0;

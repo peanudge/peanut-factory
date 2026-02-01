@@ -105,10 +105,10 @@ using PeanutVision.MultiCamDriver.Camera;
 using var service = new GrabService();
 service.Initialize();
 
-Console.WriteLine($"Driver: {service.DriverVersion}, Boards: {service.BoardCount}");
+Console.WriteLine($"Boards Detected: {service.BoardCount}");
 
 // Create channel using camera profile
-using var channel = service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
+using var channel = service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
 
 // Subscribe to frame events
 channel.FrameAcquired += (sender, args) =>
@@ -204,7 +204,7 @@ The Camera Profile System abstracts camera-specific details into reusable, exten
 
 ```csharp
 // Use predefined profile
-using var channel = service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
+using var channel = service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
 
 // Lookup by ID
 var profile = service.CameraProfiles.GetProfile("crevis-tc-a160k-freerun-rgb8");

@@ -71,7 +71,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
+        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
 
         Assert.True(channel.Handle != 0);
         Assert.True(channel.ImageWidth > 0);
@@ -83,7 +83,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
+        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
 
         channel.StartAcquisition();
         Assert.True(channel.IsActive);
@@ -99,7 +99,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
+        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
 
         var stats = new AcquisitionStatistics();
         int frameCount = 0;
@@ -175,7 +175,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
+        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
 
         try
         {
@@ -206,7 +206,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
+        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
 
         try
         {
@@ -228,7 +228,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
+        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
 
         var stats = new AcquisitionStatistics();
         int targetFrames = 500;

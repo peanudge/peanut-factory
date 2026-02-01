@@ -108,21 +108,6 @@ public sealed class GrabService : IGrabService
     }
 
     /// <summary>
-    /// Creates a new grab channel with default options and the specified .cam file.
-    /// </summary>
-    public GrabChannel CreateChannel(string camFilePath, int driverIndex = 0)
-    {
-        return CreateChannel(new GrabChannelOptions
-        {
-            CamFilePath = camFilePath,
-            DriverIndex = driverIndex,
-            UseCallback = true,
-            SurfaceCount = 4,
-            TriggerMode = McTrigMode.MC_TrigMode_IMMEDIATE
-        });
-    }
-
-    /// <summary>
     /// Gets board information for the specified board index.
     /// </summary>
     public BoardInfo GetBoardInfo(int boardIndex)
@@ -154,16 +139,6 @@ public sealed class GrabService : IGrabService
                 PCIPosition = pciPosition
             };
         }
-    }
-
-    /// <summary>
-    /// Creates a new grab channel using a camera profile.
-    /// </summary>
-    public GrabChannel CreateChannel(CameraProfile profile, int driverIndex = 0)
-    {
-        ArgumentNullException.ThrowIfNull(profile);
-        var options = profile.ToChannelOptions(driverIndex);
-        return CreateChannel(options);
     }
 
     /// <summary>

@@ -213,7 +213,7 @@ public class ContinuousCapture
         service.Initialize();
 
         // Use continuous (free-run) profile
-        using var channel = service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
+        using var channel = service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
 
         int frameCount = 0;
 

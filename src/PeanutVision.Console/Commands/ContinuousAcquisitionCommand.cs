@@ -21,7 +21,7 @@ public sealed class ContinuousAcquisitionCommand : CommandBase
 
         try
         {
-            using var channel = context.Service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
+            using var channel = context.Service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
 
             Print($"\n  Image Size: {channel.ImageWidth} x {channel.ImageHeight}");
             Print($"  Active    : {channel.IsActive}");

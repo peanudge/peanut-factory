@@ -110,7 +110,7 @@ public class MultiCamDriverTests
         using var service = new GrabService();
 
         Assert.Throws<InvalidOperationException>(() =>
-            service.CreateChannel("test.cam"));
+            service.CreateChannel(new GrabChannelOptions { CamFilePath = "test.cam" }));
     }
 
     [Fact]

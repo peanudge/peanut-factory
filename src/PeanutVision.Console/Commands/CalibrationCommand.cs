@@ -21,7 +21,7 @@ public sealed class CalibrationCommand : CommandBase
 
         try
         {
-            using var channel = context.Service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8);
+            using var channel = context.Service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
 
             RunFlatFieldCalibration(channel);
             RunWhiteBalanceCalibration(channel);
