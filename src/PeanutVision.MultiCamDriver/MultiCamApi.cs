@@ -265,6 +265,25 @@ public static partial class MultiCamApi
 	public const string PN_LineRate_Hz = "LineRate_Hz";
 	public const string PN_FrameRate_mHz = "FrameRate_mHz";
 
+	// Input/Output status
+	public const string PN_InputState = "InputState";
+	public const string PN_OutputState = "OutputState";
+	public const string PN_InputConnector = "InputConnector";
+
+	// Diagnostics
+	public const string PN_GrabberErrors = "GrabberErrors";
+	public const string PN_ChannelLinkSyncErrors = "ChannelLinkSyncErrors";
+	public const string PN_ChannelLinkClockErrors = "ChannelLinkClockErrors";
+	public const string PN_LineTriggerViolation = "LineTriggerViolation";
+	public const string PN_FrameTriggerViolation = "FrameTriggerViolation";
+	public const string PN_DetectedSignalStrength = "DetectedSignalStrength";
+
+	// PCIe
+	public const string PN_PCIeLinkInfo = "PCIeLinkInfo";
+
+	// Camera Link status
+	public const string PN_CameraLinkStatus = "CameraLinkStatus";
+
 	#endregion
 
 	#region Driver Connection

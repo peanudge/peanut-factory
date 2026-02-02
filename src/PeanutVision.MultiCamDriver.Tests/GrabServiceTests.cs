@@ -125,6 +125,42 @@ public class GrabServiceTests
     }
 
     [Fact]
+    public void GetBoardStatus_ReturnsBoardStatusInformation()
+    {
+        _mockHal.Configuration.BoardCount = 1;
+        _mockHal.Configuration.BoardNames = new List<string> { "Grablink Full" };
+        _mockHal.Configuration.BoardTypes = new List<string> { "PC1622" };
+
+        using var service = new GrabService(_mockHal);
+        service.Initialize();
+
+        var status = service.GetBoardStatus(0);
+
+        Assert.Equal(0, status.Index);
+        Assert.Equal("Grablink Full", status.BoardName);
+        Assert.Equal("PC1622", status.BoardType);
+        Assert.Equal("M", status.InputConnector);
+        Assert.Equal("ACTIVE", status.InputState);
+        Assert.Equal("ACTIVE", status.OutputState);
+        Assert.Equal("STRONG", status.SignalStrength);
+        Assert.Equal("CONNECTED", status.CameraLinkStatus);
+        Assert.Equal("Gen2 x4", status.PCIeLinkInfo);
+        Assert.Equal(0, status.GrabberErrors);
+        Assert.Equal(0, status.SyncErrors);
+        Assert.Equal(0, status.ClockErrors);
+    }
+
+    [Fact]
+    public void GetBoardStatus_InvalidIndex_ThrowsException()
+    {
+        _mockHal.Configuration.BoardCount = 1;
+        using var service = new GrabService(_mockHal);
+        service.Initialize();
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => service.GetBoardStatus(5));
+    }
+
+    [Fact]
     public void Dispose_ClosesDriver()
     {
         var service = new GrabService(_mockHal);

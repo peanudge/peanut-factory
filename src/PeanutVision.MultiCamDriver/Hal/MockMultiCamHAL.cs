@@ -186,8 +186,7 @@ public class MockMultiCamHAL : IMultiCamHAL
         // Handle board objects
         if (instance >= MultiCamApi.MC_BOARD && instance < MultiCamApi.MC_BOARD + 100)
         {
-            value = 0;
-            return MultiCamApi.MC_OK;
+            return GetBoardParamInt(instance, paramName, out value);
         }
 
         if (!_instances.TryGetValue(instance, out var inst))
@@ -339,7 +338,37 @@ public class MockMultiCamHAL : IMultiCamHAL
             MultiCamApi.PN_BoardType => Configuration.BoardTypes.ElementAtOrDefault(boardIndex) ?? "MockType",
             MultiCamApi.PN_SerialNumber => $"MOCK{boardIndex:D4}",
             MultiCamApi.PN_PCIPosition => $"0:{boardIndex}:0",
+            // Board status parameters
+            MultiCamApi.PN_InputConnector => "M",
+            MultiCamApi.PN_InputState => "ACTIVE",
+            MultiCamApi.PN_OutputState => "ACTIVE",
+            MultiCamApi.PN_DetectedSignalStrength => "STRONG",
+            MultiCamApi.PN_CameraLinkStatus => "CONNECTED",
+            MultiCamApi.PN_PCIeLinkInfo => "Gen2 x4",
             _ => string.Empty
+        };
+
+        return MultiCamApi.MC_OK;
+    }
+
+    private int GetBoardParamInt(uint boardHandle, string paramName, out int value)
+    {
+        int boardIndex = (int)(boardHandle - MultiCamApi.MC_BOARD);
+
+        if (boardIndex < 0 || boardIndex >= Configuration.BoardCount)
+        {
+            value = 0;
+            return (int)McStatus.MC_INVALID_HANDLE;
+        }
+
+        value = paramName switch
+        {
+            MultiCamApi.PN_GrabberErrors => 0,
+            MultiCamApi.PN_ChannelLinkSyncErrors => 0,
+            MultiCamApi.PN_ChannelLinkClockErrors => 0,
+            MultiCamApi.PN_LineTriggerViolation => 0,
+            MultiCamApi.PN_FrameTriggerViolation => 0,
+            _ => 0
         };
 
         return MultiCamApi.MC_OK;

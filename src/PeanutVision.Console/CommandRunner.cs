@@ -28,6 +28,7 @@ public sealed class CommandRunner
         Register(new BenchmarkCommand());
         Register(new CamFileInfoCommand());
         Register(new SaveImageCommand());
+        Register(new BoardStatusCommand());
     }
 
     /// <summary>

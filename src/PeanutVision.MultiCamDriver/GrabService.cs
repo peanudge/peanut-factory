@@ -142,6 +142,71 @@ public sealed class GrabService : IGrabService
     }
 
     /// <summary>
+    /// Gets detailed status for the specified board including diagnostics.
+    /// </summary>
+    public BoardStatus GetBoardStatus(int boardIndex)
+    {
+        lock (_lock)
+        {
+            ThrowIfDisposed();
+            EnsureInitialized();
+
+            if (boardIndex < 0 || boardIndex >= _boardCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(boardIndex),
+                    $"Board index must be between 0 and {_boardCount - 1}");
+            }
+
+            uint boardHandle = MultiCamApi.MC_BOARD + (uint)boardIndex;
+
+            // Query basic info (ignore failures for unsupported params)
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardType, out string boardType);
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardName, out string boardName);
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_SerialNumber, out string serial);
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_PCIPosition, out string pci);
+
+            // Input/Output status
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_InputConnector, out string inputConnector);
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_InputState, out string inputState);
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_OutputState, out string outputState);
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_DetectedSignalStrength, out string signal);
+
+            // Link status
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_CameraLinkStatus, out string cameraLinkStatus);
+            _hal.GetParamInt(boardHandle, MultiCamApi.PN_ChannelLinkSyncErrors, out int syncErrors);
+            _hal.GetParamInt(boardHandle, MultiCamApi.PN_ChannelLinkClockErrors, out int clockErrors);
+
+            // Diagnostics
+            _hal.GetParamInt(boardHandle, MultiCamApi.PN_GrabberErrors, out int grabberErrors);
+            _hal.GetParamInt(boardHandle, MultiCamApi.PN_LineTriggerViolation, out int lineViolations);
+            _hal.GetParamInt(boardHandle, MultiCamApi.PN_FrameTriggerViolation, out int frameViolations);
+
+            // PCIe
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_PCIeLinkInfo, out string pcieInfo);
+
+            return new BoardStatus
+            {
+                Index = boardIndex,
+                BoardName = boardName ?? "Unknown",
+                BoardType = boardType ?? "Unknown",
+                SerialNumber = serial ?? "Unknown",
+                PCIPosition = pci ?? "Unknown",
+                InputConnector = inputConnector ?? "N/A",
+                InputState = inputState ?? "N/A",
+                OutputState = outputState ?? "N/A",
+                SignalStrength = signal ?? "N/A",
+                CameraLinkStatus = cameraLinkStatus ?? "N/A",
+                GrabberErrors = grabberErrors,
+                SyncErrors = syncErrors,
+                ClockErrors = clockErrors,
+                LineTriggerViolations = lineViolations,
+                FrameTriggerViolations = frameViolations,
+                PCIeLinkInfo = pcieInfo ?? "N/A"
+            };
+        }
+    }
+
+    /// <summary>
     /// Gets the default camera profile from the registry.
     /// </summary>
     public CameraProfile? DefaultCameraProfile => CameraRegistry.Default.DefaultProfile;
