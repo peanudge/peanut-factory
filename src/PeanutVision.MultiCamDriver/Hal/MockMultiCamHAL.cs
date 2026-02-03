@@ -337,13 +337,13 @@ public class MockMultiCamHAL : IMultiCamHAL
             MultiCamApi.PN_BoardName => Configuration.BoardNames.ElementAtOrDefault(boardIndex) ?? "MockBoard",
             MultiCamApi.PN_BoardType => Configuration.BoardTypes.ElementAtOrDefault(boardIndex) ?? "MockType",
             MultiCamApi.PN_SerialNumber => $"MOCK{boardIndex:D4}",
-            MultiCamApi.PN_PCIPosition => $"0:{boardIndex}:0",
+            MultiCamApi.PN_PciPosition => $"0:{boardIndex}:0",
             // Board status parameters
-            MultiCamApi.PN_InputConnector => "M",
+            MultiCamApi.PN_InputConnectorName => "M",
             MultiCamApi.PN_InputState => "ACTIVE",
             MultiCamApi.PN_OutputState => "ACTIVE",
-            MultiCamApi.PN_DetectedSignalStrength => "STRONG",
-            MultiCamApi.PN_CameraLinkStatus => "CONNECTED",
+            MultiCamApi.PN_DetectedSignalStrength => "NORMAL",
+            MultiCamApi.PN_CameraLinkFrequencyRange => "Range30MHzTo70MHz",
             MultiCamApi.PN_PCIeLinkInfo => "Gen2 x4",
             _ => string.Empty
         };
@@ -364,8 +364,8 @@ public class MockMultiCamHAL : IMultiCamHAL
         value = paramName switch
         {
             MultiCamApi.PN_GrabberErrors => 0,
-            MultiCamApi.PN_ChannelLinkSyncErrors => 0,
-            MultiCamApi.PN_ChannelLinkClockErrors => 0,
+            MultiCamApi.PN_ChannelLinkSyncErrors_X => 0,
+            MultiCamApi.PN_ChannelLinkClockErrors_X => 0,
             MultiCamApi.PN_LineTriggerViolation => 0,
             MultiCamApi.PN_FrameTriggerViolation => 0,
             _ => 0

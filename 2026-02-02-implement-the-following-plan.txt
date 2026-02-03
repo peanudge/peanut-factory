@@ -1,0 +1,827 @@
+
+╭─── Claude Code v2.1.25 ──────────────────────────────────────────────────────╮
+│                                            │ Tips for getting started        │
+│             Welcome back Jiho!             │ ✔ Run /init to create a CLAUDE… │
+│                                            │ ─────────────────────────────── │
+│                   ▐▛███▜▌                  │ Recent activity                 │
+│                  ▝▜█████▛▘                 │ No recent activity              │
+│                    ▘▘ ▝▝                   │                                 │
+│                                            │                                 │
+│   Opus 4.5 · Claude Team · celltics-tech   │                                 │
+│         ~/Workspace/peanut-factory         │                                 │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Plan to implement                                                            │
+│                                                                              │
+│ Board Status Query Feature Implementation Plan                               │
+│                                                                              │
+│ Overview                                                                     │
+│                                                                              │
+│ Add detailed board status query functionality to check input/output status,  │
+│ configuration, diagnostics, and connection health.                           │
+│                                                                              │
+│ Requirements                                                                 │
+│                                                                              │
+│ - Query detailed board status beyond basic BoardInfo                         │
+│ - Show input signal status and configuration                                 │
+│ - Show output status and configuration                                       │
+│ - Show diagnostic information (errors, link status)                          │
+│ - Console command to display board status                                    │
+│                                                                              │
+│ Architecture                                                                 │
+│                                                                              │
+│ 1. New Types                                                                 │
+│                                                                              │
+│ // Detailed board status information                                         │
+│ public readonly struct BoardStatus                                           │
+│ {                                                                            │
+│     // Basic Info (existing)                                                 │
+│     public int Index { get; init; }                                          │
+│     public string BoardName { get; init; }                                   │
+│     public string BoardType { get; init; }                                   │
+│     public string SerialNumber { get; init; }                                │
+│     public string PCIPosition { get; init; }                                 │
+│                                                                              │
+│     // Input Status                                                          │
+│     public string InputConnector { get; init; }                              │
+│     public string InputState { get; init; }                                  │
+│     public string SignalStrength { get; init; }                              │
+│                                                                              │
+│     // Output Status                                                         │
+│     public string OutputState { get; init; }                                 │
+│                                                                              │
+│     // Link Status                                                           │
+│     public string CameraLinkStatus { get; init; }                            │
+│     public int SyncErrors { get; init; }                                     │
+│     public int ClockErrors { get; init; }                                    │
+│                                                                              │
+│     // Diagnostics                                                           │
+│     public int GrabberErrors { get; init; }                                  │
+│     public int FrameTriggerViolations { get; init; }                         │
+│     public int LineTriggerViolations { get; init; }                          │
+│                                                                              │
+│     // PCIe                                                                  │
+│     public string PCIeLinkInfo { get; init; }                                │
+│ }                                                                            │
+│                                                                              │
+│ 2. New Parameter Constants                                                   │
+│                                                                              │
+│ Add to MultiCamApi.cs:                                                       │
+│ // Input/Output status                                                       │
+│ public const string PN_InputState = "InputState";                            │
+│ public const string PN_OutputState = "OutputState";                          │
+│ public const string PN_InputConnector = "InputConnector";                    │
+│                                                                              │
+│ // Diagnostics                                                               │
+│ public const string PN_GrabberErrors = "GrabberErrors";                      │
+│ public const string PN_ChannelLinkSyncErrors = "ChannelLinkSyncErrors";      │
+│ public const string PN_ChannelLinkClockErrors = "ChannelLinkClockErrors";    │
+│ public const string PN_LineTriggerViolation = "LineTriggerViolation";        │
+│ public const string PN_FrameTriggerViolation = "FrameTriggerViolation";      │
+│ public const string PN_DetectedSignalStrength = "DetectedSignalStrength";    │
+│                                                                              │
+│ // PCIe                                                                      │
+│ public const string PN_PCIeLinkInfo = "PCIeLinkInfo";                        │
+│                                                                              │
+│ 3. Interface Changes                                                         │
+│                                                                              │
+│ Add to IGrabService.cs:                                                      │
+│ /// <summary>                                                                │
+│ /// Gets detailed status for the specified board.                            │
+│ /// </summary>                                                               │
+│ BoardStatus GetBoardStatus(int boardIndex);                                  │
+│                                                                              │
+│ 4. Console Command                                                           │
+│                                                                              │
+│ New BoardStatusCommand.cs:                                                   │
+│ - Menu key: '8'                                                              │
+│ - Display comprehensive board status with sections:                          │
+│   - Board Identification                                                     │
+│   - Input Status                                                             │
+│   - Output Status                                                            │
+│   - Link Status                                                              │
+│   - Diagnostics                                                              │
+│                                                                              │
+│ Implementation Steps                                                         │
+│                                                                              │
+│ Step 1: Add Parameter Constants                                              │
+│                                                                              │
+│ File: src/PeanutVision.MultiCamDriver/MultiCamApi.cs                         │
+│ - Add new parameter name constants for status queries                        │
+│                                                                              │
+│ Step 2: Add BoardStatus Struct                                               │
+│                                                                              │
+│ File: src/PeanutVision.MultiCamDriver/IGrabService.cs                        │
+│ - Add BoardStatus struct with all status fields                              │
+│                                                                              │
+│ Step 3: Add GetBoardStatus Method                                            │
+│                                                                              │
+│ Files:                                                                       │
+│ - src/PeanutVision.MultiCamDriver/IGrabService.cs - interface                │
+│ - src/PeanutVision.MultiCamDriver/GrabService.cs - implementation            │
+│                                                                              │
+│ Step 4: Update MockMultiCamHAL                                               │
+│                                                                              │
+│ File: src/PeanutVision.MultiCamDriver/Hal/MockMultiCamHAL.cs                 │
+│ - Add mock responses for new parameters                                      │
+│                                                                              │
+│ Step 5: Create BoardStatusCommand                                            │
+│                                                                              │
+│ File: src/PeanutVision.Console/Commands/BoardStatusCommand.cs                │
+│ - Implement command following existing patterns                              │
+│                                                                              │
+│ Step 6: Register Command                                                     │
+│                                                                              │
+│ File: src/PeanutVision.Console/CommandRunner.cs                              │
+│ - Add Register(new BoardStatusCommand());                                    │
+│                                                                              │
+│ Critical Files                                                               │
+│ ┌───────────────────────┬────────────────────────────────────────────────┐   │
+│ │         File          │                     Action                     │   │
+│ ├───────────────────────┼────────────────────────────────────────────────┤   │
+│ │ MultiCamApi.cs        │ Add parameter constants                        │   │
+│ ├───────────────────────┼────────────────────────────────────────────────┤   │
+│ │ IGrabService.cs       │ Add BoardStatus struct + GetBoardStatus method │   │
+│ ├───────────────────────┼────────────────────────────────────────────────┤   │
+│ │ GrabService.cs        │ Implement GetBoardStatus                       │   │
+│ ├───────────────────────┼────────────────────────────────────────────────┤   │
+│ │ MockMultiCamHAL.cs    │ Add mock parameter responses                   │   │
+│ ├───────────────────────┼────────────────────────────────────────────────┤   │
+│ │ BoardStatusCommand.cs │ Create new command                             │   │
+│ ├───────────────────────┼────────────────────────────────────────────────┤   │
+│ │ CommandRunner.cs      │ Register command                               │   │
+│ └───────────────────────┴────────────────────────────────────────────────┘   │
+│ Code Details                                                                 │
+│                                                                              │
+│ BoardStatusCommand Implementation                                            │
+│                                                                              │
+│ public sealed class BoardStatusCommand : CommandBase                         │
+│ {                                                                            │
+│     public override string Name => "Board Status";                           │
+│     public override string Description => "Detailed board diagnostics";      │
+│     public override char Key => '8';                                         │
+│                                                                              │
+│     public override void Execute(CommandContext context)                     │
+│     {                                                                        │
+│         if (!RequireHardware(context, "query board status"))                 │
+│             return;                                                          │
+│                                                                              │
+│         PrintHeader("BOARD STATUS");                                         │
+│                                                                              │
+│         for (int i = 0; i < context.Service.BoardCount; i++)                 │
+│         {                                                                    │
+│             var status = context.Service.GetBoardStatus(i);                  │
+│                                                                              │
+│             PrintSection($"Board [{i}]: {status.BoardName}");                │
+│                                                                              │
+│             // Identification                                                │
+│             Print($"  Type        : {status.BoardType}");                    │
+│             Print($"  Serial      : {status.SerialNumber}");                 │
+│             Print($"  PCI Position: {status.PCIPosition}");                  │
+│                                                                              │
+│             // Input Status                                                  │
+│             Print("\n  INPUT STATUS:");                                      │
+│             Print($"    Connector : {status.InputConnector}");               │
+│             Print($"    State     : {status.InputState}");                   │
+│             Print($"    Signal    : {status.SignalStrength}");               │
+│                                                                              │
+│             // Output Status                                                 │
+│             Print("\n  OUTPUT STATUS:");                                     │
+│             Print($"    State     : {status.OutputState}");                  │
+│                                                                              │
+│             // Link Status                                                   │
+│             Print("\n  LINK STATUS:");                                       │
+│             Print($"    Camera Link: {status.CameraLinkStatus}");            │
+│             Print($"    Sync Errors: {status.SyncErrors}");                  │
+│             Print($"    Clock Errors: {status.ClockErrors}");                │
+│                                                                              │
+│             // Diagnostics                                                   │
+│             Print("\n  DIAGNOSTICS:");                                       │
+│             Print($"    Grabber Errors     : {status.GrabberErrors}");       │
+│             Print($"    Frame Trig Violations:                               │
+│ {status.FrameTriggerViolations}");                                           │
+│             Print($"    Line Trig Violations :                               │
+│ {status.LineTriggerViolations}");                                            │
+│                                                                              │
+│             // PCIe                                                          │
+│             Print($"\n  PCIe Link   : {status.PCIeLinkInfo}");               │
+│         }                                                                    │
+│                                                                              │
+│         PrintFooter();                                                       │
+│         WaitForKey();                                                        │
+│     }                                                                        │
+│ }                                                                            │
+│                                                                              │
+│ GrabService.GetBoardStatus Implementation                                    │
+│                                                                              │
+│ public BoardStatus GetBoardStatus(int boardIndex)                            │
+│ {                                                                            │
+│     ThrowIfDisposed();                                                       │
+│     EnsureInitialized();                                                     │
+│                                                                              │
+│     if (boardIndex < 0 || boardIndex >= _boardCount)                         │
+│         throw new ArgumentOutOfRangeException(nameof(boardIndex));           │
+│                                                                              │
+│     uint boardHandle = MultiCamApi.MC_BOARD + (uint)boardIndex;              │
+│                                                                              │
+│     // Query all parameters (ignore failures for unsupported params)         │
+│     _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardType, out string       │
+│ boardType);                                                                  │
+│     _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardName, out string       │
+│ boardName);                                                                  │
+│     _hal.GetParamStr(boardHandle, MultiCamApi.PN_SerialNumber, out string    │
+│ serial);                                                                     │
+│     _hal.GetParamStr(boardHandle, MultiCamApi.PN_PCIPosition, out string     │
+│ pci);                                                                        │
+│                                                                              │
+│     // Input/Output status                                                   │
+│     _hal.GetParamStr(boardHandle, MultiCamApi.PN_InputState, out string      │
+│ inputState);                                                                 │
+│     _hal.GetParamStr(boardHandle, MultiCamApi.PN_OutputState, out string     │
+│ outputState);                                                                │
+│     _hal.GetParamStr(boardHandle, MultiCamApi.PN_DetectedSignalStrength, out │
+│  string signal);                                                             │
+│                                                                              │
+│     // Diagnostics                                                           │
+│     _hal.GetParamInt(boardHandle, MultiCamApi.PN_GrabberErrors, out int      │
+│ grabberErrors);                                                              │
+│     _hal.GetParamInt(boardHandle, MultiCamApi.PN_ChannelLinkSyncErrors, out  │
+│ int syncErrors);                                                             │
+│     _hal.GetParamInt(boardHandle, MultiCamApi.PN_ChannelLinkClockErrors, out │
+│  int clockErrors);                                                           │
+│     _hal.GetParamInt(boardHandle, MultiCamApi.PN_LineTriggerViolation, out   │
+│ int lineViolations);                                                         │
+│     _hal.GetParamInt(boardHandle, MultiCamApi.PN_FrameTriggerViolation, out  │
+│ int frameViolations);                                                        │
+│                                                                              │
+│     // PCIe                                                                  │
+│     _hal.GetParamStr(boardHandle, MultiCamApi.PN_PCIeLinkInfo, out string    │
+│ pcieInfo);                                                                   │
+│                                                                              │
+│     return new BoardStatus                                                   │
+│     {                                                                        │
+│         Index = boardIndex,                                                  │
+│         BoardName = boardName ?? "Unknown",                                  │
+│         BoardType = boardType ?? "Unknown",                                  │
+│         SerialNumber = serial ?? "Unknown",                                  │
+│         PCIPosition = pci ?? "Unknown",                                      │
+│         InputState = inputState ?? "N/A",                                    │
+│         OutputState = outputState ?? "N/A",                                  │
+│         SignalStrength = signal ?? "N/A",                                    │
+│         GrabberErrors = grabberErrors,                                       │
+│         SyncErrors = syncErrors,                                             │
+│         ClockErrors = clockErrors,                                           │
+│         LineTriggerViolations = lineViolations,                              │
+│         FrameTriggerViolations = frameViolations,                            │
+│         PCIeLinkInfo = pcieInfo ?? "N/A"                                     │
+│     };                                                                       │
+│ }                                                                            │
+│                                                                              │
+│ Verification                                                                 │
+│                                                                              │
+│ 1. Build: dotnet build                                                       │
+│ 2. Tests: dotnet test                                                        │
+│ 3. Manual Test:                                                              │
+│ cd src/PeanutVision.Console                                                  │
+│ dotnet run -- --mock                                                         │
+│ # Select option 8 (Board Status)                                             │
+│ # Verify all sections display correctly                                      │
+│                                                                              │
+│ Notes                                                                        │
+│                                                                              │
+│ - Some parameters may not be available on all board types                    │
+│ - Implementation gracefully handles missing parameters with "N/A"            │
+│ - Mock HAL returns simulated values for testing                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+⏺ I'll implement the Board Status Query feature according to the plan. Let me
+  start by reading the relevant files to understand the current structure.
+
+⏺ Read 3 files (ctrl+o to expand)
+
+⏺ Now let me read the MockMultiCamHAL and an existing command to understand the
+  patterns.
+
+⏺ Searched for 1 pattern, read 2 files (ctrl+o to expand)
+
+⏺ Let me read an existing command to understand the CommandBase pattern.
+
+⏺ Read 2 files (ctrl+o to expand)
+
+⏺ Let me find the command base class.
+
+⏺ Searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+⏺ Now I have all the context I need. Let me create tasks and implement the
+  feature.
+
+⏺ Update(src/PeanutVision.MultiCamDriver/MultiCamApi.cs)
+  ⎿  Added 19 lines
+      265    public const string PN_LineRate_Hz = "LineRate_Hz";         
+      266    public const string PN_FrameRate_mHz = "FrameRate_mHz";     
+      267                                                                
+      268 +  // Input/Output status                                      
+      269 +  public const string PN_InputState = "InputState";           
+      270 +  public const string PN_OutputState = "OutputState";         
+      271 +  public const string PN_InputConnector = "InputConnector";   
+      272 +                                                              
+      273 +  // Diagnostics                                              
+      274 +  public const string PN_GrabberErrors = "GrabberErrors";     
+      275 +  public const string PN_ChannelLinkSyncErrors =              
+          +"ChannelLinkSyncErrors";                                      
+      276 +  public const string PN_ChannelLinkClockErrors =             
+          +"ChannelLinkClockErrors";                                     
+      277 +  public const string PN_LineTriggerViolation =               
+          +"LineTriggerViolation";                                       
+      278 +  public const string PN_FrameTriggerViolation =              
+          +"FrameTriggerViolation";                                      
+      279 +  public const string PN_DetectedSignalStrength =             
+          +"DetectedSignalStrength";                                     
+      280 +                                                              
+      281 +  // PCIe                                                     
+      282 +  public const string PN_PCIeLinkInfo = "PCIeLinkInfo";       
+      283 +                                                              
+      284 +  // Camera Link status                                       
+      285 +  public const string PN_CameraLinkStatus =                   
+          +"CameraLinkStatus";                                           
+      286 +                                                              
+      287    #endregion                                                  
+      288                                                                
+      289    #region Driver Connection                                   
+
+⏺ Update(src/PeanutVision.MultiCamDriver/IGrabService.cs)
+  ⎿  Added 60 lines
+       67      /// <summary>PCI bus position</summary>                   
+       68      public string PCIPosition { get; init; }                  
+       69  }                                                             
+       70 +                                                              
+       71 +/// <summary>                                                 
+       72 +/// Detailed board status information including diagnostics.  
+       73 +/// </summary>                                                
+       74 +public readonly struct BoardStatus                            
+       75 +{                                                             
+       76 +    // Basic Info                                             
+       77 +    /// <summary>Board index (0-based)</summary>              
+       78 +    public int Index { get; init; }                           
+       79 +                                                              
+       80 +    /// <summary>Board name/model</summary>                   
+       81 +    public string BoardName { get; init; }                    
+       82 +                                                              
+       83 +    /// <summary>Board type identifier</summary>              
+       84 +    public string BoardType { get; init; }                    
+       85 +                                                              
+       86 +    /// <summary>Serial number</summary>                      
+       87 +    public string SerialNumber { get; init; }                 
+       88 +                                                              
+       89 +    /// <summary>PCI bus position</summary>                   
+       90 +    public string PCIPosition { get; init; }                  
+       91 +                                                              
+       92 +    // Input Status                                           
+       93 +    /// <summary>Input connector identifier</summary>         
+       94 +    public string InputConnector { get; init; }               
+       95 +                                                              
+       96 +    /// <summary>Current input state</summary>                
+       97 +    public string InputState { get; init; }                   
+       98 +                                                              
+       99 +    /// <summary>Detected signal strength</summary>           
+      100 +    public string SignalStrength { get; init; }               
+      101 +                                                              
+      102 +    // Output Status                                          
+      103 +    /// <summary>Current output state</summary>               
+      104 +    public string OutputState { get; init; }                  
+      105 +                                                              
+      106 +    // Link Status                                            
+      107 +    /// <summary>Camera Link connection status</summary>      
+      108 +    public string CameraLinkStatus { get; init; }             
+      109 +                                                              
+      110 +    /// <summary>Number of link synchronization               
+          +errors</summary>                                              
+      111 +    public int SyncErrors { get; init; }                      
+      112 +                                                              
+      113 +    /// <summary>Number of link clock errors</summary>        
+      114 +    public int ClockErrors { get; init; }                     
+      115 +                                                              
+      116 +    // Diagnostics                                            
+      117 +    /// <summary>Number of grabber errors</summary>           
+      118 +    public int GrabberErrors { get; init; }                   
+      119 +                                                              
+      120 +    /// <summary>Number of frame trigger violations</summary> 
+      121 +    public int FrameTriggerViolations { get; init; }          
+      122 +                                                              
+      123 +    /// <summary>Number of line trigger violations</summary>  
+      124 +    public int LineTriggerViolations { get; init; }           
+      125 +                                                              
+      126 +    // PCIe                                                   
+      127 +    /// <summary>PCIe link information</summary>              
+      128 +    public string PCIeLinkInfo { get; init; }                 
+      129 +}                                                             
+
+⏺ Update(src/PeanutVision.MultiCamDriver/IGrabService.cs)
+  ⎿  Added 5 lines
+      37      BoardInfo GetBoardInfo(int boardIndex);                    
+      38                                                                 
+      39      /// <summary>                                              
+      40 +    /// Gets detailed status for the specified board including 
+         + diagnostics.                                                  
+      41 +    /// </summary>                                             
+      42 +    BoardStatus GetBoardStatus(int boardIndex);                
+      43 +                                                               
+      44 +    /// <summary>                                              
+      45      /// Gets the default camera profile (first available from  
+          registry).                                                     
+      46      /// </summary>                                             
+      47      CameraProfile? DefaultCameraProfile { get; }               
+
+⏺ Update(src/PeanutVision.MultiCamDriver/GrabService.cs)
+  ⎿  Added 65 lines
+      142      }                                                         
+      143                                                                
+      144      /// <summary>                                             
+      145 +    /// Gets detailed status for the specified board          
+          +including diagnostics.                                        
+      146 +    /// </summary>                                            
+      147 +    public BoardStatus GetBoardStatus(int boardIndex)         
+      148 +    {                                                         
+      149 +        lock (_lock)                                          
+      150 +        {                                                     
+      151 +            ThrowIfDisposed();                                
+      152 +            EnsureInitialized();                              
+      153 +                                                              
+      154 +            if (boardIndex < 0 || boardIndex >= _boardCount)  
+      155 +            {                                                 
+      156 +                throw new                                     
+          +ArgumentOutOfRangeException(nameof(boardIndex),               
+      157 +                    $"Board index must be between 0 and       
+          +{_boardCount - 1}");                                          
+      158 +            }                                                 
+      159 +                                                              
+      160 +            uint boardHandle = MultiCamApi.MC_BOARD +         
+          +(uint)boardIndex;                                             
+      161 +                                                              
+      162 +            // Query basic info (ignore failures for          
+          +unsupported params)                                           
+      163 +            _hal.GetParamStr(boardHandle,                     
+          +MultiCamApi.PN_BoardType, out string boardType);              
+      164 +            _hal.GetParamStr(boardHandle,                     
+          +MultiCamApi.PN_BoardName, out string boardName);              
+      165 +            _hal.GetParamStr(boardHandle,                     
+          +MultiCamApi.PN_SerialNumber, out string serial);              
+      166 +            _hal.GetParamStr(boardHandle,                     
+          +MultiCamApi.PN_PCIPosition, out string pci);                  
+      167 +                                                              
+      168 +            // Input/Output status                            
+      169 +            _hal.GetParamStr(boardHandle,                     
+          +MultiCamApi.PN_InputConnector, out string inputConnector);    
+      170 +            _hal.GetParamStr(boardHandle,                     
+          +MultiCamApi.PN_InputState, out string inputState);            
+      171 +            _hal.GetParamStr(boardHandle,                     
+          +MultiCamApi.PN_OutputState, out string outputState);          
+      172 +            _hal.GetParamStr(boardHandle,                     
+          +MultiCamApi.PN_DetectedSignalStrength, out string signal);    
+      173 +                                                              
+      174 +            // Link status                                    
+      175 +            _hal.GetParamStr(boardHandle,                     
+          +MultiCamApi.PN_CameraLinkStatus, out string                   
+          +cameraLinkStatus);                                            
+      176 +            _hal.GetParamInt(boardHandle,                     
+          +MultiCamApi.PN_ChannelLinkSyncErrors, out int syncErrors);    
+      177 +            _hal.GetParamInt(boardHandle,                     
+          +MultiCamApi.PN_ChannelLinkClockErrors, out int clockErrors);  
+      178 +                                                              
+      179 +            // Diagnostics                                    
+      180 +            _hal.GetParamInt(boardHandle,                     
+          +MultiCamApi.PN_GrabberErrors, out int grabberErrors);         
+      181 +            _hal.GetParamInt(boardHandle,                     
+          +MultiCamApi.PN_LineTriggerViolation, out int lineViolations); 
+      182 +            _hal.GetParamInt(boardHandle,                     
+          +MultiCamApi.PN_FrameTriggerViolation, out int                 
+          +frameViolations);                                             
+      183 +                                                              
+      184 +            // PCIe                                           
+      185 +            _hal.GetParamStr(boardHandle,                     
+          +MultiCamApi.PN_PCIeLinkInfo, out string pcieInfo);            
+      186 +                                                              
+      187 +            return new BoardStatus                            
+      188 +            {                                                 
+      189 +                Index = boardIndex,                           
+      190 +                BoardName = boardName ?? "Unknown",           
+      191 +                BoardType = boardType ?? "Unknown",           
+      192 +                SerialNumber = serial ?? "Unknown",           
+      193 +                PCIPosition = pci ?? "Unknown",               
+      194 +                InputConnector = inputConnector ?? "N/A",     
+      195 +                InputState = inputState ?? "N/A",             
+      196 +                OutputState = outputState ?? "N/A",           
+      197 +                SignalStrength = signal ?? "N/A",             
+      198 +                CameraLinkStatus = cameraLinkStatus ?? "N/A", 
+      199 +                GrabberErrors = grabberErrors,                
+      200 +                SyncErrors = syncErrors,                      
+      201 +                ClockErrors = clockErrors,                    
+      202 +                LineTriggerViolations = lineViolations,       
+      203 +                FrameTriggerViolations = frameViolations,     
+      204 +                PCIeLinkInfo = pcieInfo ?? "N/A"              
+      205 +            };                                                
+      206 +        }                                                     
+      207 +    }                                                         
+      208 +                                                              
+      209 +    /// <summary>                                             
+      210      /// Gets the default camera profile from the registry.    
+      211      /// </summary>                                            
+      212      public CameraProfile? DefaultCameraProfile =>             
+           CameraRegistry.Default.DefaultProfile;                        
+
+⏺ Update(src/PeanutVision.MultiCamDriver/Hal/MockMultiCamHAL.cs)
+  ⎿  Added 30 lines
+      339              MultiCamApi.PN_BoardType =>                       
+           Configuration.BoardTypes.ElementAtOrDefault(boardIndex) ??    
+           "MockType",                                                   
+      340              MultiCamApi.PN_SerialNumber =>                    
+           $"MOCK{boardIndex:D4}",                                       
+      341              MultiCamApi.PN_PCIPosition =>                     
+           $"0:{boardIndex}:0",                                          
+      342 +            // Board status parameters                        
+      343 +            MultiCamApi.PN_InputConnector => "M",             
+      344 +            MultiCamApi.PN_InputState => "ACTIVE",            
+      345 +            MultiCamApi.PN_OutputState => "ACTIVE",           
+      346 +            MultiCamApi.PN_DetectedSignalStrength =>          
+          +"STRONG",                                                     
+      347 +            MultiCamApi.PN_CameraLinkStatus => "CONNECTED",   
+      348 +            MultiCamApi.PN_PCIeLinkInfo => "Gen2 x4",         
+      349              _ => string.Empty                                 
+      350          };                                                    
+      351                                                                
+      352          return MultiCamApi.MC_OK;                             
+      353      }                                                         
+      354                                                                
+      355 +    private int GetBoardParamInt(uint boardHandle, string     
+          +paramName, out int value)                                     
+      356 +    {                                                         
+      357 +        int boardIndex = (int)(boardHandle -                  
+          +MultiCamApi.MC_BOARD);                                        
+      358 +                                                              
+      359 +        if (boardIndex < 0 || boardIndex >=                   
+          +Configuration.BoardCount)                                     
+      360 +        {                                                     
+      361 +            value = 0;                                        
+      362 +            return (int)McStatus.MC_INVALID_HANDLE;           
+      363 +        }                                                     
+      364 +                                                              
+      365 +        value = paramName switch                              
+      366 +        {                                                     
+      367 +            MultiCamApi.PN_GrabberErrors => 0,                
+      368 +            MultiCamApi.PN_ChannelLinkSyncErrors => 0,        
+      369 +            MultiCamApi.PN_ChannelLinkClockErrors => 0,       
+      370 +            MultiCamApi.PN_LineTriggerViolation => 0,         
+      371 +            MultiCamApi.PN_FrameTriggerViolation => 0,        
+      372 +            _ => 0                                            
+      373 +        };                                                    
+      374 +                                                              
+      375 +        return MultiCamApi.MC_OK;                             
+      376 +    }                                                         
+      377 +                                                              
+      378      #endregion                                                
+      379                                                                
+      380      #region Parameter Access - Set                            
+
+⏺ Now I need to update GetParamInt to call GetBoardParamInt for board handles.
+
+⏺ Update(src/PeanutVision.MultiCamDriver/Hal/MockMultiCamHAL.cs)
+  ⎿  Added 1 line, removed 2 lines
+      186          // Handle board objects                               
+      187          if (instance >= MultiCamApi.MC_BOARD && instance <    
+           MultiCamApi.MC_BOARD + 100)                                   
+      188          {                                                     
+      189 -            value = 0;                                        
+      190 -            return MultiCamApi.MC_OK;                         
+      189 +            return GetBoardParamInt(instance, paramName, out  
+          +value);                                                       
+      190          }                                                     
+      191                                                                
+      192          if (!_instances.TryGetValue(instance, out var inst))  
+
+⏺ Write(src/PeanutVision.Console/Commands/BoardStatusCommand.cs)
+  ⎿  Wrote 69 lines to
+     src/PeanutVision.Console/Commands/BoardStatusCommand.cs
+     using PeanutVision.MultiCamDriver;
+
+     namespace PeanutVision.Console.Commands;
+
+     /// <summary>
+     /// Displays detailed board status including diagnostics.
+     /// </summary>
+     public sealed class BoardStatusCommand : CommandBase
+     {
+         public override string Name => "Board Status";
+     … +59 lines (ctrl+o to expand)
+
+⏺ Update(src/PeanutVision.Console/CommandRunner.cs)
+  ⎿  Added 1 line
+      28          Register(new BenchmarkCommand());                      
+      29          Register(new CamFileInfoCommand());                    
+      30          Register(new SaveImageCommand());                      
+      31 +        Register(new BoardStatusCommand());                    
+      32      }                                                          
+      33                                                                 
+      34      /// <summary>                                              
+
+⏺ Now let me build the project to verify everything compiles correctly.
+
+⏺ Bash(dotnet build 2>&1)
+  ⎿   Determining projects to restore...
+      All projects are up-to-date for restore.
+      PeanutVision.MultiCamDriver -> /Users/sonjiho/Workspace/peanut-factor
+    … +16 lines (ctrl+o to expand)
+
+
+⏺ Build succeeded. Now let me run the tests to ensure nothing broke.
+
+⏺ Bash(dotnet test 2>&1)
+  ⎿  Error: Exit code 1
+       Determining projects to restore...
+       All projects are up-to-date for restore.
+       PeanutVision.MultiCamDriver -> 
+     /Users/sonjiho/Workspace/peanut-factory/src/PeanutVision.MultiCamDriver/bin
+     Debug/net10.0/PeanutVision.MultiCamDriver.dll
+       PeanutVision.MultiCamDriver.Tests -> 
+     /Users/sonjiho/Workspace/peanut-factory/src/PeanutVision.MultiCamDriver.Tes
+     s/bin/Debug/net10.0/PeanutVision.MultiCamDriver.Tests.dll
+       PeanutVision.MultiCamDriver.IntegrationTests -> /Users/sonjiho/Workspace/
+     eanut-factory/src/PeanutVision.MultiCamDriver.IntegrationTests/bin/Debug/ne
+     10.0/PeanutVision.MultiCamDriver.IntegrationTests.dll
+     Test run for /Users/sonjiho/Workspace/peanut-factory/src/PeanutVision.Multi
+     amDriver.Tests/bin/Debug/net10.0/PeanutVision.MultiCamDriver.Tests.dll 
+     (.NETCoreApp,Version=v10.0)
+     Test run for /Users/sonjiho/Workspace/peanut-factory/src/PeanutVision.Multi
+     amDriver.IntegrationTests/bin/Debug/net10.0/PeanutVision.MultiCamDriver.Int
+     grationTests.dll (.NETCoreApp,Version=v10.0)
+     VSTest version 18.0.1 (arm64)
+
+     … +48 lines (ctrl+o to see all)
+
+⏺ The unit tests (202 tests) all passed. The integration tests are failing
+  because the MultiCam native library isn't available on this machine (which is
+  expected - they're for testing with real hardware). Let me run just the unit
+  tests to confirm.
+
+⏺ Bash(dotnet test src/PeanutVision.MultiCamDriver.Tests 2>&1)
+  ⎿   Determining projects to restore...
+      All projects are up-to-date for restore.
+      PeanutVision.MultiCamDriver -> /Users/sonjiho/Workspace/peanut-factor
+    … +15 lines (ctrl+o to expand)
+
+
+⏺ All 202 unit tests passed. Now let me add a test specifically for
+  GetBoardStatus to ensure the new functionality is covered.
+
+⏺ Searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+⏺ Update(src/PeanutVision.MultiCamDriver.Tests/GrabServiceTests.cs)
+  ⎿  Added 36 lines
+      125      }                                                         
+      126                                                                
+      127      [Fact]                                                    
+      128 +    public void                                               
+          +GetBoardStatus_ReturnsBoardStatusInformation()                
+      129 +    {                                                         
+      130 +        _mockHal.Configuration.BoardCount = 1;                
+      131 +        _mockHal.Configuration.BoardNames = new List<string>  
+          +{ "Grablink Full" };                                          
+      132 +        _mockHal.Configuration.BoardTypes = new List<string>  
+          +{ "PC1622" };                                                 
+      133 +                                                              
+      134 +        using var service = new GrabService(_mockHal);        
+      135 +        service.Initialize();                                 
+      136 +                                                              
+      137 +        var status = service.GetBoardStatus(0);               
+      138 +                                                              
+      139 +        Assert.Equal(0, status.Index);                        
+      140 +        Assert.Equal("Grablink Full", status.BoardName);      
+      141 +        Assert.Equal("PC1622", status.BoardType);             
+      142 +        Assert.Equal("M", status.InputConnector);             
+      143 +        Assert.Equal("ACTIVE", status.InputState);            
+      144 +        Assert.Equal("ACTIVE", status.OutputState);           
+      145 +        Assert.Equal("STRONG", status.SignalStrength);        
+      146 +        Assert.Equal("CONNECTED", status.CameraLinkStatus);   
+      147 +        Assert.Equal("Gen2 x4", status.PCIeLinkInfo);         
+      148 +        Assert.Equal(0, status.GrabberErrors);                
+      149 +        Assert.Equal(0, status.SyncErrors);                   
+      150 +        Assert.Equal(0, status.ClockErrors);                  
+      151 +    }                                                         
+      152 +                                                              
+      153 +    [Fact]                                                    
+      154 +    public void GetBoardStatus_InvalidIndex_ThrowsException() 
+      155 +    {                                                         
+      156 +        _mockHal.Configuration.BoardCount = 1;                
+      157 +        using var service = new GrabService(_mockHal);        
+      158 +        service.Initialize();                                 
+      159 +                                                              
+      160 +        Assert.Throws<ArgumentOutOfRangeException>(() =>      
+          +service.GetBoardStatus(5));                                   
+      161 +    }                                                         
+      162 +                                                              
+      163 +    [Fact]                                                    
+      164      public void Dispose_ClosesDriver()                        
+      165      {                                                         
+      166          var service = new GrabService(_mockHal);              
+
+⏺ Bash(dotnet test src/PeanutVision.MultiCamDriver.Tests 2>&1)
+  ⎿   Determining projects to restore...
+      All projects are up-to-date for restore.
+      PeanutVision.MultiCamDriver -> /Users/sonjiho/Workspace/peanut-factor
+    … +15 lines (ctrl+o to expand)
+
+
+⏺ All 204 tests pass (including the 2 new tests for GetBoardStatus). Let me
+  verify the implementation is complete by reviewing the key changes.
+
+⏺ All tasks are completed. Let me provide a summary of the implementation:
+
+  Board Status Query Feature - Implementation Complete
+
+  I've implemented the board status query feature as specified in the plan.
+  Here's a summary of the changes:
+
+  Files Modified
+
+  1. src/PeanutVision.MultiCamDriver/MultiCamApi.cs
+    - Added 11 new parameter constants for status queries: PN_InputState,
+  PN_OutputState, PN_InputConnector, PN_GrabberErrors, PN_ChannelLinkSyncErrors,
+   PN_ChannelLinkClockErrors, PN_LineTriggerViolation, PN_FrameTriggerViolation,
+   PN_DetectedSignalStrength, PN_PCIeLinkInfo, PN_CameraLinkStatus
+  2. src/PeanutVision.MultiCamDriver/IGrabService.cs
+    - Added BoardStatus readonly struct with all status fields
+    - Added GetBoardStatus(int boardIndex) method to interface
+  3. src/PeanutVision.MultiCamDriver/GrabService.cs
+    - Implemented GetBoardStatus() that queries all board status parameters via
+  HAL
+  4. src/PeanutVision.MultiCamDriver/Hal/MockMultiCamHAL.cs
+    - Extended GetBoardParamStr for new string status parameters
+    - Added GetBoardParamInt for diagnostic counters
+    - Updated GetParamInt to route board queries to new method
+  5. src/PeanutVision.Console/Commands/BoardStatusCommand.cs (new file)
+    - Command with key '8' that displays comprehensive board status
+  6. src/PeanutVision.Console/CommandRunner.cs
+    - Registered BoardStatusCommand in default commands
+  7. src/PeanutVision.MultiCamDriver.Tests/GrabServiceTests.cs
+    - Added 2 tests for GetBoardStatus functionality
+
+  Verification
+
+  - Build: Succeeded (0 warnings, 0 errors)
+  - Unit Tests: 204 passed (including 2 new tests)
+
+  Usage
+
+  cd src/PeanutVision.Console
+  dotnet run -- --mock
+  # Select option 8 (Board Status)
+
+✻ Churned for 2m 59s
+
+❯ commit 
+
+⏺ Bash(git status)
+  ⎿  On branch main
+     Changes not staged for commit:
+       (use "git add <file>..." to update what will be committed)
+     … +13 lines (ctrl+o to expand)
+
+⏺ Bash(git diff)
+  ⎿ diff --git a/src/PeanutVision.Console/CommandRunner.cs b/src/PeanutVisi
+    on.Console/CommandRunner.cs
+    index 3bf5eb3..a1eab59 100644
+    … +338 lines (ctrl+o to expand)
+
+
+⏺ Bash(git log --oneline -5)
+  ⎿  fe76eae Simplify IGrabService.CreateChannel to single method
+     5e8e8bb Add driver state validation to MockMultiCamHAL
+     72204a6 chore
+     … +2 lines (ctrl+o to expand)
+
+⏺ Bash(git add src/PeanutVision.MultiCamDriver/MultiCamApi.cs
+      src/PeanutVision.MultiCamDriver/IGrabService.cs
+      src/PeanutVision.MultiCamDriver/GrabService.cs src/Peanut…)
+  ⎿  (No content)
+
+⏺ Bash(git commit -m "Add board status query feature with diagnostics…)
+  ⎿ [main c28d32c] Add board status query feature with diagnostics
+     7 files changed, 285 insertions(+), 2 deletions(-)
+     create mode 100644 src/PeanutVision.Console/Commands/BoardStatusComman
+    d.cs
+
+
+⏺ Bash(git status)
+  ⎿  On branch main
+     nothing to commit, working tree clean
+
+⏺ Committed c28d32c:
+
+  Add board status query feature with diagnostics
+
+  Add GetBoardStatus method to IGrabService for querying detailed board
+  information including input/output status, Camera Link status, error
+  counters, and PCIe link info. Includes BoardStatusCommand (key '8')
+  for the console application.
+
+  7 files changed, 285 insertions(+), 2 deletions(-)

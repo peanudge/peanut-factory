@@ -142,8 +142,8 @@ public class GrabServiceTests
         Assert.Equal("M", status.InputConnector);
         Assert.Equal("ACTIVE", status.InputState);
         Assert.Equal("ACTIVE", status.OutputState);
-        Assert.Equal("STRONG", status.SignalStrength);
-        Assert.Equal("CONNECTED", status.CameraLinkStatus);
+        Assert.Equal("NORMAL", status.SignalStrength);
+        Assert.Equal("Range30MHzTo70MHz", status.CameraLinkStatus);
         Assert.Equal("Gen2 x4", status.PCIeLinkInfo);
         Assert.Equal(0, status.GrabberErrors);
         Assert.Equal(0, status.SyncErrors);

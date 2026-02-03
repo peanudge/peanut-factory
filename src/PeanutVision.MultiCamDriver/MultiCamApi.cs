@@ -205,7 +205,7 @@ public static partial class MultiCamApi
 	public const string PN_BoardType = "BoardType";
 	public const string PN_BoardName = "BoardName";
 	public const string PN_SerialNumber = "SerialNumber";
-	public const string PN_PCIPosition = "PCIPosition";
+	public const string PN_PciPosition = "PciPosition";
 
 	// Channel configuration
 	public const string PN_DriverIndex = "DriverIndex";
@@ -268,12 +268,12 @@ public static partial class MultiCamApi
 	// Input/Output status
 	public const string PN_InputState = "InputState";
 	public const string PN_OutputState = "OutputState";
-	public const string PN_InputConnector = "InputConnector";
+	public const string PN_InputConnectorName = "InputConnectorName";
 
 	// Diagnostics
 	public const string PN_GrabberErrors = "GrabberErrors";
-	public const string PN_ChannelLinkSyncErrors = "ChannelLinkSyncErrors";
-	public const string PN_ChannelLinkClockErrors = "ChannelLinkClockErrors";
+	public const string PN_ChannelLinkSyncErrors_X = "ChannelLinkSyncErrors_X";
+	public const string PN_ChannelLinkClockErrors_X = "ChannelLinkClockErrors_X";
 	public const string PN_LineTriggerViolation = "LineTriggerViolation";
 	public const string PN_FrameTriggerViolation = "FrameTriggerViolation";
 	public const string PN_DetectedSignalStrength = "DetectedSignalStrength";
@@ -281,8 +281,8 @@ public static partial class MultiCamApi
 	// PCIe
 	public const string PN_PCIeLinkInfo = "PCIeLinkInfo";
 
-	// Camera Link status
-	public const string PN_CameraLinkStatus = "CameraLinkStatus";
+	// Camera Link frequency range
+	public const string PN_CameraLinkFrequencyRange = "CameraLinkFrequencyRange";
 
 	#endregion
 

@@ -128,7 +128,7 @@ public sealed class GrabService : IGrabService
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardType, out string boardType);
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardName, out string boardName);
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_SerialNumber, out string serialNumber);
-            _hal.GetParamStr(boardHandle, MultiCamApi.PN_PCIPosition, out string pciPosition);
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_PciPosition, out string pciPosition);
 
             return new BoardInfo
             {
@@ -163,18 +163,18 @@ public sealed class GrabService : IGrabService
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardType, out string boardType);
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardName, out string boardName);
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_SerialNumber, out string serial);
-            _hal.GetParamStr(boardHandle, MultiCamApi.PN_PCIPosition, out string pci);
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_PciPosition, out string pci);
 
             // Input/Output status
-            _hal.GetParamStr(boardHandle, MultiCamApi.PN_InputConnector, out string inputConnector);
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_InputConnectorName, out string inputConnector);
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_InputState, out string inputState);
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_OutputState, out string outputState);
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_DetectedSignalStrength, out string signal);
 
             // Link status
-            _hal.GetParamStr(boardHandle, MultiCamApi.PN_CameraLinkStatus, out string cameraLinkStatus);
-            _hal.GetParamInt(boardHandle, MultiCamApi.PN_ChannelLinkSyncErrors, out int syncErrors);
-            _hal.GetParamInt(boardHandle, MultiCamApi.PN_ChannelLinkClockErrors, out int clockErrors);
+            _hal.GetParamStr(boardHandle, MultiCamApi.PN_CameraLinkFrequencyRange, out string cameraLinkStatus);
+            _hal.GetParamInt(boardHandle, MultiCamApi.PN_ChannelLinkSyncErrors_X, out int syncErrors);
+            _hal.GetParamInt(boardHandle, MultiCamApi.PN_ChannelLinkClockErrors_X, out int clockErrors);
 
             // Diagnostics
             _hal.GetParamInt(boardHandle, MultiCamApi.PN_GrabberErrors, out int grabberErrors);

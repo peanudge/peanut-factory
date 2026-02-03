@@ -67,6 +67,39 @@ public class HardwareTests : IDisposable
     }
 
     [Fact]
+    public void GetBoardStatus_WithHardware_ReturnsDetailedStatus()
+    {
+        SkipIfNoHardware();
+
+        var status = _service.GetBoardStatus(0);
+
+        // Basic info should be populated
+        Assert.Equal(0, status.Index);
+        Assert.NotEmpty(status.BoardName);
+        Assert.NotEmpty(status.BoardType);
+        Assert.NotEmpty(status.SerialNumber);
+        Assert.NotEmpty(status.PCIPosition);
+
+        // Input/Output status - may be N/A if not connected but should not be null
+        Assert.NotNull(status.InputState);
+        Assert.NotNull(status.OutputState);
+        Assert.NotNull(status.SignalStrength);
+
+        // Link status
+        Assert.NotNull(status.CameraLinkStatus);
+
+        // Diagnostics - error counters should be non-negative
+        Assert.True(status.GrabberErrors >= 0);
+        Assert.True(status.SyncErrors >= 0);
+        Assert.True(status.ClockErrors >= 0);
+        Assert.True(status.FrameTriggerViolations >= 0);
+        Assert.True(status.LineTriggerViolations >= 0);
+
+        // PCIe info
+        Assert.NotNull(status.PCIeLinkInfo);
+    }
+
+    [Fact]
     public void CreateChannel_WithEmbeddedCamFile_Succeeds()
     {
         SkipIfNoHardware();
