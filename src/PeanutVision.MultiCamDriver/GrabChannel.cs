@@ -333,6 +333,16 @@ public sealed class GrabChannel : IDisposable
             int status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SeqLength_Fr, frameCount);
             ThrowOnError(status, $"SetParam(SeqLength_Fr={frameCount})");
 
+            // Check current channel state before activation to avoid hanging
+            status = _hal.GetParamStr(_channelHandle, MultiCamApi.PN_ChannelState, out string currentState);
+            ThrowOnError(status, "GetParam(ChannelState)");
+
+            if (currentState == MultiCamApi.MC_ChannelState_ACTIVE_STR)
+            {
+                throw new InvalidOperationException(
+                    "Channel is already ACTIVE. Another application (e.g., MultiCam Studio) may be using this channel.");
+            }
+
             // Activate channel
             status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_ChannelState,
                 MultiCamApi.MC_ChannelState_ACTIVE_STR);
