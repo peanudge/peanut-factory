@@ -27,13 +27,13 @@ public static class AcquisitionExample
         }
 
         // Print board info
-        var boardInfo = service.GetBoardInfo(0);
+        var boardInfo = service.GetBoardInfo(MultiCamApi.DefaultBoardIndex);
         Console.WriteLine($"Using board: {boardInfo.BoardName} (S/N: {boardInfo.SerialNumber})");
 
         // Create channel with the TC-A160K camera file
         using var channel = service.CreateChannel(new GrabChannelOptions
         {
-            DriverIndex = 0,
+            DriverIndex = MultiCamApi.DefaultBoardIndex,
             Connector = "M",  // Medium connector for Camera Link Full
             CamFilePath = camFilePath,
             SurfaceCount = 4,  // 4 frame buffers for smooth acquisition
@@ -105,7 +105,7 @@ public static class AcquisitionExample
 
         using var channel = service.CreateChannel(new GrabChannelOptions
         {
-            DriverIndex = 0,
+            DriverIndex = MultiCamApi.DefaultBoardIndex,
             Connector = "M",
             CamFilePath = camFilePath,
             SurfaceCount = 2,
@@ -157,7 +157,7 @@ public static class AcquisitionExample
 
         using var channel = service.CreateChannel(new GrabChannelOptions
         {
-            DriverIndex = 0,
+            DriverIndex = MultiCamApi.DefaultBoardIndex,
             Connector = "M",
             CamFilePath = camFilePath,
             SurfaceCount = 2,

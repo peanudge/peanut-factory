@@ -73,7 +73,7 @@ public sealed class GrabService : IGrabService
             // Try to verify board exists by querying board info
             try
             {
-                uint boardHandle = MultiCamApi.MC_BOARD; // Board index 0
+                uint boardHandle = MultiCamApi.MC_BOARD + (uint)MultiCamApi.DefaultBoardIndex;
                 status = _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardName, out string boardName);
                 if (status == MultiCamApi.MC_OK && !string.IsNullOrEmpty(boardName))
                 {

@@ -156,6 +156,9 @@ public static partial class MultiCamApi
 	/// <summary>Board object handle base (add board index for specific board)</summary>
 	public const uint MC_BOARD = (MC_BOARD_CLASS << 28) | 0;  // 0xE0000000
 
+	/// <summary>Default board index (first board)</summary>
+	public const int DefaultBoardIndex = 0;
+
 	/// <summary>Channel model for creating channels</summary>
 	public const uint MC_CHANNEL = (MC_CHANNEL_CLASS << 28) | 0x0000FFFF;  // 0x8000FFFF
 
