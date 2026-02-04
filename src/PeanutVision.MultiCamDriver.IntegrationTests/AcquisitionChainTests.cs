@@ -361,16 +361,25 @@ public class AcquisitionChainTests : IDisposable
         Assert.Equal(MultiCamApi.MC_OK, status);
 
         // Step 5: Enable signals for surface processing
-        // MC_SIG_SURFACE_PROCESSING = 0x0003
-        // MC_SIG_ACQUISITION_FAILURE = 0x0013
-        // MC_SIG_END_CHANNEL_ACTIVITY = 0x0011
-        int signals = (int)McSignal.MC_SIG_SURFACE_PROCESSING |
-                     (int)McSignal.MC_SIG_ACQUISITION_FAILURE |
-                     (int)McSignal.MC_SIG_END_CHANNEL_ACTIVITY;
-
-        status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SignalEnable, signals);
-
+        // MultiCam uses compound parameter names: "SignalName+SignalEnable" = "ON"
+        status = SetSignalEnable(_channelHandle, McSignal.MC_SIG_SURFACE_PROCESSING, true);
         Assert.Equal(MultiCamApi.MC_OK, status);
+
+        status = SetSignalEnable(_channelHandle, McSignal.MC_SIG_ACQUISITION_FAILURE, true);
+        Assert.Equal(MultiCamApi.MC_OK, status);
+
+        status = SetSignalEnable(_channelHandle, McSignal.MC_SIG_END_CHANNEL_ACTIVITY, true);
+        Assert.Equal(MultiCamApi.MC_OK, status);
+    }
+
+    /// <summary>
+    /// Helper to set signal enable using MultiCam's compound parameter format.
+    /// </summary>
+    private int SetSignalEnable(uint channelHandle, McSignal signal, bool enable)
+    {
+        string paramName = $"{signal}+{MultiCamApi.PN_SignalEnable}";
+        string value = enable ? MultiCamApi.MC_SignalEnable_ON_STR : MultiCamApi.MC_SignalEnable_OFF_STR;
+        return _hal.SetParamStr(channelHandle, paramName, value);
     }
 
     #endregion
@@ -399,11 +408,9 @@ public class AcquisitionChainTests : IDisposable
         status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SurfaceCount, 4);
         Assert.Equal(MultiCamApi.MC_OK, status);
 
-        int signals = (int)McSignal.MC_SIG_SURFACE_PROCESSING |
-                     (int)McSignal.MC_SIG_ACQUISITION_FAILURE |
-                     (int)McSignal.MC_SIG_END_CHANNEL_ACTIVITY;
-        status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SignalEnable, signals);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        SetSignalEnable(_channelHandle, McSignal.MC_SIG_SURFACE_PROCESSING, true);
+        SetSignalEnable(_channelHandle, McSignal.MC_SIG_ACQUISITION_FAILURE, true);
+        SetSignalEnable(_channelHandle, McSignal.MC_SIG_END_CHANNEL_ACTIVITY, true);
 
         // Step 6: Activate the channel
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_ChannelState, MultiCamApi.MC_ChannelState_ACTIVE_STR);
@@ -472,12 +479,10 @@ public class AcquisitionChainTests : IDisposable
         status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SurfaceCount, 4);
         Assert.Equal(MultiCamApi.MC_OK, status);
 
-        // Step 5: Enable signals
-        int signals = (int)McSignal.MC_SIG_SURFACE_PROCESSING |
-                     (int)McSignal.MC_SIG_ACQUISITION_FAILURE |
-                     (int)McSignal.MC_SIG_END_CHANNEL_ACTIVITY;
-        status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SignalEnable, signals);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        // Step 5: Enable signals (using compound parameter format)
+        SetSignalEnable(_channelHandle, McSignal.MC_SIG_SURFACE_PROCESSING, true);
+        SetSignalEnable(_channelHandle, McSignal.MC_SIG_ACQUISITION_FAILURE, true);
+        SetSignalEnable(_channelHandle, McSignal.MC_SIG_END_CHANNEL_ACTIVITY, true);
 
         // Set trigger mode to immediate (free-run)
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_TrigMode, MultiCamApi.MC_TrigMode_IMMEDIATE_STR);
