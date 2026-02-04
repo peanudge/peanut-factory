@@ -92,7 +92,7 @@ public sealed class MultiCamHAL : IMultiCamHAL
 
     #endregion
 
-    #region Parameter Access - Set
+    #region Parameter Access - Set (by Name)
 
     public int SetParamInt(uint instance, string paramName, int value)
     {
@@ -102,6 +102,15 @@ public sealed class MultiCamHAL : IMultiCamHAL
     public int SetParamInt64(uint instance, string paramName, long value)
     {
         return MultiCamApi.McSetParamNmInt64(instance, paramName, value);
+    }
+
+    #endregion
+
+    #region Parameter Access - Set (by ID)
+
+    public int SetParamIntById(uint instance, uint paramId, int value)
+    {
+        return MultiCamApi.McSetParamInt(instance, paramId, value);
     }
 
     public int SetParamFloat(uint instance, string paramName, double value)

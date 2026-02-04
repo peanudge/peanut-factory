@@ -68,6 +68,43 @@ public class AcquisitionChainTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// Converts a MultiCam status code to a descriptive string.
+    /// </summary>
+    private static string DescribeStatus(int status)
+    {
+        return status switch
+        {
+            0 => "MC_OK (0)",
+            -1 => "MC_ERROR (-1)",
+            -2 => "MC_INVALID_HANDLE (-2)",
+            -3 => "MC_INVALID_PARAM (-3)",
+            -4 => "MC_NOMORE_RESOURCES (-4)",
+            -5 => "MC_TIMEOUT (-5)",
+            -6 => "MC_NOT_SUPPORTED (-6)",
+            -7 => "MC_IN_USE (-7)",
+            -8 => "MC_BUSY (-8)",
+            -9 => "MC_IO_ERROR (-9)",
+            -10 => "MC_INTERNAL_ERROR (-10)",
+            -25 => "MC_SERVICE_ERROR (-25)",
+            _ => $"UNKNOWN_STATUS ({status})"
+        };
+    }
+
+    /// <summary>
+    /// Asserts that the status equals MC_OK, with a descriptive error message if not.
+    /// </summary>
+    private static void AssertOk(int status, string operation = "")
+    {
+        if (status != MultiCamApi.MC_OK)
+        {
+            string message = string.IsNullOrEmpty(operation)
+                ? $"Expected: {DescribeStatus(MultiCamApi.MC_OK)}, Actual: {DescribeStatus(status)}"
+                : $"{operation} failed. Expected: {DescribeStatus(MultiCamApi.MC_OK)}, Actual: {DescribeStatus(status)}";
+            Assert.Fail(message);
+        }
+    }
+
     #region Step 0: Driver and Channel Creation
 
     [Fact]
@@ -344,42 +381,44 @@ public class AcquisitionChainTests : IDisposable
         SkipIfNoHardware();
 
         int status = _hal.Create(MultiCamApi.MC_CHANNEL, out _channelHandle);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "McCreate(MC_CHANNEL)");
 
         // Configure channel through Step 4
         status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_DriverIndex, MultiCamApi.DefaultBoardIndex);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(DriverIndex)");
 
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_Connector, "M");
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(Connector)");
 
         var camPath = CamFileResource.GetCamFilePath(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8);
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(CamFile)");
 
         status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SurfaceCount, 4);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(SurfaceCount)");
 
         // Step 5: Enable signals for surface processing
-        // MultiCam uses compound parameter names: "SignalName+SignalEnable" = "ON"
+        // MultiCam uses compound parameter IDs: MC_SignalEnable + signal_id
         status = SetSignalEnable(_channelHandle, McSignal.MC_SIG_SURFACE_PROCESSING, true);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetSignalEnable(MC_SIG_SURFACE_PROCESSING)");
 
         status = SetSignalEnable(_channelHandle, McSignal.MC_SIG_ACQUISITION_FAILURE, true);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetSignalEnable(MC_SIG_ACQUISITION_FAILURE)");
 
         status = SetSignalEnable(_channelHandle, McSignal.MC_SIG_END_CHANNEL_ACTIVITY, true);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetSignalEnable(MC_SIG_END_CHANNEL_ACTIVITY)");
     }
 
     /// <summary>
-    /// Helper to set signal enable using MultiCam's compound parameter format.
+    /// Helper to set signal enable using MultiCam's compound parameter ID format.
+    /// The compound parameter ID is: MC_SignalEnable + signal_id
     /// </summary>
     private int SetSignalEnable(uint channelHandle, McSignal signal, bool enable)
     {
-        string paramName = $"{signal}+{MultiCamApi.PN_SignalEnable}";
-        string value = enable ? MultiCamApi.MC_SignalEnable_ON_STR : MultiCamApi.MC_SignalEnable_OFF_STR;
-        return _hal.SetParamStr(channelHandle, paramName, value);
+        // MultiCam uses compound parameter IDs: MC_SignalEnable + signal_id
+        uint compoundParamId = MultiCamApi.MC_SignalEnable + (uint)signal;
+        int value = enable ? MultiCamApi.MC_SignalEnable_ON : MultiCamApi.MC_SignalEnable_OFF;
+        return _hal.SetParamIntById(channelHandle, compoundParamId, value);
     }
 
     #endregion
@@ -392,21 +431,21 @@ public class AcquisitionChainTests : IDisposable
         SkipIfNoHardware();
 
         int status = _hal.Create(MultiCamApi.MC_CHANNEL, out _channelHandle);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "McCreate(MC_CHANNEL)");
 
         // Configure channel through Step 5
         status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_DriverIndex, MultiCamApi.DefaultBoardIndex);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(DriverIndex)");
 
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_Connector, "M");
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(Connector)");
 
         var camPath = CamFileResource.GetCamFilePath(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8);
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(CamFile)");
 
         status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SurfaceCount, 4);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(SurfaceCount)");
 
         SetSignalEnable(_channelHandle, McSignal.MC_SIG_SURFACE_PROCESSING, true);
         SetSignalEnable(_channelHandle, McSignal.MC_SIG_ACQUISITION_FAILURE, true);
@@ -414,17 +453,16 @@ public class AcquisitionChainTests : IDisposable
 
         // Step 6: Activate the channel
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_ChannelState, MultiCamApi.MC_ChannelState_ACTIVE_STR);
-
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(ChannelState=ACTIVE)");
 
         // Verify channel is active
         status = _hal.GetParamStr(_channelHandle, MultiCamApi.PN_ChannelState, out string state);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "GetParam(ChannelState)");
         Assert.Equal(MultiCamApi.MC_ChannelState_ACTIVE_STR, state);
 
         // Stop the channel
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_ChannelState, MultiCamApi.MC_ChannelState_IDLE_STR);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(ChannelState=IDLE)");
     }
 
     [Fact]
@@ -433,20 +471,21 @@ public class AcquisitionChainTests : IDisposable
         SkipIfNoHardware();
 
         int status = _hal.Create(MultiCamApi.MC_CHANNEL, out _channelHandle);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "McCreate(MC_CHANNEL)");
 
         // Only set driver index and connector, skip CamFile
         status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_DriverIndex, MultiCamApi.DefaultBoardIndex);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(DriverIndex)");
 
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_Connector, "M");
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(Connector)");
 
         // Try to activate without loading CamFile
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_ChannelState, MultiCamApi.MC_ChannelState_ACTIVE_STR);
 
         // Should fail because camera configuration is incomplete
-        Assert.NotEqual(MultiCamApi.MC_OK, status);
+        Assert.True(status != MultiCamApi.MC_OK,
+            $"Expected activation to fail without CamFile, but got: {DescribeStatus(status)}");
     }
 
     #endregion
@@ -460,57 +499,55 @@ public class AcquisitionChainTests : IDisposable
 
         // Step 0: Create channel
         int status = _hal.Create(MultiCamApi.MC_CHANNEL, out _channelHandle);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "McCreate(MC_CHANNEL)");
 
         // Step 1: Board linkage
         status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_DriverIndex, MultiCamApi.DefaultBoardIndex);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(DriverIndex)");
 
         // Step 2: Connector selection
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_Connector, "M");
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(Connector)");
 
         // Step 3: Load camera configuration
         var camPath = CamFileResource.GetCamFilePath(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8);
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(CamFile)");
 
         // Step 4: Configure surfaces
         status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SurfaceCount, 4);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(SurfaceCount)");
 
-        // Step 5: Enable signals (using compound parameter format)
+        // Step 5: Enable signals (using compound parameter ID format)
         SetSignalEnable(_channelHandle, McSignal.MC_SIG_SURFACE_PROCESSING, true);
         SetSignalEnable(_channelHandle, McSignal.MC_SIG_ACQUISITION_FAILURE, true);
         SetSignalEnable(_channelHandle, McSignal.MC_SIG_END_CHANNEL_ACTIVITY, true);
 
         // Set trigger mode to immediate (free-run)
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_TrigMode, MultiCamApi.MC_TrigMode_IMMEDIATE_STR);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(TrigMode)");
 
         // Set sequence length for finite acquisition (10 frames)
         status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SeqLength_Fr, 10);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(SeqLength_Fr)");
 
         // Step 6: Activate channel
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_ChannelState, MultiCamApi.MC_ChannelState_ACTIVE_STR);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(ChannelState=ACTIVE)");
 
         // Wait for a frame using WaitSignal
         status = _hal.WaitSignal(_channelHandle, (int)McSignal.MC_SIG_SURFACE_PROCESSING, 5000, out var signalInfo);
-
-        // Should receive a surface processing signal
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "McWaitSignal(MC_SIG_SURFACE_PROCESSING)");
         Assert.Equal((int)McSignal.MC_SIG_SURFACE_PROCESSING, signalInfo.Signal);
 
         // Query the surface address from the channel
         status = _hal.GetParamPtr(_channelHandle, MultiCamApi.PN_SurfaceAddr, out IntPtr surfaceAddr);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "GetParam(SurfaceAddr)");
         Assert.True(surfaceAddr != IntPtr.Zero, "Surface address should not be null");
 
         // Stop the channel
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_ChannelState, MultiCamApi.MC_ChannelState_IDLE_STR);
-        Assert.Equal(MultiCamApi.MC_OK, status);
+        AssertOk(status, "SetParam(ChannelState=IDLE)");
     }
 
     #endregion

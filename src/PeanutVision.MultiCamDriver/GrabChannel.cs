@@ -427,10 +427,11 @@ public sealed class GrabChannel : IDisposable
 
     private void SetSignalEnable(McSignal signal, bool enable)
     {
-        string paramName = $"{signal}+{MultiCamApi.PN_SignalEnable}";
-        string value = enable ? MultiCamApi.MC_SignalEnable_ON_STR : MultiCamApi.MC_SignalEnable_OFF_STR;
+        // MultiCam uses compound parameter IDs: MC_SignalEnable + signal_id
+        uint compoundParamId = MultiCamApi.MC_SignalEnable + (uint)signal;
+        int value = enable ? MultiCamApi.MC_SignalEnable_ON : MultiCamApi.MC_SignalEnable_OFF;
 
-        _hal.SetParamStr(_channelHandle, paramName, value);
+        _hal.SetParamIntById(_channelHandle, compoundParamId, value);
         // Don't throw - some signals may not be available on all boards
     }
 

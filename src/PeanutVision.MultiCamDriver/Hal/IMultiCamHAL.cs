@@ -39,10 +39,20 @@ public interface IMultiCamHAL
 
     #endregion
 
-    #region Parameter Access - Set
+    #region Parameter Access - Set (by Name)
 
     int SetParamInt(uint instance, string paramName, int value);
     int SetParamInt64(uint instance, string paramName, long value);
+
+    #endregion
+
+    #region Parameter Access - Set (by ID)
+
+    /// <summary>
+    /// Sets an integer parameter using the parameter ID.
+    /// Used for compound parameters like MC_SignalEnable + signal_id.
+    /// </summary>
+    int SetParamIntById(uint instance, uint paramId, int value);
     int SetParamFloat(uint instance, string paramName, double value);
     int SetParamStr(uint instance, string paramName, string value);
     int SetParamPtr(uint instance, string paramName, IntPtr value);

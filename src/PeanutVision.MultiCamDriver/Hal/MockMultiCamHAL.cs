@@ -418,7 +418,7 @@ public class MockMultiCamHAL : IMultiCamHAL
 
     #endregion
 
-    #region Parameter Access - Set
+    #region Parameter Access - Set (by Name)
 
     public int SetParamInt(uint instance, string paramName, int value)
     {
@@ -445,6 +445,25 @@ public class MockMultiCamHAL : IMultiCamHAL
         }
 
         inst.Parameters[paramName] = value;
+        return MultiCamApi.MC_OK;
+    }
+
+    #endregion
+
+    #region Parameter Access - Set (by ID)
+
+    public int SetParamIntById(uint instance, uint paramId, int value)
+    {
+        CallLog.SetParamCalls++;
+        string paramKey = $"ParamId_{paramId}";
+        CallLog.LastSetParams[paramKey] = value;
+
+        if (!_instances.TryGetValue(instance, out var inst))
+        {
+            return (int)McStatus.MC_INVALID_HANDLE;
+        }
+
+        inst.Parameters[paramKey] = value;
         return MultiCamApi.MC_OK;
     }
 

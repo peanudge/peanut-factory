@@ -192,6 +192,13 @@ public static partial class MultiCamApi
 	public const string MC_SignalEnable_ON_STR = "ON";
 	public const string MC_SignalEnable_OFF_STR = "OFF";
 
+	// Signal enable integer values (for McSetParamInt with compound parameter ID)
+	public const int MC_SignalEnable_ON = 5;
+	public const int MC_SignalEnable_OFF = 4;
+
+	// Parameter ID for SignalEnable (compound: MC_SignalEnable + signal_id)
+	public const uint MC_SignalEnable = (24 << 14);
+
 	// ForceTrig string values
 	public const string MC_ForceTrig_STR = "TRIG";
 
@@ -352,6 +359,17 @@ public static partial class MultiCamApi
 
 	[LibraryImport(LibraryName, EntryPoint = "McGetParamNmPtr", StringMarshalling = StringMarshalling.Utf8)]
 	public static partial int McGetParamNmPtr(uint instance, string paramName, out IntPtr valuePtr);
+
+	#endregion
+
+	#region Parameters - Set Methods (by ID)
+
+	/// <summary>
+	/// Sets an integer parameter using the parameter ID (not name).
+	/// Used for compound parameters like MC_SignalEnable + MC_SIG_SURFACE_PROCESSING.
+	/// </summary>
+	[LibraryImport(LibraryName, EntryPoint = "McSetParamInt")]
+	public static partial int McSetParamInt(uint instance, uint paramId, int value);
 
 	#endregion
 
