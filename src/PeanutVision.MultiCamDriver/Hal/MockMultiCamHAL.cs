@@ -201,8 +201,28 @@ public class MockMultiCamHAL : IMultiCamHAL
             return MultiCamApi.MC_OK;
         }
 
+        // Return default values for channel-level int parameters
+        if (inst.Model == MultiCamApi.MC_CHANNEL)
+        {
+            value = GetDefaultChannelParamInt(paramName);
+            return MultiCamApi.MC_OK;
+        }
+
         value = 0;
         return (int)McStatus.MC_INVALID_PARAM;
+    }
+
+    private int GetDefaultChannelParamInt(string paramName)
+    {
+        return paramName switch
+        {
+            MultiCamApi.PN_ChannelLinkSyncErrors_X => 0,
+            MultiCamApi.PN_ChannelLinkClockErrors_X => 0,
+            MultiCamApi.PN_GrabberErrors => 0,
+            MultiCamApi.PN_LineTriggerViolation => 0,
+            MultiCamApi.PN_FrameTriggerViolation => 0,
+            _ => 0
+        };
     }
 
     public int GetParamInt64(uint instance, string paramName, out long value)
@@ -273,8 +293,30 @@ public class MockMultiCamHAL : IMultiCamHAL
             return MultiCamApi.MC_OK;
         }
 
+        // Return default values for channel-level parameters
+        if (inst.Model == MultiCamApi.MC_CHANNEL)
+        {
+            value = GetDefaultChannelParamStr(paramName);
+            if (value != string.Empty)
+                return MultiCamApi.MC_OK;
+        }
+
         value = string.Empty;
         return (int)McStatus.MC_INVALID_PARAM;
+    }
+
+    private string GetDefaultChannelParamStr(string paramName)
+    {
+        return paramName switch
+        {
+            MultiCamApi.PN_InputConnectorName => "M",
+            MultiCamApi.PN_InputState => "ACTIVE",
+            MultiCamApi.PN_OutputState => "ACTIVE",
+            MultiCamApi.PN_DetectedSignalStrength => "NORMAL",
+            MultiCamApi.PN_CameraLinkFrequencyRange => "Range30MHzTo70MHz",
+            MultiCamApi.PN_ChannelState => "IDLE",
+            _ => string.Empty
+        };
     }
 
     public int GetParamPtr(uint instance, string paramName, out IntPtr value)

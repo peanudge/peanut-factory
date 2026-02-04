@@ -38,8 +38,17 @@ public interface IGrabService : IDisposable
 
     /// <summary>
     /// Gets detailed status for the specified board including diagnostics.
+    /// Uses default connector "M" for Camera Link Full.
     /// </summary>
     BoardStatus GetBoardStatus(int boardIndex);
+
+    /// <summary>
+    /// Gets detailed status for the specified board including diagnostics.
+    /// Creates a temporary channel to probe camera/input status on the specified connector.
+    /// </summary>
+    /// <param name="boardIndex">Board index (0-based)</param>
+    /// <param name="connector">Connector to probe for camera status (e.g., "M" for Camera Link Full)</param>
+    BoardStatus GetBoardStatus(int boardIndex, string connector);
 
     /// <summary>
     /// Gets the default camera profile (first available from registry).

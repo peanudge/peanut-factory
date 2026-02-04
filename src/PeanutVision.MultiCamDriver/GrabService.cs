@@ -143,8 +143,16 @@ public sealed class GrabService : IGrabService
 
     /// <summary>
     /// Gets detailed status for the specified board including diagnostics.
+    /// Uses default connector "M" for Camera Link Full.
     /// </summary>
-    public BoardStatus GetBoardStatus(int boardIndex)
+    public BoardStatus GetBoardStatus(int boardIndex) => GetBoardStatus(boardIndex, "M");
+
+    /// <summary>
+    /// Gets detailed status for the specified board including diagnostics.
+    /// </summary>
+    /// <param name="boardIndex">Board index (0-based)</param>
+    /// <param name="connector">Connector to probe for camera status</param>
+    public BoardStatus GetBoardStatus(int boardIndex, string connector)
     {
         lock (_lock)
         {
@@ -159,30 +167,57 @@ public sealed class GrabService : IGrabService
 
             uint boardHandle = MultiCamApi.MC_BOARD + (uint)boardIndex;
 
-            // Query basic info (ignore failures for unsupported params)
+            // Query board-level parameters
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardType, out string boardType);
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardName, out string boardName);
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_SerialNumber, out string serial);
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_PciPosition, out string pci);
-
-            // Input/Output status
-            _hal.GetParamStr(boardHandle, MultiCamApi.PN_InputConnectorName, out string inputConnector);
-            _hal.GetParamStr(boardHandle, MultiCamApi.PN_InputState, out string inputState);
-            _hal.GetParamStr(boardHandle, MultiCamApi.PN_OutputState, out string outputState);
-            _hal.GetParamStr(boardHandle, MultiCamApi.PN_DetectedSignalStrength, out string signal);
-
-            // Link status
-            _hal.GetParamStr(boardHandle, MultiCamApi.PN_CameraLinkFrequencyRange, out string cameraLinkStatus);
-            _hal.GetParamInt(boardHandle, MultiCamApi.PN_ChannelLinkSyncErrors_X, out int syncErrors);
-            _hal.GetParamInt(boardHandle, MultiCamApi.PN_ChannelLinkClockErrors_X, out int clockErrors);
-
-            // Diagnostics
-            _hal.GetParamInt(boardHandle, MultiCamApi.PN_GrabberErrors, out int grabberErrors);
-            _hal.GetParamInt(boardHandle, MultiCamApi.PN_LineTriggerViolation, out int lineViolations);
-            _hal.GetParamInt(boardHandle, MultiCamApi.PN_FrameTriggerViolation, out int frameViolations);
-
-            // PCIe
             _hal.GetParamStr(boardHandle, MultiCamApi.PN_PCIeLinkInfo, out string pcieInfo);
+
+            // Channel-level parameters (require temporary channel)
+            string inputConnector = "N/A";
+            string inputState = "N/A";
+            string outputState = "N/A";
+            string signal = "N/A";
+            string cameraLinkStatus = "N/A";
+            int syncErrors = 0;
+            int clockErrors = 0;
+            int grabberErrors = 0;
+            int lineViolations = 0;
+            int frameViolations = 0;
+
+            // Create temporary channel to query camera/input status
+            int status = _hal.Create(MultiCamApi.MC_CHANNEL, out uint tempChannel);
+            if (status == MultiCamApi.MC_OK)
+            {
+                try
+                {
+                    // Configure minimal channel settings
+                    _hal.SetParamInt(tempChannel, MultiCamApi.PN_DriverIndex, boardIndex);
+                    _hal.SetParamStr(tempChannel, MultiCamApi.PN_Connector, connector);
+
+                    // Query channel-level input/output status
+                    _hal.GetParamStr(tempChannel, MultiCamApi.PN_InputConnectorName, out inputConnector);
+                    _hal.GetParamStr(tempChannel, MultiCamApi.PN_InputState, out inputState);
+                    _hal.GetParamStr(tempChannel, MultiCamApi.PN_OutputState, out outputState);
+                    _hal.GetParamStr(tempChannel, MultiCamApi.PN_DetectedSignalStrength, out signal);
+
+                    // Query link status
+                    _hal.GetParamStr(tempChannel, MultiCamApi.PN_CameraLinkFrequencyRange, out cameraLinkStatus);
+                    _hal.GetParamInt(tempChannel, MultiCamApi.PN_ChannelLinkSyncErrors_X, out syncErrors);
+                    _hal.GetParamInt(tempChannel, MultiCamApi.PN_ChannelLinkClockErrors_X, out clockErrors);
+
+                    // Query diagnostics
+                    _hal.GetParamInt(tempChannel, MultiCamApi.PN_GrabberErrors, out grabberErrors);
+                    _hal.GetParamInt(tempChannel, MultiCamApi.PN_LineTriggerViolation, out lineViolations);
+                    _hal.GetParamInt(tempChannel, MultiCamApi.PN_FrameTriggerViolation, out frameViolations);
+                }
+                finally
+                {
+                    // Always delete the temporary channel
+                    _hal.Delete(tempChannel);
+                }
+            }
 
             return new BoardStatus
             {
