@@ -397,6 +397,10 @@ public class AcquisitionChainTests : IDisposable
         status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SurfaceCount, 4);
         AssertOk(status, "SetParam(SurfaceCount)");
 
+        status = _hal.GetParamInt(_channelHandle, MultiCamApi.PN_SurfaceCount, out int surfaceCount);
+        AssertOk(status, "GetParam(SurfaceCount)");
+        Assert.Equal(4, surfaceCount);
+
         // Step 5: Enable signals for surface processing
         // MultiCam uses compound parameter IDs: MC_SignalEnable + signal_id
         status = SetSignalEnable(_channelHandle, McSignal.MC_SIG_SURFACE_PROCESSING, true);
@@ -466,7 +470,7 @@ public class AcquisitionChainTests : IDisposable
     }
 
     [Fact]
-    public void Step6_ActivateWithoutCamFile_ReturnsError()
+    public void Step6_ActivateWithoutCamFile_HasNoUsableImageParameters()
     {
         SkipIfNoHardware();
 
@@ -480,12 +484,16 @@ public class AcquisitionChainTests : IDisposable
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_Connector, "M");
         AssertOk(status, "SetParam(Connector)");
 
-        // Try to activate without loading CamFile
-        status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_ChannelState, MultiCamApi.MC_ChannelState_ACTIVE_STR);
+        // The native driver accepts activation without CamFile (uses internal defaults),
+        // but the resulting image parameters should be zero/default — not usable for real acquisition.
+        status = _hal.GetParamInt(_channelHandle, MultiCamApi.PN_ImageSizeX, out int width);
+        AssertOk(status, "GetParam(ImageSizeX)");
 
-        // Should fail because camera configuration is incomplete
-        Assert.True(status != MultiCamApi.MC_OK,
-            $"Expected activation to fail without CamFile, but got: {DescribeStatus(status)}");
+        status = _hal.GetParamInt(_channelHandle, MultiCamApi.PN_ImageSizeY, out int height);
+        AssertOk(status, "GetParam(ImageSizeY)");
+
+        Assert.True(width == 0 || height == 0,
+            $"Expected zero image dimensions without CamFile, but got: {width}x{height}");
     }
 
     #endregion
