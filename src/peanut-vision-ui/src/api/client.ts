@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../constants";
 import type {
   BoardInfo,
   BoardStatus,
@@ -7,22 +8,22 @@ import type {
   ApiMessage,
 } from "./types";
 
-const BASE_URL = "http://localhost:5000/api";
+async function handleErrorResponse(res: Response): Promise<never> {
+  const body = await res.json().catch(() => ({}));
+  throw new Error(
+    body.error ?? body.message ?? `HTTP ${res.status}`,
+  );
+}
 
 async function request<T>(
   path: string,
   options?: RequestInit,
 ): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(
-      body.error ?? body.message ?? `HTTP ${res.status}`,
-    );
-  }
+  if (!res.ok) await handleErrorResponse(res);
   return res.json();
 }
 
@@ -65,15 +66,10 @@ export function sendTrigger(): Promise<ApiMessage> {
 }
 
 export async function captureFrame(): Promise<Blob> {
-  const res = await fetch(`${BASE_URL}/acquisition/capture`, {
+  const res = await fetch(`${API_BASE_URL}/acquisition/capture`, {
     method: "POST",
   });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(
-      body.error ?? body.message ?? `HTTP ${res.status}`,
-    );
-  }
+  if (!res.ok) await handleErrorResponse(res);
   return res.blob();
 }
 
