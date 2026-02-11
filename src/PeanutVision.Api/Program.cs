@@ -23,6 +23,11 @@ var app = builder.Build();
 
 app.MapOpenApi();
 
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/openapi/v1.json", "PeanutVision API");
+});
+
 app.UseCors();
 
 app.MapControllers();
