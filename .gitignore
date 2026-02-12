@@ -482,3 +482,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# PDF documentation (source files; markdown conversions are tracked)
+doc/*.pdf
