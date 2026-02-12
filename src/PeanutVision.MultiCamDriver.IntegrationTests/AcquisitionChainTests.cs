@@ -551,12 +551,19 @@ public class AcquisitionChainTests : IDisposable
         // SignalInfo contains the surface HANDLE (not index)
         uint surfaceHandle = signalInfo.SignalInfo;
 
-        // Query SurfaceAddr directly from the surface handle
-        status = _hal.GetParamPtr(surfaceHandle, MultiCamApi.PN_SurfaceAddr, out IntPtr surfaceAddr);
+        // Get the surface's cluster index from the handle
+        status = _hal.GetParamInt(surfaceHandle, MultiCamApi.PN_SurfaceIndex, out int surfaceIndex);
+        AssertOk(status, "GetParam(SurfaceIndex) from surface handle");
+
+        // Select the surface on the channel, then read the buffer address
+        status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SurfaceIndex, surfaceIndex);
+        AssertOk(status, "SetParam(SurfaceIndex) on channel");
+
+        status = _hal.GetParamPtr(_channelHandle, MultiCamApi.PN_SurfaceAddr, out IntPtr surfaceAddr);
         AssertOk(status, "GetParam(SurfaceAddr)");
         Assert.True(surfaceAddr != IntPtr.Zero, "Surface address should not be null");
 
-        // Release surface back to FREE
+        // Release surface back to FREE via the surface handle
         _hal.SetParamInt(surfaceHandle, MultiCamApi.PN_SurfaceState, (int)McSurfaceState.MC_SurfaceState_FREE);
 
         // Stop the channel

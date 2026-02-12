@@ -256,8 +256,13 @@ public sealed class GrabChannel : IDisposable
 
     private SurfaceData GetSurfaceData(uint surfaceHandle)
     {
-        // Read SurfaceAddr directly from the surface handle
-        int status = _hal.GetParamPtr(surfaceHandle, MultiCamApi.PN_SurfaceAddr, out IntPtr address);
+        // Get the surface's cluster index from the handle
+        _hal.GetParamInt(surfaceHandle, MultiCamApi.PN_SurfaceIndex, out int surfaceIndex);
+
+        // Select this surface on the channel, then read the buffer address
+        _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SurfaceIndex, surfaceIndex);
+
+        int status = _hal.GetParamPtr(_channelHandle, MultiCamApi.PN_SurfaceAddr, out IntPtr address);
         if (status != MultiCamApi.MC_OK)
             address = IntPtr.Zero;
 

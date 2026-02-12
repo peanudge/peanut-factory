@@ -593,6 +593,7 @@ public class MockMultiCamHAL : IMultiCamHAL
     /// Creates a mock surface instance in the instance dictionary.
     /// Returns the handle so it can be used in SignalInfo.
     /// </summary>
+    private int _nextSurfaceIndex;
     private uint CreateMockSurface()
     {
         lock (_lock)
@@ -603,6 +604,7 @@ public class MockMultiCamHAL : IMultiCamHAL
                 Handle = handle,
                 Model = MultiCamApi.MC_SURFACE
             };
+            surface.Parameters[MultiCamApi.PN_SurfaceIndex] = _nextSurfaceIndex++;
             surface.Parameters[MultiCamApi.PN_SurfaceState] = (int)McSurfaceState.MC_SurfaceState_PROCESSING;
             _instances[handle] = surface;
             return handle;
