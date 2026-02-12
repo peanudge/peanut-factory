@@ -99,10 +99,10 @@ public enum McSeqLength
 /// </summary>
 public enum McSurfaceState
 {
-	MC_SurfaceState_FREE = 0,
-	MC_SurfaceState_FILLING = 1,
-	MC_SurfaceState_FILLED = 2,
-	MC_SurfaceState_PROCESSING = 3,
+	MC_SurfaceState_FREE = 1,
+	MC_SurfaceState_FILLING = 2,
+	MC_SurfaceState_FILLED = 3,
+	MC_SurfaceState_PROCESSING = 4,
 }
 
 /// <summary>
