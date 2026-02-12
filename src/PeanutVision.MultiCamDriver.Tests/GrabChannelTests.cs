@@ -530,11 +530,11 @@ public class GrabChannelTests
         };
 
         // Simulate frame acquisition
-        _mockHal.SimulateFrameAcquisition(channel.Handle, surfaceIndex: 2);
+        _mockHal.SimulateFrameAcquisition(channel.Handle);
 
         Assert.True(eventFired);
         Assert.NotNull(receivedSurface);
-        Assert.Equal(2, receivedSurface.Value.SurfaceIndex);
+        Assert.NotEqual(0u, receivedSurface.Value.SurfaceHandle);
     }
 
     [Fact]

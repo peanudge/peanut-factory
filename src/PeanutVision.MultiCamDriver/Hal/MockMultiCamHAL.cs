@@ -575,16 +575,38 @@ public class MockMultiCamHAL : IMultiCamHAL
             return Configuration.WaitSignalFailure.Value;
         }
 
-        // Simulate a successful signal
+        // Create a mock surface instance (real driver returns surface handle in SignalInfo)
+        uint surfaceHandle = CreateMockSurface();
+
         info = new McSignalInfo
         {
             Instance = instance,
             Signal = signal == (int)McSignal.MC_SIG_ANY ? (int)McSignal.MC_SIG_SURFACE_PROCESSING : signal,
-            SignalInfo = 0, // Surface index 0
+            SignalInfo = surfaceHandle, // Surface HANDLE (not index)
             Context = IntPtr.Zero
         };
 
         return MultiCamApi.MC_OK;
+    }
+
+    /// <summary>
+    /// Creates a mock surface instance in the instance dictionary.
+    /// Returns the handle so it can be used in SignalInfo.
+    /// </summary>
+    private uint CreateMockSurface()
+    {
+        lock (_lock)
+        {
+            uint handle = _nextInstanceId++;
+            var surface = new MockInstance
+            {
+                Handle = handle,
+                Model = MultiCamApi.MC_SURFACE
+            };
+            surface.Parameters[MultiCamApi.PN_SurfaceState] = (int)McSurfaceState.MC_SurfaceState_PROCESSING;
+            _instances[handle] = surface;
+            return handle;
+        }
     }
 
     #endregion
@@ -595,16 +617,19 @@ public class MockMultiCamHAL : IMultiCamHAL
     /// Simulates a frame acquisition by invoking the registered callback.
     /// Useful for testing callback-based acquisition.
     /// </summary>
-    public void SimulateFrameAcquisition(uint channelHandle, int surfaceIndex = 0)
+    public void SimulateFrameAcquisition(uint channelHandle)
     {
         if (!_instances.TryGetValue(channelHandle, out var inst) || !inst.CallbackRegistered)
             return;
+
+        // Create a mock surface instance (real driver returns surface handle in SignalInfo)
+        uint surfaceHandle = CreateMockSurface();
 
         var signalInfo = new McSignalInfo
         {
             Instance = channelHandle,
             Signal = (int)McSignal.MC_SIG_SURFACE_PROCESSING,
-            SignalInfo = (uint)surfaceIndex,
+            SignalInfo = surfaceHandle, // Surface HANDLE (not index)
             Context = inst.CallbackContext
         };
 

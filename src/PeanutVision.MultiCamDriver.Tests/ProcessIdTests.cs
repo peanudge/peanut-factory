@@ -185,14 +185,14 @@ public class MultiCamDriverTests
     {
         var surface = new SurfaceData
         {
-            SurfaceIndex = 2,
+            SurfaceHandle = 2,
             Width = 1920,
             Height = 1080
         };
 
         var args = new FrameAcquiredEventArgs(surface, 123, McSignal.MC_SIG_SURFACE_PROCESSING);
 
-        Assert.Equal(2, args.Surface.SurfaceIndex);
+        Assert.Equal(2u, args.Surface.SurfaceHandle);
         Assert.Equal(1920, args.Surface.Width);
         Assert.Equal(123u, args.ChannelHandle);
         Assert.Equal(McSignal.MC_SIG_SURFACE_PROCESSING, args.Signal);

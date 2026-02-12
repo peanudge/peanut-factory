@@ -235,13 +235,13 @@ public sealed class GrabChannel : IDisposable
 
     private void ProcessSurfaceSignal(ref McSignalInfo info)
     {
-        // SignalInfo contains the surface index
-        int surfaceIndex = (int)info.SignalInfo;
+        // SignalInfo contains the surface HANDLE (not index)
+        uint surfaceHandle = info.SignalInfo;
 
         try
         {
             // Get surface data
-            var surface = GetSurfaceData(surfaceIndex);
+            var surface = GetSurfaceData(surfaceHandle);
 
             // Fire event
             FrameAcquired?.Invoke(this, new FrameAcquiredEventArgs(
@@ -250,27 +250,20 @@ public sealed class GrabChannel : IDisposable
         finally
         {
             // CRITICAL: Release surface back to MultiCam for next acquisition
-            ReleaseSurface(surfaceIndex);
+            ReleaseSurface(surfaceHandle);
         }
     }
 
-    private SurfaceData GetSurfaceData(int surfaceIndex)
+    private SurfaceData GetSurfaceData(uint surfaceHandle)
     {
-        // Set surface index for parameter access
-        int status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SurfaceIndex, surfaceIndex);
-        if (status != MultiCamApi.MC_OK)
-        {
-            return new SurfaceData { SurfaceIndex = surfaceIndex };
-        }
-
-        // Get surface address
-        status = _hal.GetParamPtr(_channelHandle, MultiCamApi.PN_SurfaceAddr, out IntPtr address);
+        // Read SurfaceAddr directly from the surface handle
+        int status = _hal.GetParamPtr(surfaceHandle, MultiCamApi.PN_SurfaceAddr, out IntPtr address);
         if (status != MultiCamApi.MC_OK)
             address = IntPtr.Zero;
 
         return new SurfaceData
         {
-            SurfaceIndex = surfaceIndex,
+            SurfaceHandle = surfaceHandle,
             Address = address,
             Pitch = _bufferPitch,
             Size = _bufferSize,
@@ -279,14 +272,10 @@ public sealed class GrabChannel : IDisposable
         };
     }
 
-    private void ReleaseSurface(int surfaceIndex)
+    private void ReleaseSurface(uint surfaceHandle)
     {
-        // Set surface state back to FREE
-        int status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SurfaceIndex, surfaceIndex);
-        if (status == MultiCamApi.MC_OK)
-        {
-            _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SurfaceState, (int)McSurfaceState.MC_SurfaceState_FREE);
-        }
+        // Set SurfaceState back to FREE on the surface handle
+        _hal.SetParamInt(surfaceHandle, MultiCamApi.PN_SurfaceState, (int)McSurfaceState.MC_SurfaceState_FREE);
     }
 
     /// <summary>
@@ -405,8 +394,8 @@ public sealed class GrabChannel : IDisposable
 
         ThrowOnError(status, "McWaitSignal");
 
-        int surfaceIndex = (int)info.SignalInfo;
-        var surface = GetSurfaceData(surfaceIndex);
+        uint surfaceHandle = info.SignalInfo;
+        var surface = GetSurfaceData(surfaceHandle);
 
         // Note: Caller is responsible for calling ReleaseSurface when done
         return surface;
@@ -418,7 +407,7 @@ public sealed class GrabChannel : IDisposable
     /// </summary>
     public void ReleaseSurface(SurfaceData surface)
     {
-        ReleaseSurface(surface.SurfaceIndex);
+        ReleaseSurface(surface.SurfaceHandle);
     }
 
     #endregion

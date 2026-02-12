@@ -8,8 +8,8 @@ namespace PeanutVision.MultiCamDriver;
 /// </summary>
 public readonly struct SurfaceData
 {
-    /// <summary>Surface index in the cluster (0-based)</summary>
-    public int SurfaceIndex { get; init; }
+    /// <summary>Surface instance handle returned by MultiCam in SignalInfo</summary>
+    public uint SurfaceHandle { get; init; }
 
     /// <summary>Pointer to the start of image data in memory</summary>
     public IntPtr Address { get; init; }

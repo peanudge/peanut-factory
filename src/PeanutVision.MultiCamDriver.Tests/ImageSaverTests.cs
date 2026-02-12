@@ -84,7 +84,7 @@ public class ImageSaverTests : IDisposable
             Height = height,
             Pitch = pitch,
             Size = data.Length,
-            SurfaceIndex = 0,
+            SurfaceHandle = 0,
             FrameCount = 1,
             Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
         };
