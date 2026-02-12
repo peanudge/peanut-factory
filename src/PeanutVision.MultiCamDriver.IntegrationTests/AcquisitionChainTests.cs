@@ -548,7 +548,11 @@ public class AcquisitionChainTests : IDisposable
         AssertOk(status, "McWaitSignal(MC_SIG_SURFACE_PROCESSING)");
         Assert.Equal((int)McSignal.MC_SIG_SURFACE_PROCESSING, signalInfo.Signal);
 
-        // Query the surface address from the channel
+        // Select the filled surface by index (from SignalInfo), then query its address
+        int surfaceIndex = (int)signalInfo.SignalInfo;
+        status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SurfaceIndex, surfaceIndex);
+        AssertOk(status, "SetParam(SurfaceIndex)");
+
         status = _hal.GetParamPtr(_channelHandle, MultiCamApi.PN_SurfaceAddr, out IntPtr surfaceAddr);
         AssertOk(status, "GetParam(SurfaceAddr)");
         Assert.True(surfaceAddr != IntPtr.Zero, "Surface address should not be null");
