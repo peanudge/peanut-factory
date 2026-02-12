@@ -9,9 +9,23 @@ namespace PeanutVision.MultiCamDriver;
 public static class CamFileResource
 {
     private static readonly Assembly Assembly = typeof(CamFileResource).Assembly;
-    private static readonly string TempDirectory = Path.Combine(Path.GetTempPath(), "PeanutVision.CamFiles");
+    private static string _directory = Path.Combine(Path.GetTempPath(), "PeanutVision.CamFiles");
     private static readonly object Lock = new();
     private static bool _initialized;
+
+    /// <summary>
+    /// Sets the directory where cam files are stored/extracted.
+    /// Must be called before any cam file access. If the directory contains
+    /// .cam files already, they will be used directly without extraction.
+    /// </summary>
+    public static void SetDirectory(string path)
+    {
+        lock (Lock)
+        {
+            _directory = Path.GetFullPath(path);
+            _initialized = false;
+        }
+    }
 
     /// <summary>
     /// Known embedded camera configurations.
@@ -36,7 +50,7 @@ public static class CamFileResource
     {
         EnsureInitialized();
 
-        string targetPath = Path.Combine(TempDirectory, camFileName);
+        string targetPath = Path.Combine(_directory, camFileName);
 
         if (File.Exists(targetPath))
         {
@@ -103,12 +117,12 @@ public static class CamFileResource
     }
 
     /// <summary>
-    /// Gets the temporary directory where cam files are extracted.
+    /// Gets the directory where cam files are stored.
     /// </summary>
-    public static string GetTempDirectory()
+    public static string GetDirectory()
     {
         EnsureInitialized();
-        return TempDirectory;
+        return _directory;
     }
 
     /// <summary>
@@ -118,11 +132,11 @@ public static class CamFileResource
     {
         lock (Lock)
         {
-            if (Directory.Exists(TempDirectory))
+            if (Directory.Exists(_directory))
             {
                 try
                 {
-                    Directory.Delete(TempDirectory, recursive: true);
+                    Directory.Delete(_directory, recursive: true);
                 }
                 catch
                 {
@@ -141,9 +155,9 @@ public static class CamFileResource
         {
             if (_initialized) return;
 
-            if (!Directory.Exists(TempDirectory))
+            if (!Directory.Exists(_directory))
             {
-                Directory.CreateDirectory(TempDirectory);
+                Directory.CreateDirectory(_directory);
             }
 
             _initialized = true;

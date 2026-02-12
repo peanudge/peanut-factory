@@ -59,7 +59,6 @@ public class CamFileResourceTests
 
         Assert.True(File.Exists(extractedPath), $"File should exist at: {extractedPath}");
         Assert.EndsWith(camFileName, extractedPath);
-        Assert.StartsWith(Path.GetTempPath(), extractedPath);
     }
 
     [Fact]
@@ -87,13 +86,12 @@ public class CamFileResourceTests
     }
 
     [Fact]
-    public void GetTempDirectory_ReturnsValidPath()
+    public void GetDirectory_ReturnsValidPath()
     {
-        string tempDir = CamFileResource.GetTempDirectory();
+        string dir = CamFileResource.GetDirectory();
 
-        Assert.NotEmpty(tempDir);
-        Assert.StartsWith(Path.GetTempPath(), tempDir);
-        Assert.Contains("PeanutVision", tempDir);
+        Assert.NotEmpty(dir);
+        Assert.True(Directory.Exists(dir));
     }
 
     [Fact]
@@ -102,7 +100,7 @@ public class CamFileResourceTests
         CamFileResource.ExtractAllCamFiles();
 
         var camFiles = CamFileResource.GetAvailableCamFiles().ToList();
-        string tempDir = CamFileResource.GetTempDirectory();
+        string tempDir = CamFileResource.GetDirectory();
 
         foreach (var camFile in camFiles)
         {

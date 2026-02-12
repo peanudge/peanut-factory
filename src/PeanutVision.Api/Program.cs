@@ -3,6 +3,17 @@ using PeanutVision.MultiCamDriver;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure cam file directory from appsettings.json (relative to project root)
+var camFileDir = builder.Configuration["CamFileDirectory"];
+if (!string.IsNullOrEmpty(camFileDir))
+{
+    var fullPath = Path.IsPathRooted(camFileDir)
+        ? camFileDir
+        : Path.Combine(builder.Environment.ContentRootPath, camFileDir);
+    CamFileResource.SetDirectory(fullPath);
+}
+CamFileResource.ExtractAllCamFiles();
+
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 

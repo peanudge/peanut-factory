@@ -44,7 +44,7 @@ public sealed class CamFileInfoCommand : CommandBase
             Print();
         }
 
-        Print("  Temp Directory: " + CamFileResource.GetTempDirectory());
+        Print("  Temp Directory: " + CamFileResource.GetDirectory());
     }
 
     private void PrintCamFileDetails(string filename)
