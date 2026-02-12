@@ -18,11 +18,5 @@
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
   </ItemGroup>
 
-  <!-- Embed camera configuration files as resources -->
-  <ItemGroup>
-    <EmbeddedResource Include="..\..\setup\camfiles\*.cam" Link="CamFiles\%(Filename)%(Extension)">
-      <LogicalName>CamFiles.%(Filename)%(Extension)</LogicalName>
-    </EmbeddedResource>
-  </ItemGroup>
 
 </Project>

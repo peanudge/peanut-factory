@@ -3,8 +3,25 @@ using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.MultiCamDriver.Tests.Camera;
 
-public class CameraProfileTests
+public class CameraProfileTests : IDisposable
 {
+    private readonly string _testDir;
+
+    public CameraProfileTests()
+    {
+        _testDir = Path.Combine(Path.GetTempPath(), $"PeanutVision.CameraProfileTests.{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_testDir);
+        // Create known cam files so GetCamFilePath succeeds
+        File.WriteAllText(Path.Combine(_testDir, CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8), "");
+        CamFileResource.SetDirectory(_testDir);
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_testDir))
+            Directory.Delete(_testDir, recursive: true);
+    }
+
     [Fact]
     public void Builder_CreatesProfile_WithRequiredFields()
     {

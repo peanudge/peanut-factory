@@ -1,77 +1,74 @@
 namespace PeanutVision.MultiCamDriver.Tests;
 
-public class CamFileResourceTests
+public class CamFileResourceTests : IDisposable
 {
-    [Fact]
-    public void GetAvailableCamFiles_ReturnsEmbeddedFiles()
+    private readonly string _testDir;
+
+    public CamFileResourceTests()
     {
+        _testDir = Path.Combine(Path.GetTempPath(), $"PeanutVision.CamFileTests.{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_testDir);
+        CamFileResource.SetDirectory(_testDir);
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_testDir))
+            Directory.Delete(_testDir, recursive: true);
+    }
+
+    [Fact]
+    public void GetAvailableCamFiles_ReturnsCamFilesFromDirectory()
+    {
+        File.WriteAllText(Path.Combine(_testDir, "test1.cam"), "");
+        File.WriteAllText(Path.Combine(_testDir, "test2.cam"), "");
+
         var camFiles = CamFileResource.GetAvailableCamFiles().ToList();
 
-        Assert.NotEmpty(camFiles);
+        Assert.Equal(2, camFiles.Count);
         Assert.All(camFiles, f => Assert.EndsWith(".cam", f));
     }
 
     [Fact]
-    public void GetAvailableCamFiles_ContainsKnownFiles()
+    public void GetAvailableCamFiles_ReturnsEmptyWhenNoFiles()
     {
         var camFiles = CamFileResource.GetAvailableCamFiles().ToList();
 
-        // At least one of the known files should be present
-        Assert.True(
-            camFiles.Contains(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8) ||
-            camFiles.Contains(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_1TAP_RGB8),
-            $"Expected known cam files. Found: {string.Join(", ", camFiles)}");
+        Assert.Empty(camFiles);
     }
 
     [Fact]
     public void IsCamFileAvailable_ReturnsTrueForExistingFile()
     {
-        var camFiles = CamFileResource.GetAvailableCamFiles().ToList();
+        File.WriteAllText(Path.Combine(_testDir, "test.cam"), "");
 
-        if (camFiles.Count > 0)
-        {
-            bool isAvailable = CamFileResource.IsCamFileAvailable(camFiles[0]);
-            Assert.True(isAvailable);
-        }
+        Assert.True(CamFileResource.IsCamFileAvailable("test.cam"));
     }
 
     [Fact]
     public void IsCamFileAvailable_ReturnsFalseForNonExistingFile()
     {
-        bool isAvailable = CamFileResource.IsCamFileAvailable("nonexistent_camera.cam");
-
-        Assert.False(isAvailable);
+        Assert.False(CamFileResource.IsCamFileAvailable("nonexistent_camera.cam"));
     }
 
     [Fact]
-    public void GetCamFilePath_ExtractsFileToTempDirectory()
+    public void GetCamFilePath_ReturnsPathForExistingFile()
     {
-        var camFiles = CamFileResource.GetAvailableCamFiles().ToList();
+        string camFileName = "test.cam";
+        File.WriteAllText(Path.Combine(_testDir, camFileName), "");
 
-        if (camFiles.Count == 0)
-        {
-            // Skip if no cam files are embedded
-            return;
-        }
+        string path = CamFileResource.GetCamFilePath(camFileName);
 
-        string camFileName = camFiles[0];
-        string extractedPath = CamFileResource.GetCamFilePath(camFileName);
-
-        Assert.True(File.Exists(extractedPath), $"File should exist at: {extractedPath}");
-        Assert.EndsWith(camFileName, extractedPath);
+        Assert.True(File.Exists(path));
+        Assert.EndsWith(camFileName, path);
     }
 
     [Fact]
     public void GetCamFilePath_ReturnsSamePathOnMultipleCalls()
     {
-        var camFiles = CamFileResource.GetAvailableCamFiles().ToList();
+        string camFileName = "test.cam";
+        File.WriteAllText(Path.Combine(_testDir, camFileName), "");
 
-        if (camFiles.Count == 0)
-        {
-            return;
-        }
-
-        string camFileName = camFiles[0];
         string path1 = CamFileResource.GetCamFilePath(camFileName);
         string path2 = CamFileResource.GetCamFilePath(camFileName);
 
@@ -95,17 +92,21 @@ public class CamFileResourceTests
     }
 
     [Fact]
-    public void ExtractAllCamFiles_ExtractsAllFiles()
+    public void SetDirectory_ChangesDirectory()
     {
-        CamFileResource.ExtractAllCamFiles();
+        string newDir = Path.Combine(Path.GetTempPath(), $"PeanutVision.CamFileTests2.{Guid.NewGuid():N}");
+        Directory.CreateDirectory(newDir);
 
-        var camFiles = CamFileResource.GetAvailableCamFiles().ToList();
-        string tempDir = CamFileResource.GetDirectory();
-
-        foreach (var camFile in camFiles)
+        try
         {
-            string expectedPath = Path.Combine(tempDir, camFile);
-            Assert.True(File.Exists(expectedPath), $"Expected file at: {expectedPath}");
+            CamFileResource.SetDirectory(newDir);
+
+            Assert.Equal(newDir, CamFileResource.GetDirectory());
+        }
+        finally
+        {
+            Directory.Delete(newDir, recursive: true);
+            CamFileResource.SetDirectory(_testDir);
         }
     }
 

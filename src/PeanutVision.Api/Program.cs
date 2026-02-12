@@ -12,7 +12,6 @@ if (!string.IsNullOrEmpty(camFileDir))
         : Path.Combine(builder.Environment.ContentRootPath, camFileDir);
     CamFileResource.SetDirectory(fullPath);
 }
-CamFileResource.ExtractAllCamFiles();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
