@@ -485,3 +485,6 @@ $RECYCLE.BIN/
 
 # PDF documentation (source files; markdown conversions are tracked)
 doc/*.pdf
+
+# Claude 
+.mcp.json
