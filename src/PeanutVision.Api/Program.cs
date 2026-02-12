@@ -21,14 +21,21 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseCors();
+
+app.UseExceptionHandler(error => error.Run(async context =>
+{
+    context.Response.StatusCode = 500;
+    context.Response.ContentType = "application/json";
+    await context.Response.WriteAsJsonAsync(new { error = "Internal server error" });
+}));
+
 app.MapOpenApi();
 
 app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/openapi/v1.json", "PeanutVision API");
 });
-
-app.UseCors();
 
 app.MapControllers();
 
