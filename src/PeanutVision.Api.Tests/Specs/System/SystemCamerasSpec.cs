@@ -28,12 +28,12 @@ public class SystemCamerasSpec : IClassFixture<PeanutVisionApiFactory>, IAsyncLi
     }
 
     [Fact]
-    public async Task GetCameras_returns_three_crevis_profiles()
+    public async Task GetCameras_returns_profiles()
     {
         var response = await _client.GetAsync("/api/system/cameras");
 
         using var doc = await response.ReadJsonDocumentAsync();
-        Assert.Equal(3, doc.RootElement.GetArrayLength());
+        Assert.True(doc.RootElement.GetArrayLength() >= 3);
     }
 
     [Fact]

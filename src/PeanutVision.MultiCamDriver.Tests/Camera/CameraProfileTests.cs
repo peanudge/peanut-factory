@@ -3,6 +3,7 @@ using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.MultiCamDriver.Tests.Camera;
 
+[Collection("CamFileResource")]
 public class CameraProfileTests : IDisposable
 {
     private readonly string _testDir;

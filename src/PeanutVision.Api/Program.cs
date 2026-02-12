@@ -1,5 +1,6 @@
 using PeanutVision.Api.Services;
 using PeanutVision.MultiCamDriver;
+using PeanutVision.MultiCamDriver.Camera;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,9 @@ if (!string.IsNullOrEmpty(camFileDir))
         : Path.Combine(builder.Environment.ContentRootPath, camFileDir);
     CamFileResource.SetDirectory(fullPath);
 }
+
+// Load camera profiles from cam files in the directory
+CameraRegistry.Default.LoadFromDirectory();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();

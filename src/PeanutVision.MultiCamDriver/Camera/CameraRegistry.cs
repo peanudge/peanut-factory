@@ -9,9 +9,9 @@ public sealed class CameraRegistry
     private readonly Dictionary<string, CameraProfile> _profiles = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Gets the default registry instance with built-in camera profiles.
+    /// Gets the default registry instance. Initially empty; call LoadFromDirectory() to populate.
     /// </summary>
-    public static CameraRegistry Default { get; } = CreateDefault();
+    public static CameraRegistry Default { get; } = new();
 
     /// <summary>
     /// Gets all registered camera profiles.
@@ -97,16 +97,18 @@ public sealed class CameraRegistry
     /// </summary>
     public CameraProfile? DefaultProfile => _profiles.Values.FirstOrDefault();
 
-    private static CameraRegistry CreateDefault()
+    /// <summary>
+    /// Clears all profiles and loads one profile per .cam file from the configured CamFileResource directory.
+    /// </summary>
+    public CameraRegistry LoadFromDirectory()
     {
-        var registry = new CameraRegistry();
+        _profiles.Clear();
 
-        // Register built-in Crevis profiles
-        foreach (var profile in CrevisProfiles.All)
+        foreach (var camFile in CamFileResource.GetAvailableCamFiles())
         {
-            registry.Register(profile);
+            Register(CameraProfile.FromCamFile(camFile));
         }
 
-        return registry;
+        return this;
     }
 }

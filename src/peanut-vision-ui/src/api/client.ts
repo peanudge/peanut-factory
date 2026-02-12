@@ -2,6 +2,7 @@ import { API_BASE_URL } from "../constants";
 import type {
   BoardInfo,
   BoardStatus,
+  CamFiles,
   CameraProfile,
   AcquisitionStatus,
   ExposureInfo,
@@ -35,6 +36,10 @@ export function getBoards(): Promise<BoardInfo[]> {
 
 export function getBoardStatus(index: number): Promise<BoardStatus> {
   return request(`/system/boards/${index}/status`);
+}
+
+export function getCamFiles(): Promise<CamFiles> {
+  return request("/system/camfiles");
 }
 
 export function getCameras(): Promise<CameraProfile[]> {

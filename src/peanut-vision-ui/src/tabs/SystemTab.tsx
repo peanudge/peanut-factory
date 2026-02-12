@@ -9,21 +9,24 @@ import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
 import StatusChip from "../components/StatusChip";
 import BoardRow from "../components/BoardRow";
-import type { BoardInfo, CameraProfile } from "../api/types";
-import { getBoards, getCameras } from "../api/client";
+import type { BoardInfo, CamFiles, CameraProfile } from "../api/types";
+import { getBoards, getCamFiles, getCameras } from "../api/client";
 import { useApiData } from "../hooks/useApiData";
 
 export default function SystemTab() {
   const { data, loading, error } = useApiData(
-    () => Promise.all([getBoards(), getCameras()]),
+    () => Promise.all([getBoards(), getCamFiles(), getCameras()]),
   );
 
   if (loading) return <CircularProgress sx={{ m: 4 }} />;
   if (error) return <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>;
 
-  const [boards, cameras] = data as [BoardInfo[], CameraProfile[]];
+  const [boards, camFiles, cameras] = data as [BoardInfo[], CamFiles, CameraProfile[]];
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -57,6 +60,31 @@ export default function SystemTab() {
             </TableBody>
           </Table>
         </TableContainer>
+      </Box>
+
+      {/* Cam Files */}
+      <Box>
+        <Typography variant="h6" gutterBottom>
+          Camera Files
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          Directory: <code>{camFiles.directory}</code>
+        </Typography>
+        {camFiles.files.length === 0 ? (
+          <Alert severity="info">
+            No .cam files found. Place camera configuration files in the directory above.
+          </Alert>
+        ) : (
+          <Paper variant="outlined">
+            <List dense>
+              {camFiles.files.map((f) => (
+                <ListItem key={f}>
+                  <ListItemText primary={f} />
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
+        )}
       </Box>
 
       {/* Cameras */}

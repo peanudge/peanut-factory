@@ -34,6 +34,17 @@ public class SystemController : ControllerBase
         return _grabService.GetBoardStatus(index);
     }
 
+    [HttpGet("camfiles")]
+    public ActionResult<CamFilesDto> GetCamFiles()
+    {
+        var files = CamFileResource.GetAvailableCamFiles().ToList();
+        return new CamFilesDto
+        {
+            Directory = CamFileResource.GetDirectory(),
+            Files = files,
+        };
+    }
+
     [HttpGet("cameras")]
     public ActionResult<List<CameraProfileDto>> GetCameras()
     {
@@ -54,6 +65,12 @@ public class SystemController : ControllerBase
             .ToList();
         return profiles;
     }
+}
+
+public class CamFilesDto
+{
+    public required string Directory { get; set; }
+    public required List<string> Files { get; set; }
 }
 
 public class CameraProfileDto

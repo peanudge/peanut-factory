@@ -2,34 +2,46 @@ using PeanutVision.MultiCamDriver.Camera;
 
 namespace PeanutVision.MultiCamDriver.Tests.Camera;
 
+[Collection("CamFileResource")]
 public class CameraRegistryTests
 {
-    [Fact]
-    public void Default_ContainsCrevisProfiles()
+    private static CameraRegistry CreateTestRegistry()
     {
-        var registry = CameraRegistry.Default;
-
-        Assert.True(registry.HasProfile("crevis-tc-a160k-freerun-rgb8"));
-        Assert.True(registry.HasProfile("crevis-tc-a160k-softtrig-rgb8"));
+        var registry = new CameraRegistry();
+        registry.Register(new CameraProfile.Builder()
+            .WithId("test-freerun")
+            .WithDisplayName("Test FreeRun")
+            .WithManufacturer("TestCorp")
+            .WithModel("CAM-100")
+            .WithCamFile("freerun.cam")
+            .Build());
+        registry.Register(new CameraProfile.Builder()
+            .WithId("test-trigger")
+            .WithDisplayName("Test Trigger")
+            .WithManufacturer("TestCorp")
+            .WithModel("CAM-100")
+            .WithCamFile("trigger.cam")
+            .Build());
+        return registry;
     }
 
     [Fact]
     public void GetProfile_ReturnsCorrectProfile()
     {
-        var registry = CameraRegistry.Default;
+        var registry = CreateTestRegistry();
 
-        var profile = registry.GetProfile("crevis-tc-a160k-freerun-rgb8");
+        var profile = registry.GetProfile("test-freerun");
 
-        Assert.Equal("Crevis", profile.Manufacturer);
-        Assert.Equal("TC-A160K", profile.Model);
+        Assert.Equal("TestCorp", profile.Manufacturer);
+        Assert.Equal("CAM-100", profile.Model);
     }
 
     [Fact]
     public void GetProfile_CaseInsensitive()
     {
-        var registry = CameraRegistry.Default;
+        var registry = CreateTestRegistry();
 
-        var profile = registry.GetProfile("CREVIS-TC-A160K-FREERUN-RGB8");
+        var profile = registry.GetProfile("TEST-FREERUN");
 
         Assert.NotNull(profile);
     }
@@ -37,7 +49,7 @@ public class CameraRegistryTests
     [Fact]
     public void GetProfile_NotFound_Throws()
     {
-        var registry = CameraRegistry.Default;
+        var registry = CreateTestRegistry();
 
         var ex = Assert.Throws<KeyNotFoundException>(() =>
             registry.GetProfile("nonexistent-camera"));
@@ -48,9 +60,9 @@ public class CameraRegistryTests
     [Fact]
     public void TryGetProfile_Found_ReturnsTrue()
     {
-        var registry = CameraRegistry.Default;
+        var registry = CreateTestRegistry();
 
-        var found = registry.TryGetProfile("crevis-tc-a160k-freerun-rgb8", out var profile);
+        var found = registry.TryGetProfile("test-freerun", out var profile);
 
         Assert.True(found);
         Assert.NotNull(profile);
@@ -59,7 +71,7 @@ public class CameraRegistryTests
     [Fact]
     public void TryGetProfile_NotFound_ReturnsFalse()
     {
-        var registry = CameraRegistry.Default;
+        var registry = CreateTestRegistry();
 
         var found = registry.TryGetProfile("nonexistent", out var profile);
 
@@ -120,39 +132,40 @@ public class CameraRegistryTests
     [Fact]
     public void GetByManufacturer_ReturnsMatchingProfiles()
     {
-        var registry = CameraRegistry.Default;
+        var registry = CreateTestRegistry();
 
-        var crevisProfiles = registry.GetByManufacturer("Crevis").ToList();
+        var matched = registry.GetByManufacturer("TestCorp").ToList();
 
-        Assert.NotEmpty(crevisProfiles);
-        Assert.All(crevisProfiles, p => Assert.Equal("Crevis", p.Manufacturer));
+        Assert.Equal(2, matched.Count);
+        Assert.All(matched, p => Assert.Equal("TestCorp", p.Manufacturer));
     }
 
     [Fact]
     public void GetByModel_ReturnsMatchingProfiles()
     {
-        var registry = CameraRegistry.Default;
+        var registry = CreateTestRegistry();
 
-        var tcA160kProfiles = registry.GetByModel("TC-A160K").ToList();
+        var matched = registry.GetByModel("CAM-100").ToList();
 
-        Assert.NotEmpty(tcA160kProfiles);
-        Assert.All(tcA160kProfiles, p => Assert.Equal("TC-A160K", p.Model));
+        Assert.Equal(2, matched.Count);
+        Assert.All(matched, p => Assert.Equal("CAM-100", p.Model));
     }
 
     [Fact]
     public void ProfileIds_ReturnsAllIds()
     {
-        var registry = CameraRegistry.Default;
+        var registry = CreateTestRegistry();
 
         var ids = registry.ProfileIds;
 
-        Assert.Contains("crevis-tc-a160k-freerun-rgb8", ids, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("test-freerun", ids, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("test-trigger", ids, StringComparer.OrdinalIgnoreCase);
     }
 
     [Fact]
     public void DefaultProfile_ReturnsFirstProfile()
     {
-        var registry = CameraRegistry.Default;
+        var registry = CreateTestRegistry();
 
         var defaultProfile = registry.DefaultProfile;
 
@@ -167,5 +180,31 @@ public class CameraRegistryTests
             .Register(new CameraProfile.Builder().WithId("b").WithCamFile("b.cam").Build());
 
         Assert.Equal(2, registry.ProfileIds.Count);
+    }
+
+    [Fact]
+    public void LoadFromDirectory_CreatesProfilesFromCamFiles()
+    {
+        var testDir = Path.Combine(Path.GetTempPath(), $"PeanutVision.RegistryTest.{Guid.NewGuid():N}");
+        Directory.CreateDirectory(testDir);
+        var previousDir = CamFileResource.GetDirectory();
+
+        try
+        {
+            File.WriteAllText(Path.Combine(testDir, "camera1.cam"), "");
+            File.WriteAllText(Path.Combine(testDir, "camera2.cam"), "");
+            CamFileResource.SetDirectory(testDir);
+
+            var registry = new CameraRegistry().LoadFromDirectory();
+
+            Assert.Equal(2, registry.Profiles.Count);
+            Assert.True(registry.HasProfile("camera1"));
+            Assert.True(registry.HasProfile("camera2"));
+        }
+        finally
+        {
+            CamFileResource.SetDirectory(previousDir);
+            Directory.Delete(testDir, recursive: true);
+        }
     }
 }

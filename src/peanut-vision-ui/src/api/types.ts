@@ -38,6 +38,11 @@ export interface CameraProfile {
   description?: string;
 }
 
+export interface CamFiles {
+  directory: string;
+  files: string[];
+}
+
 export interface AcquisitionStatistics {
   frameCount: number;
   droppedFrameCount: number;

@@ -86,6 +86,19 @@ public sealed class CameraProfile
         return options;
     }
 
+    /// <summary>
+    /// Creates a profile from a cam file name with default settings.
+    /// </summary>
+    public static CameraProfile FromCamFile(string camFileName)
+    {
+        var name = Path.GetFileNameWithoutExtension(camFileName);
+        return new Builder()
+            .WithId(name)
+            .WithDisplayName(name)
+            .WithCamFile(camFileName)
+            .Build();
+    }
+
     public override string ToString() => $"{DisplayName} ({Id})";
 
     /// <summary>

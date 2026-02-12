@@ -1,5 +1,6 @@
 namespace PeanutVision.MultiCamDriver.Tests;
 
+[Collection("CamFileResource")]
 public class CamFileResourceTests : IDisposable
 {
     private readonly string _testDir;

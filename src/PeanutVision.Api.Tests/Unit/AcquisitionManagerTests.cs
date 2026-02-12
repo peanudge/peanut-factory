@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using PeanutVision.Api.Services;
 using PeanutVision.MultiCamDriver;
+using PeanutVision.MultiCamDriver.Camera;
 using PeanutVision.MultiCamDriver.Hal;
 using PeanutVision.MultiCamDriver.Imaging;
 
@@ -14,6 +15,10 @@ public class AcquisitionManagerTests : IDisposable
 
     public AcquisitionManagerTests()
     {
+        // Register built-in profiles for tests
+        foreach (var profile in CrevisProfiles.All)
+            CameraRegistry.Default.Register(profile);
+
         _mockHal = new MockMultiCamHAL();
         _grabService = new GrabService(_mockHal);
         _grabService.Initialize();
