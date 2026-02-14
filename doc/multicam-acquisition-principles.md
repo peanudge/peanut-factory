@@ -1,1174 +1,493 @@
-APPLICATION NOTES
+# MultiCam Acquisition Principles
 
-MultiCam
+> Source: Euresys MultiCam 6.19.4 (Doc D405EN)
 
-MultiCam Acquisition Principles
+## Contents
 
-© EURESYS s.a. 2025 - Doc. D405EN-MultiCam Acquisition Principles-6.19.4.4059 built on 2025-12-15
+1. [Introduction](#1-introduction)
+2. [Channel](#2-channel)
+3. [Acquisition Model](#3-acquisition-model)
+4. [Acquisition Control](#4-acquisition-control)
+5. [Acquisition Modes](#5-acquisition-modes)
+6. [A Typical Setup](#6-a-typical-setup)
+7. [Glossary](#7-glossary)
 
-MultiCam MultiCam Acquisition Principles
+---
 
-This documentation is provided with MultiCam 6.19.4 (doc build 4059).
-www.euresys.com
+## 1. Introduction
 
-2
+Euresys frame grabbers can be connected to a very large set of commercially available cameras and support numerous operation modes for these cameras in many system configurations.
 
-MultiCam MultiCam Acquisition Principles
+This interfacing flexibility offers a lot of freedom to the user but selecting the right mode may become difficult.
 
-Contents
+MultiCam is a powerful software tool designed to help the user in this selection process. The purpose of this application note is to explain the MultiCam acquisition mechanisms in a synthetic form.
 
-1. Introduction
+This note provides useful application information complementing the "MultiCam User Guide".
 
-2. Channel
+---
 
-2.1. Camera
-2.2. Grabber
-2.3. Memory Buffers
-2.4. How To Control The Channel?
-
-3. Acquisition Model
-
-3.1. Hierarchy
-3.2. Block Diagram Elements
-3.3. MultiCam Block Diagram
-3.4. Timing diagram
-
-4. Acquisition Control
-
-4.1. Starting
-4.2. Stopping
-
-5. Acquisition Modes
-
-5.1. Video
-5.2. Snapshot
-5.3. High Frame Rate
-5.4. Page
-5.5. Web
-5.6. Long Page
-
-6. A Typical Setup
-
-7. Glossary
-
-4
-
-5
-6
-9
-10
-10
-
-11
-11
-12
-13
-14
-
-16
-16
-17
-
-19
-19
-20
-21
-22
-23
-24
-
-25
-
-28
-
-3
-
-MultiCam MultiCam Acquisition Principles
-
-1. Introduction
-
-Euresys frame grabbers can be connected to a very large set of commercially available cameras
-and support numerous operation modes for these cameras in many system configurations.
-
-This interfacing flexibility offers a lot of freedom to the user but selecting the right mode may
-become difficult.
-
-MultiCam is a powerful software tool designed to help the user in this selection process. The
-purpose of this application note is to explain the MultiCam acquisition mechanisms in a
-synthetic form.
-
-This note provides useful application information complementing the “MultiCam User Guide”.
-
-4
-
-MultiCam MultiCam Acquisition Principles
-
-2. Channel
+## 2. Channel
 
 Image acquisition in the PC environment is a process involving three main actors:
 
-● a camera responsible for the image capture,
+- A camera responsible for the image capture,
+- A frame grabber responsible for the image acquisition and transfer,
+- And memory buffers used to store the image in the host PC.
 
-● a frame grabber responsible for the image acquisition and transfer,
+MultiCam allows control of the full acquisition path between the camera and the host computer memory with a MultiCam object called **channel**. The channel is under the control of the user application.
 
-● and memory buffers used to store the image in the host PC.
+All components of the channel are examined below: the Camera, the Grabber and the Memory Buffers.
 
-The figure below summarizes the concept of image acquisition:
+### 2.1. Camera
 
-MultiCam allows control of the full acquisition path between the camera and the host computer
-memory with a MultiCam object called channel. The channel is under the control of the user
-application. The channel represents what is surrounded by dotted lines on the above picture.
+#### Basic features
 
-All components of the channel are examined below: the "Camera" on page 6, the "Grabber" on
-page 9 and the "Memory Buffers" on page 10.
+A camera is a device which transforms the light coming from an observed object into an electrical signal.
 
-5
+The camera operation involves an **exposure period (EXP)** and a **readout period (RDO)**. The exposure period allows each photosite to build up electrical charges proportionally to the incoming light. The charges accumulation period is often called the integration period. The longer the exposure period, the higher the sensitivity.
 
-MultiCam MultiCam Acquisition Principles
+The readout period allows the stored charges to be extracted from the sensor and transformed into an electrical signal. The readout causes the extraction of all previously accumulated charges from the photosites.
 
-2.1. Camera
+A camera is called an **analog camera** when the electrical signal is mixed with synchronisation pulses before being sent to the output of the camera. The output signal is an analog one. In that case the camera is connected to the frame grabber with a coaxial cable.
 
-Basic features
+When the electrical signal is digitized before being sent to the output of the camera, the camera is called a **digital camera**. In that case, a dedicated cable composed of several wires able to transfer digital data and synchronisation signals connects the camera and the frame grabber together.
 
-A camera is a device which transforms the light coming from an observed object into an
-electrical signal.
+The camera features are detailed below by differentiating the area-scan and the line-scan cameras.
 
-The camera operation involves an exposure period (EXP) and a readout period (RDO). The
-exposure period allows each photosite to build up electrical charges proportionally to the
-incoming light. The charges accumulation period is often called the integration period. The
-longer the exposure period, the higher the sensitivity.
+#### Area-scan
 
-The readout period allows the stored charges to be extracted from the sensor and transformed
-into an electrical signal. The readout causes the extraction of all previously accumulated
-charges form the photosites.
+An area-scan camera is characterized by a rectangular sensor. The image generated by an area-scan camera is two-dimensional.
 
-A camera is called an analog camera when the electrical signal is mixed with synchronisation
-pulses before being sent to the output of the camera. The output signal is an analog one. In that
-case the camera is connected to the frame grabber with a coaxial cable.
+One can advantageously split the area-scan camera modes of operation in three groups depending on the exposure and readout properties.
 
-When the electrical signal is digitized before being sent to the output of the camera, the camera
-is called a digital camera. In that case, a dedicated cable composed of several wires able to
-transfer digital data and synchronisation signals connects the camera and the frame grabber
-together.
+##### Progressive scanning with asynchronous reset
 
-The camera features are detailed below by differentiating the area-scan and the line-scan
-cameras.
+A camera capable of asynchronous reset allows the frame grabber to control the instant of the image capture.
 
-Area-scan
+In addition, the scanning is qualified as progressive when the sensor is scanned from the first to the last line in a single run. The result of a run is called a frame.
 
-An area-scan camera is characterized by a rectangular sensor. The image generated by an area–
-scan camera is two-dimensional.
+A trigger event external to the camera marks the beginning of the exposure period. When the camera is able to start an exposure period before the end of the previous readout period, an expose overlap occurs. This mode of operation offers the higher frame rate achievable.
 
-One can advantageously split the area-scan camera modes of operation in three groups
-depending on the exposure and readout properties.
+##### Progressive and synchronous scanning
 
-Progressive scanning with asynchronous reset
+The camera works in synchronous scanning when it -continuously and regularly- issues images to the frame grabber. In synchronous scanning, the time separating each readout period is always very short. The exposure period overlaps the readout period.
 
-A camera capable of asynchronous reset allows the frame grabber to control the instant of the
-image capture.
+##### Interlaced and synchronous scanning
 
-In addition, the scanning is qualified as progressive when the sensor is scanned from the first to
-the last line in a single run. The result of a run is called a frame.
+During readout, interlaced cameras deliver each captured image in two steps: firstly by successively issuing all odd lines and secondly by successively issuing all even lines. A set of odd or even lines is called a field. The captured image is called a frame and is made up of two fields.
 
-The following figure depicts the situation:
+Nominally, an exposure period takes place between each field.
 
-6
+#### Line-scan
 
-MultiCam MultiCam Acquisition Principles
+A line-scan camera is characterized by a linear sensor. The pixels are aligned and the camera delivers one image line at a time.
 
-A trigger event external to the camera marks the beginning of the exposure period. When the
-camera is able to start an exposure period before the end of the previous readout period, an
-expose overlap occurs. This mode of operation offers the higher frame rate achievable.
+By moving the camera over the object to be observed, or by moving the object under the camera, a two-dimensional image can be constructed. Line-scan cameras are well adapted to continuous moving objects analysis.
 
-Progressive and synchronous scanning
+Another advantage of using a line-scan camera lies in the possibility to reach higher resolutions than with its area-scan counterpart. Line-scan camera sensors are typically ranging from 1000 to 10,000 pixels.
 
-The camera works in synchronous scanning when it -continuously and regularly- issues images
-to the frame grabber. In synchronous scanning, the time separating each readout period is
-always very short. The exposure period overlaps the readout period.
+The exposure and readout of line-scan cameras relate to a line. Depending on the exposure and readout properties, three main modes of operation can be advantageously presented.
 
-The following figure depicts the situation:
+##### Permanent exposure
 
-Interlaced and synchronous scanning
+The permanent exposure mode of operation allows the camera sensor to accumulate electrical charges during all the available time. This mode of exposure allows the camera to reach the higher achievable sensitivity. The drawback is that the sensitivity is dependant on the line rate.
 
-During readout, interlaced cameras deliver each captured image in two steps: firstly by
-successively issuing all odd lines and secondly by successively issuing all even lines. A set of odd
-or even lines is called a field. The captured image is called a frame and is made up of two fields.
+##### Controlled exposure without overlapping
 
-Nominally, an exposure period takes place between each before.
+The controlled exposure allows independent control of the sensitivity (exposure duration) and the line rate. A distortion-less two dimensional image is obtained by adapting the line rate to the speed of the moving object.
 
-The picture below summarizes the exposure and readout for an interlaced camera.
+##### Controlled exposure with overlapping
 
-7
+When the line rate has to be increased, the time between readout is not sufficient for the exposure period to take place. The exposure period thus overlaps the readout period.
 
-MultiCam MultiCam Acquisition Principles
+### 2.2. Grabber
 
-Line-scan
+The grabber is the second element of the channel. A grabber is a part of a frame grabber able to read the video signal issued by the camera and to transfer the resulting image to the host PC memory. A grabber is a set of hardware resources used by a channel.
 
-A line-scan camera is characterized by a linear sensor. The pixels are aligned and the camera
-delivers one image line at a time.
+Some frame grabbers accept a higher number of cameras than the number of grabbers. The grabber acquires the images coming from each camera in turn.
 
-By moving the camera over the object to be observed, or by moving the object under the
-camera, a two-dimensional image can be constructed. Line-scan cameras are well adapted to
-continuous moving objects analysis.
+The user does not have to worry about the grabber sharing between channels. He only has to create as many channels as he needs.
 
-Another advantage of using a line-scan camera lies in the possibility to reach higher resolutions
-than with its area-scan counterpart. Line-scan camera sensors are typically ranging from 1000 to
-10 000 pixels.
+The source router operates as a switch and allows MultiCam to select one of the cameras. The channels share the same acquisition resources.
 
-The exposure and readout of line-scan cameras relate to a line. Depending on the exposure and
-readout properties, three main modes of operation can be advantageously presented.
+### 2.3. Memory Buffers
 
-Permanent exposure
+The last element of the channel consists of destination memory buffers. Memory buffers are represented by MultiCam objects called **surfaces**. The surface is a buffer where the user application can find the acquired image to be analysed.
 
-The permanent exposure mode of operation allows the camera sensor to accumulate electrical
-charges during all the available time. This mode of exposure allows the camera to reach the
-higher achievable sensitivity. The drawback is that the sensitivity is dependant on the line rate.
+The grabber automatically transfers the acquired image to the destination surface with a DMA mechanism.
 
-The timing diagram below shows the expose and readout operation of a line-scan camera in
-permanent exposure.
+In efficient implementations, the filling of a surface should be operated while, at the same time, a previously acquired image is analysed by the application. For this purpose, the channel offers the possibility to handle several surfaces. A set of surfaces of a channel is called a **cluster**.
 
-Controlled exposure without overlapping
+The surfaces of a cluster have different states: a surface can be used by the channel for an image acquisition, a surface can also be handled by the user application for image analysing or a surface can simply be free. The evolution of these states is managed by state machines inside MultiCam. The application is notified each time a new surface is available for processing.
 
-The controlled exposure allows independent control of the sensitivity (exposure duration) and
-the line rate. A distortion-less two dimensional image is obtained by adapting the line rate to
-the speed of the moving object.
-
-The figure below depicts the situation:
-
-8
-
-MultiCam MultiCam Acquisition Principles
-
-Controlled exposure with overlapping
-
-When the line rate has to be increased, the time between readout is not sufficient for the
-exposure period to take place. The exposure period thus overlaps the readout period:
-
-2.2. Grabber
-
-The grabber is the second element of the channel. A grabber is a part of a frame grabber able to
-read the video signal issued by the camera and to transfer the resulting image to the host PC
-memory. A grabber is a set of hardware resources used by a channel.
-
-As shown on the figure below, some frame grabbers accept a higher number of cameras than
-the number of grabbers. The grabber acquires the images coming from each camera in turn.
-
-The user does not have to worry about the grabber sharing between channels. He only has to
-create as many channels as he needs.
-
-The figure below illustrates the principle with two cameras and one grabber, the channels
-highlighted in red and blue share the same acquisition resources:
-
-The source router on the figure operates as a switch and allows MultiCam to select one of the
-two cameras.
-
-9
-
-MultiCam MultiCam Acquisition Principles
-
-2.3. Memory Buffers
-
-The last element of the channel consists of destination memory buffers. Memory buffers are
-represented by MultiCam objects called surfaces. The surface is a buffer where the user
-application can find the acquired image to be analysed.
-
-The grabber automatically transfers the acquired image to the destination surface with a DMA
-mechanism.
-
-In efficient implementations, the filling of a surface should be operated while, at the same time,
-a previously acquired image is analysed by the application. For this purpose, the channel offers
-the possibility to handle several surfaces. A set of surfaces of a channel is called a cluster.
-
-The surfaces of a cluster have different states: a surface can be used by the channel for an
-image acquisition, a surface can also be handled by the user application for image analysing or
-a surface can simply be free. The evolution of these states is managed by state machines inside
-MultiCam. The application is notified each time a new surface is available for processing.
-
-2.4. How To Control The Channel?
+### 2.4. How To Control The Channel?
 
 MultiCam offers an object-oriented API built around three objects dedicated to the acquisition:
 
-● The channel is the fundamental object.
+- The **channel** is the fundamental object.
+- The **board** is the second MultiCam object. The board contains one or several grabbers intended to serve one or several channels.
+- The **surfaces** represent the memory buffers intended to store the images.
 
-● The board is the second MultiCam object. The board contains one or several grabbers
+Each object owns an adequate set of parameters. The user adapts each object to his image acquisition requirements with these parameters. The user application handles the parameters through the MultiCam API functions.
 
-intended to serve one or several channels.
+The user application is informed when an event occurs inside an object with mechanisms called **signaling**.
 
-● The surfaces represent the memory buffers intended to store the images.
+The forthcoming chapters focus on channel parameters since they are closely related to the MultiCam acquisition mechanisms.
 
-Each object owns an adequate set of parameters. The user adapts each object to his image
-acquisition requirements with these parameters. The user application handles the parameters
-through the MultiCam API functions.
+---
 
-The user application is informed when an event occurs inside an object with mechanisms called
-signaling.
+## 3. Acquisition Model
 
-The forthcoming chapters focus on channel parameters since they are closely related to the
-MultiCam acquisition mechanisms.
+There are a lot of different ways to perform an image acquisition. MultiCam has been constructed to be highly versatile; the way this versatility is achieved is explained in this section. The acquisition is exposed with a simplifying model.
 
-10
+### 3.1. Hierarchy
 
-MultiCam MultiCam Acquisition Principles
+The MultiCam acquisition is a configurable hierarchical process. The general acquisition hierarchy is shown and explained below:
 
-3. Acquisition Model
+**Activity**
 
-There are a lot of different ways to perform an image acquisition. MultiCam has been
-constructed to be highly versatile; the way this versatility is achieved is explained in this section.
-The acquisition is exposed with a simplifying model.
+The channel is a "living" object that can be ACTIVE or not. When the channel is in the ACTIVE state, it performs the acquisition of one or several images during a period called activity. When the channel is not in the ACTIVE state, it does not perform any acquisition.
 
-3.1. Hierarchy
+**Sequence**
 
-The MultiCam acquisition is a configurable hierarchical process. The general acquisition
-hierarchy is shown and explained below:
+The activity period of the channel is divided in smallest sub-activity periods called sequences. The origin of the name sequence comes from "video sequence" which means succession of images of a scene.
 
-Activity
+**Phase**
 
-The channel is a “living” object that can be ACTIVE or not. When the channel is in the ACTIVE
-state, it performs the acquisition of one or several images during a period called activity. When
-the channel is not in the ACTIVE state, it does not perform any acquisition.
+The sequences are divided in smallest time periods called phases. The essential characteristic of a phase is that it corresponds to the filling of one surface.
 
-Sequence
+**Slice**
 
-The activity period of the channel is divided in smallest sub-activity periods called sequences.
-The origin of the name sequence comes from “video sequence” which means succession of
-images of a scene.
+Phases may be further divided in smallest sections called slices. A surface is filled with several small images (slices) captured at different times.
 
-Phase
+When there is only one slice per phase, the notions of slice and phase are merged. In that case, the term "slice" is omitted in the benefit of "phase"; this is the most common situation.
 
-The sequences are divided in smallest time periods called phases. The essential characteristic of
-a phase is that it corresponds to the filling of one surface.
+### 3.2. Block Diagram Elements
 
-11
+**Events**
 
-MultiCam MultiCam Acquisition Principles
+The acquisition model relies on events. An event is an identified temporal occurrence which arises during the acquisition process. Each event plays a role in the progress of the acquisitions.
 
-Slice
+Events have different sources ranging from user-application-issued events to camera-issued events. Events are represented by arrows in the model.
 
-Phases may be further divided in smallest sections called slices. A surface is filled with several
-small images (slices) captured at different times.
+**Managers**
 
-When there is only one slice per phase, the notions of slice and phase are merged. In that case,
-the term “slice” is omitted in the benefit of “phase”; this is the most common situation.
+Managers are black-boxes which react to input events by issuing output events depending on their internal state. The connection of all managers gives a block diagram summarizing the interactions of the hierarchical elements in MultiCam.
 
-3.2. Block Diagram Elements
+**Connections**
 
-Events
+Events connect managers together. When the managers are connected together they form a block diagram.
 
-The acquisition model relies on events. An event is an identified temporal occurrence which
-arises during the acquisition process. Each event plays a role in the progress of the acquisitions.
+### 3.3. MultiCam Block Diagram
 
-Events have different sources ranging from user-application-issued events to camera-issued
-events. Events are represented by arrow in the model.
+The interconnected set of managers composing the MultiCam acquisition model works as follows:
 
-The forthcoming section shows the events needed to understand the principle of the MultiCam
-event-based model.
+On the top of the block diagram, the user application activates the channel by sending a "Set Active" event (SACT) to the activity manager. This is performed by setting the `ChannelState` parameter to `ACTIVE`. Once activated, the channel notifies the sequence manager by issuing a "Start of Channel Activity" event (SCA).
 
-Managers
+The sequence manager gets ready and waits for a "Trigger Event" (TE). The trigger event is generated by the trigger manager when a "Hardware Trigger" event (HTRG) occurs on a selected hardware line. The trigger manager can be configured to introduce some configurable delay on the HTRG event before generating the TE event.
 
-Managers are black-boxes which react to input events by issuing output events depending on
-their internal state. The connection of all managers gives a block diagram summarizing the
-interactions of the hierarchical elements in MultiCam.
+Once triggered, the sequence manager generates the "Start of Acquisition Sequence" event (SAS) to notify the phase manager that the sequence is opened. The phase manager propagates the information by issuing the "Start of Acquisition Phase" event (SAP). The slice manager reacts to the SAP event by issuing a "Start of Acquisition Slice" event (SASL).
 
-Connections
+The camera manager reacts to each SASL event and performs an expose/readout cycle. The cycle is reported to the transfer manager by the "Expose Completed" event (XPC) and the "Readout Completed" event (ROC). The XPC event marks the end of the exposure and the ROC event marks the end of the readout period of the camera.
 
-Events connect managers together. The figure below shows a connection between the manager
-1 and the manager 2 with event named “E1to2”.
+The ROC event occurs when the last pixel is issued by the camera. This does not mean that the image data are available for image analysing by the user application. Some time is required to transfer the data to the destination surface through the PCI bus. The transfer manager takes care of this delay and generates the "End of Acquisition Phase" event (EAP) and the "End of Acquisition Sequence" event (EAS) at the right time.
 
-When the managers are connected together this form a block diagram.
+The EAP event notifies the user application that a surface has been filled and is ready for image analysing by the user application. The EAS event indicates that a full sequence has ended and the corresponding surfaces are filled with the sequence of acquired images.
 
-12
+The transfer delay does not degrade the system performances since a new phase can be restarted before the EAP event of the previous one has occurred. This phase overlapping is represented with parallelogram on the acquisition timing example in the next section.
 
-MultiCam MultiCam Acquisition Principles
+The completion manager consists of several counters programmed to inform the other managers when the numbers of pre-programmed sequences, phases and slices have been reached.
 
-3.3. MultiCam Block Diagram
+The grabber manager is responsible to inform other managers of the hardware resources availability to serve a dedicated channel.
 
-The figure below is the interconnected set of managers composing the MultiCam acquisition
-model.
+### 3.4. Timing diagram
 
-On the top of the block diagram, the user application activates the channel by sending a “Set
-Active” event (SACT) to the activity manager. This is performed by setting the ChannelState
-parameter to ACTIVE. Once activated, the channel notifies the sequence manager by issuing a
-“Start of Channel Activity” event (SCA).
+A timing diagram represents the instants of the events occurrences and the associated managers states evolutions. Timing diagrams exist in two flavors in the MultiCam model.
 
-The sequence manager gets ready and waits for a “Trigger Event” (TE). The trigger event is
-generated by the trigger manager when a “Hardware Trigger” event (HTRG) occurs on a selected
-hardware line. The trigger manager can be configured to introduce some configurable delay on
-the HTRG event before generating the TE event.
+A manager timing diagram only represents the events and states belonging to one manager. A MultiCam timing diagram represents several events and several managers states of the MultiCam block diagram, it shows the evolution of the MultiCam model.
 
-Once triggered, the sequence manager generates the “Start of Acquisition Sequence” event
-(SAS) to notify the phase manager that the sequence is opened. The phase manager propagates
-the information by issuing the “Start of Acquisition Phase” event (SAP). The slice manager reacts
-to the SAP event by issuing a “Start of Acquisition Slice” event (SASL).
+For example, the figure below shows one possible MultiCam timing diagram for an area-scan camera. The activity consists of two sequences, the sequence consists of two phases and the phase is made of two slices.
 
-The camera manager reacts to each SASL event and performs an expose/readout cycle. The
-cycle is reported to the transfer manager by the “Expose Completed” event (XPC) and the
-“Readout Completed” event (ROC). The XPC event marks the end of the exposure and the ROC
-event marks the end of the readout period of the camera.
+The figure shows the propagation of the trigger event. The trigger principle is very simple: each trigger induces a slice.
 
-The ROC event occurs when the last pixel is issued by the camera. This does not mean that the
-image data are available for image analysing by the user application. Some time is required to
-transfer the data to the destination surface through the PCI bus. The transfer manager takes
-care of this delay and generates the “End of Acquisition Phase” event (EAP) and the “End of
-Acquisition Sequence” event (EAS) at the right time.
+The trigger effect on the phase and sequence depends on their respective states. If the sequence manager is waiting for a trigger when a trigger event occurs, the sequence starts and generates the SAS event; otherwise the sequence is not affected by the trigger. The phase manager operates in the same way.
 
-13
+As shown on the figure, the first trigger event generates a succession of events because all managers are waiting for a trigger event.
 
-MultiCam MultiCam Acquisition Principles
+The second trigger event directly affects the slice manager because the phase and sequence managers are not waiting for a trigger since they are not terminated. The pre-programmed number (2) of slices and phases has not yet been reached. The completion manager monitors this pre-programmed number of phases and sequences.
 
-The EAP event notifies the user application that a surface has been filled and is ready for image
-analysing by the user application. The EAS event indicates that a full sequence has ended and
-the corresponding surfaces are filled with the sequence of acquired images.
+#### Acquisition Events
 
-The transfer delay does not degrade the system performances since a new phase can be
-restarted before the EAP event of the previous one has occurred. This phase overlapping is
-represented with parallelogram on the acquisition timing example in the next section.
-
-The completion manager consists of several counters programmed to inform the other
-managers when the numbers of pre-programmed sequences, phases and slices have been
-reached.
-
-The grabber manager is responsible to inform other managers of the hardware resources
-availability to serve a dedicated channel.
-
-3.4. Timing diagram
-
-A timing diagram represents the instants of the events occurrences and the associated
-managers states evolutions. Timing diagrams exist in two flavors in the MultiCam model.
-
-A manager timing diagram only represents the events and states belonging to one manager. A
-MultiCam timing diagram represents several events and several managers states of the
-MultiCam block diagram, it shows the evolution of the MultiCam model.
-
-For the example sake, the figure below shows one possible MultiCam timing diagram for an
-area-scan camera. The activity consists of two sequences, the sequence consists of two phases
-and the phase is made of two slices.
-
-14
-
-MultiCam MultiCam Acquisition Principles
-
-The figure shows the propagation of the trigger event. The trigger principle is very simple: each
-trigger induces a slice.
-
-The trigger effect on the phase and sequence depends on their respective states. If the
-sequence manager is waiting for a trigger when a trigger event occurs, the sequence starts and
-generates the SAS event; otherwise the sequence is not affected by the trigger. The phase
-manager operates in the same way.
-
-As shown on the figure, the first trigger event generates a succession of events because all
-managers are waiting for a trigger event.
-
-The second trigger event directly affects the slice manager because the phase and sequence
-managers are not waiting for a trigger since they are not terminated. The pre-programmed
-number (2) of slices and phases has not yet been reached. The completion manager monitors
-this pre-programmed number of phases and sequences.
-
-The table below summarizes the events occurring during an acquisition:
-
-Event
-
-Meaning
-
-EAP
-
-EAS
-
-ET
-
-“End of Acquisition Phase”. This event is issued by the transfer manager when
-the filling process of the destination surface has been completed.
-
-“End of Acquisition Sequence”. This event is issued by the transfer manager
-when the filling process of the last destination surface of the sequence has been
-completed.
-
-“End Trigger Event”. This event is issued by the trigger manager following a
-“Hardware End Trigger” event (HETRG) when a programmed delay has expired.
-
-HETRG
-
-“Hardware End Trigger”. This event is generated when a dedicated transition
-occurs on a hardware line.
-
-HTRG
-
-ROC
-
-SACT
-
-SAP
-
-SAS
-
-SASL
-
-SCA
-
-STRG
-
-TE
-
-XPC
-
-“Hardware Trigger”. This event is generated when a dedicated transition occurs
-on a hardware line.
-
-“Readout Complete”. This event is generated by the camera manager when a
-readout period of the camera completes.
-
-“Set Active”. This event is issued when the user application writes ACTIVE to the
-ChannelState parameter.
-
-“Start of Acquisition Phase”. This event is issued by the phase manager to notify
-the beginning of a new phase.
-
-“Start of Acquisition Sequence”. This event is issued by the sequence manager to
-notify the beginning of a new sequence.
-
-“Start of Acquisition Slice”. This event is issued by the slice manager to notify the
-beginning of a new slice.
-
-“Start of Channel Activity”. This event is issued by the activity manager to notify
-the beginning of a new channel activity.
-
-“Software Trigger”. This event is issued when the user application writes TRIG to
-the ForceTrig parameter.
-
-“Trigger Event”. This event is issued by the trigger manager following a
-“Hardware Trigger” (HTRG) or “Software Trigger” (STRG) event when a
-programmed delay has expired.
-
-“Exposure Complete”. This event is issued by the camera manager when the
-exposure period of the camera completes.
-
-15
-
-MultiCam MultiCam Acquisition Principles
-
-4. Acquisition Control
-
-The acquisition control encompasses all hardware and software mechanisms implemented to
-start and stop an acquisition. The trigger and the completion managers are the main actors of
-the control and are therefore more deeply studied below.
-
-4.1. Starting
+| Event | Meaning |
+|-------|---------|
+| EAP | **End of Acquisition Phase.** Issued by the transfer manager when the filling process of the destination surface has been completed. |
+| EAS | **End of Acquisition Sequence.** Issued by the transfer manager when the filling process of the last destination surface of the sequence has been completed. |
+| ET | **End Trigger Event.** Issued by the trigger manager following a "Hardware End Trigger" event (HETRG) when a programmed delay has expired. |
+| HETRG | **Hardware End Trigger.** Generated when a dedicated transition occurs on a hardware line. |
+| HTRG | **Hardware Trigger.** Generated when a dedicated transition occurs on a hardware line. |
+| ROC | **Readout Complete.** Generated by the camera manager when a readout period of the camera completes. |
+| SACT | **Set Active.** Issued when the user application writes `ACTIVE` to the `ChannelState` parameter. |
+| SAP | **Start of Acquisition Phase.** Issued by the phase manager to notify the beginning of a new phase. |
+| SAS | **Start of Acquisition Sequence.** Issued by the sequence manager to notify the beginning of a new sequence. |
+| SASL | **Start of Acquisition Slice.** Issued by the slice manager to notify the beginning of a new slice. |
+| SCA | **Start of Channel Activity.** Issued by the activity manager to notify the beginning of a new channel activity. |
+| STRG | **Software Trigger.** Issued when the user application writes `TRIG` to the `ForceTrig` parameter. |
+| TE | **Trigger Event.** Issued by the trigger manager following a "Hardware Trigger" (HTRG) or "Software Trigger" (STRG) event when a programmed delay has expired. |
+| XPC | **Exposure Complete.** Issued by the camera manager when the exposure period of the camera completes. |
+
+---
+
+## 4. Acquisition Control
+
+The acquisition control encompasses all hardware and software mechanisms implemented to start and stop an acquisition. The trigger and the completion managers are the main actors of the control and are therefore more deeply studied below.
+
+### 4.1. Starting
 
 The acquisition starting conditions can be configured independently with two parameters:
 
-● TrigMode configures the starting conditions of a sequence, and, consequently the starting
+- `TrigMode` configures the starting conditions of a sequence, and, consequently the starting conditions of the first phase or slice of the sequence.
+- `NextTrigMode` configures the starting conditions of the subsequent phases or slices of a sequence.
 
-conditions of the first phase or slice of the sequence.
+#### Hardware and software trigger mode
 
-● NextTrigMode configures the starting conditions of the subsequent phases or slices of a
+When the `TrigMode` and `NextTrigMode` parameters are set to `COMBINED`, the trigger manager monitors the "Hardware" (HTRG) and "Software Trigger" events (STRG) and generates "Trigger Events" (TE) accordingly. The TE event is monitored as a starting event by the sequence, phase and slice managers.
 
-sequence.
+The main goal of the trigger manager is to introduce a delay between the occurrence of a hardware trigger and the TE event. The trigger manager has three states for this purpose:
 
-Hardware and software trigger mode
+- **OFF:** the trigger manager is inactive. When the channel is activated, the trigger manager leaves the OFF state.
+- **WAIT:** the trigger manager is waiting for a HTRG or a STRG event.
+- **DELAY:** this state follows a HTRG or STRG event. The trigger manager counts down a programmed delay before generating a TE event. In line-scan applications, the user can configure the delay according to a line count with the `PageDelay_Ln` parameter. The `TrigDelay_us` parameter offers an alternative to configure a time delay in area-scan.
 
-When the TrigMode and NextTrigMode parameters are set to COMBINED, the trigger manager
-monitors the “Hardware” (HTRG) and “Software Trigger” events (STRG) and generates “Trigger
-Events” (TE) accordingly. The TE event is monitored as a starting event by the sequence, phase
-and slice managers.
+The trigger manager is in the OFF state until the channel starts (SCA is issued by the activity manager). Once active, the trigger manager exhibits two behaviors:
 
-The main goal of the trigger manager is to introduce a delay between the occurrence of a
-hardware trigger and the TE event. The trigger manager has three states for this purpose:
+- When the HTRG event occurs, the trigger manager goes to a delay state before generating the TE event. The HTRG event is generated from a hardware line. The electrical characteristics of the line are configured with the `TrigLine`, `TrigCtl`, `TrigEdge` and `TrigFilter` parameters.
+- When the STRG event occurs, the trigger manager goes to a delay state before generating the TE event. The user application generates the STRG event by writing the `ForceTrig` parameter.
 
-● OFF: the trigger manager is inactive. When the channel is activated, the trigger manager
+#### Immediate trigger mode
 
-leaves the OFF state.
+In some acquisition modes, as they will be further described, the sequences, phases and slices have to be started immediately without waiting for a TE event.
 
-● WAIT: the trigger manager is waiting for a HTRG or a STRG event.
+When the parameter `TrigMode` is set to `IMMEDIATE`, the sequence manager does not wait for TE but starts as soon as the previous sequence has ended.
 
-● DELAY: this state follows a HTRG or STRG event. The trigger manager counts down a
+In the same way, when the parameter `NextTrigMode` is set to `REPEAT`, the phase and slice managers do not wait for a TE event before restarting.
 
-programmed delay before generating a TE event. In line-scan applications, the user can
-configure the delay according to a line count with the PageDelay_Ln parameter. The
-TrigDelay_us parameter offers an alternative to configure a time delay in area-scan.
+#### Periodic trigger mode
 
-The figure below shows the state diagram of the trigger manager responsible for generating the
-“Trigger” event (TE). The transitions between the states are controlled by the events written in
-bold characters. The events generated during a transition are written in italic.
+The trigger manager is able to generate TE events periodically. This is achieved by setting the `NextTrigMode` parameter to `PERIODIC`. The triggering rate is adjusted with the `TargetFrameRate_Hz` parameter.
 
-16
+This mode of operation allows the frame grabber to perform a kind of under-sampling of the frames issued by a synchronous scanning camera.
 
-MultiCam MultiCam Acquisition Principles
-
-The timing diagram of the trigger manager is sketched below to help understanding the state
-diagram.
-
-The trigger manager is in the OFF state until the channel starts (SCA is issued by the activity
-manager). Once active, the trigger manager exhibits two behaviors:
-
-● When the HTRG event occurs, the trigger manager goes to a delay state before generating
-
-the TE event. The HTRG event is generated from a hardware line. The electrical
-characteristics of the line are configured with the TrigLine, TrigCtl, TrigEdge and TrigFilter
-parameters.
-
-● When the STRG event occurs, the trigger manager goes to a delay state before generating the
-
-TE event. The user application generates the STRG event by writing the ForceTrig parameter.
-
-Immediate trigger mode
-
-In some acquisition modes, as they will be further described, the sequences, phases and slices
-have to be started immediately without waiting for a TE event.
-
-When the parameter TrigMode is set to IMMEDIATE, the sequence manager does not wait for TE
-but starts as soon as the previous sequence has ended.
-
-In the same way, when the parameter NextTrigMode is set to REPEAT, the phase and slice
-managers do not wait for a TE event before restarting.
-
-Periodic trigger mode
-
-The trigger manager is able to generate TE events periodically. This is achieved by setting the
-NextTrigMode parameter to PERIODIC. The triggering rate is adjusted with the
-TargetFrameRate_Hz parameter.
-
-This mode of operation allows the frame grabber to perform a kind of under-sampling of the
-frames issued by a synchronous scanning camera.
-
-4.2. Stopping
+### 4.2. Stopping
 
 An acquisition can be halted in three ways: end trigger, automatic completion, and user break.
 
-17
+#### End trigger
 
-MultiCam MultiCam Acquisition Principles
+The trigger manager offers a mean to stop an acquisition sequence in reaction to a "Hardware End Trigger" (HETRG) event. The parameter `EndTrigMode` has to be set to `HARD` for this purpose.
 
-End trigger
+In the same way the trigger manager generates TE, it is also able to generate an "End Trigger" event (ET) in reaction to HETRG after a configurable delay. The delay parameter is `EndPageDelay_Ln`.
 
-The trigger manager offers a mean to stop an acquisition sequence in reaction to a “Hardware
-End Trigger” (HETRG) event. The parameter EndTrigMode has to be set to HARD for this
-purpose.
+#### Automatic completion
 
-In the same way the trigger manager generates TE, it is also able to generate an “End Trigger”
-event (ET) in reaction to HETRG after a configurable delay. The delay parameter is
-EndPageDelay_Ln.
+When the parameter `EndTrigMode` is set to `AUTO`, the completion manager is responsible for advising the sequence, phase and slice managers that the acquisition has to end.
 
-The figure below shows the part of the trigger manager responsible for generating the “End
-Trigger” event (ET).
+To perform this job, the completion manager has several counters that are compared to user configurable values:
 
-Automatic completion
+- `ActivityLength`: set the number of sequences in the activity.
+- `SeqLength_Fr`: set the number of frames in a sequence.
+- `SeqLength_Pg`: set the number of pages in a sequence.
+- `SeqLength_Ln`: set the number of lines in a sequence.
+- `PhaseLength_Fr`: set the number of frames in a phase.
 
-When the parameter EndTrigMode is set to AUTO, the completion manager is responsible for
-advising the sequence, phase and slice managers that the acquisition has to end.
+#### User break
 
-To perform this job, the completion manager has several counters that are compared to user
-configurable values:
+Regardless of the `EndTrigMode` parameter setting, the user always has the ability to stop the channel activity by setting it to an inactive state. The `BreakEffect` parameter configures if the acquisition has to be stopped immediately or has to be delayed at a slice, phase or sequence boundary.
 
-● ActivityLength: set the number of sequence in the activity.
+---
 
-● SeqLength_Fr: set the number of frames in a sequence.
+## 5. Acquisition Modes
 
-● SeqLength_Pg: set the number of pages in a sequence.
+The user has the possibility to work with a simplified version of the MultiCam model by selecting an acquisition mode.
 
-● SeqLength_Ln: set the number of lines in a sequence.
+### 5.1. Video
 
-● PhaseLength_Fr :set the number of frames in a phase.
+The Video acquisition mode is dedicated to the automated acquisition of several video sequences. It is a multi-sequences mode applicable to area-scan cameras.
 
-User break
+Setting `AcquisitionMode = VIDEO` automatically sets the other parameters with default values (shown in **bold**).
 
-Regardless of the EndTrigMode parameter setting, the user always has the ability to stop the
-channel activity by setting it to an inactive state. The BreakEffect parameter configures if the
-acquisition has to be stopped immediately or has to be delayed at a slice, phase or sequence
-boundary.
+Choosing `HARD` or `COMBINED` for the `TrigMode`, `NextTrigMode` or `EndTrigMode` parameters requires the user to configure some parameters related to the hardware trigger lines. `TargetFrameRate_Hz` determines the acquisition rate in the sequence when `NextTrigMode = PERIODIC`.
 
-18
+When `EndTrigMode` is set to `AUTO`, `SeqLength_Fr` determines the number of frames to be acquired in the sequence.
 
-MultiCam MultiCam Acquisition Principles
+### 5.2. Snapshot
 
-5. Acquisition Modes
+The Snapshot acquisition mode is dedicated to the controlled capture of one or several pictures of one or several objects. It is applicable to area-scan cameras.
 
-The user has the possibility to work with a simplified version of the MultiCam model by
-selecting an acquisition mode.
+Setting `AcquisitionMode = SNAPSHOT` automatically sets `ActivityLength`, `PhaseLength_Fr`, `TrigMode`, `NextTrigMode`, `EndTrigMode` and `BreakEffect` to default values. The mode allows a few parameters to be tuned: `TrigMode`, `NextTrigMode` and `SeqLength_Fr`.
 
-5.1. Video
+Choosing `HARD` or `COMBINED` for `TrigMode` or `NextTrigMode` requires the user to configure the parameters related to the hardware trigger line (`TrigCtl`, `TrigEdge`, `TrigFilter`, `TrigLine` and `TrigDelay_us`).
 
-The Video acquisition mode is dedicated to the automated acquisition of several video
-sequences. It is a multi-sequences mode applicable to area-scan cameras.
+### 5.3. High Frame Rate
 
-The following table shows the configuration parameters for the mode:
+When a camera is delivering the frames at a very high frame rate, the filling of the surfaces also occurs at this rate. This situation can cause an insupportable interruption rate of the operating system.
 
-Setting AcquisitionMode = VIDEO automatically sets the other parameters with the default
-values written in bold characters.
+The High Frame Rate Mode offers the opportunity to deliver several frames in a same surface. This means that each phase is divided in slices. The interruption rate of the operating system is then divided by the number of slices in a phase.
 
-19
+Setting `AcquisitionMode = HFR` automatically sets the other parameters with default values.
 
-MultiCam MultiCam Acquisition Principles
+The High Frame Rate mode is identical to the Snapshot mode except for the phase length. High Frame Rate allows the phase to be built of several frames by setting `PhaseLength_Fr` to a value between 2 and 256. The number of frames in a sequence is configured with `SeqLength_Fr`. All slices belonging to a same phase are recorded in a same surface.
 
-Choosing HARD or COMBINED for the TrigMode, NextTrigMode or EndTrigMode parameters
-requires the user to configure some parameters related to the hardware trigger lines.
-TargetFrameRate_Hz determines the acquisition rate in the sequence when NextTrigMode =
-PERIODIC.
+### 5.4. Page
 
-When EndTrigMode is set to AUTO, SeqLength_Fr determines the number of frame to be
-acquired in the sequence.
+The Page mode applies to line-scan cameras. It is born from the capture of document pages of identical size.
 
-5.2. Snapshot
+Setting `AcquisitionMode = PAGE` automatically sets the other parameters with default values.
 
-The Snapshot acquisition mode is dedicated to the controlled capture of one or several pictures
-of one or several objects. It is applicable to area-scan cameras.
+Choosing `HARD` or `COMBINED` for the `TrigMode` or `NextTrigMode` parameters requires the user to configure some parameters related to the hardware trigger line and the associated delay (`TrigCtl`, `TrigEdge`, `TrigFilter`, `TrigLine` and `PageDelay_Ln`).
 
-The following table shows the configuration parameters for the mode:
+`EndTrigMode` is necessarily set to `AUTO` by choosing the PAGE acquisition mode. `SeqLength_Pg` determines the number of pages to be acquired in the sequence.
 
-Setting AcquisitionMode = SNAPSHOT automatically sets ActivityLength, Phaselength_Fr,
-TrigMode, NextTrigMode EndTrigMode and BreakEffect to the value written in bold characters in
-the table. The mode allows a few parameters to be tuned: TrigMode, NextTrigMode and
-SeqLength_Fr.
+The `PageLength_Ln` parameter is automatically set to a working value. The user can adapt this value to his requirements but has to read it back for effective setting confirmation.
 
-20
+### 5.5. Web
 
-MultiCam MultiCam Acquisition Principles
+The Web acquisition mode is dedicated to applications where one object of indeterminate size has to be observed by a line-scan camera.
 
-Choosing HARD or COMBINED for TrigMode or NextTrigMode requires the user to configure the
-parameters related to the hardware trigger line (TrigCtl, TrigEdge, TrigFilter, TrigLine and
-TrigDelay_us).
+Setting `AcquisitionMode = WEB` automatically sets the other parameters with default values. The mode allows a few parameters to be tuned: `PageLength_Ln`, `TrigMode` and `BreakEffect`.
 
-5.3. High Frame Rate
+`NextTrigMode` is automatically set to `REPEAT` to guarantee continuous acquisition in the sequence.
 
-When a camera is delivering the frames at a very high frame rate, the filling of the surfaces also
-occurs at this rate. This situation can cause an insupportable interruption rate of the operating
-system.
+Choosing `HARD` or `COMBINED` for `TrigMode` requires the user to configure some parameters related to the hardware trigger line.
 
-The High Frame Rate Mode offers the opportunity to delivers several frames in a same surface.
-This means that each phase is divided in slices. The interruption rate of the operating system is
-then divided by the number of slice in a phase.
+`EndTrigMode` is necessarily set to `AUTO` by choosing the Web acquisition mode. `SeqLength_Ln` determines the number of lines to be acquired in a sequence.
 
-The following table shows the configuration parameters for the mode:
+The same remark applies to `PageLength_Ln` as in the Page mode.
 
-Setting AcquisitionMode = HFR automatically sets the other parameters with the default values
-written in bold characters.
+### 5.6. Long Page
 
-The High Frame Rate mode is identical to the Snapshot mode except for the phase length. High
-Frame Rate allows the phase to be built of several frames by setting PhaseLength_Fr to a value
-between 2 and 256. The number of frame in a sequence is configured with SeqLength_FR. All
-slices belonging to a same phase are recorded in a same surface.
+The Long Page mode of operation is dedicated to the observation of objects of large but variable size. This is the most powerful acquisition mode for line-scan cameras. The name Long Page has been selected since the pages are assembled to form an equivalent "long page".
 
-21
+Setting `AcquisitionMode = LONGPAGE` automatically sets the other parameters with default values. `EndTrigMode` is available in Long Page, it controls the end of a sequence. One should note that the Long Page mode is a multi-sequences mode.
 
-MultiCam MultiCam Acquisition Principles
+The same remark applies to `PageLength_Ln` as in the Page mode.
 
-5.4. Page
+---
 
-The Page mode applies to line-scan cameras. It is born from the capture of document pages of
-identical size. The hierarchy of the page mode is shown below:
+## 6. A Typical Setup
 
-The following table shows the configuration parameters for the mode:
+### Procedure
 
-Setting AcquisitionMode = PAGE automatically sets the other parameters with the default values
-written in bold characters.
+Setting-up a MultiCam acquisition in an application program involves several steps as summarized below:
 
-Choosing HARD or COMBINED for the TrigMode or NextTrigMode parameters requires the user to
-configure some parameters related to the hardware trigger line and the associated delay
-(TrigCtl, TrigEdge, TrigFilter, TrigLine and PageDelay_Ln).
+**When the application starts:**
 
-EndTrigMode is necessarily set to AUTO by choosing the PAGE acquisition mode, SeqLength_Pg
-determines the number of page to be acquired in the sequence.
-
-The PageLength_Ln parameter is automatically set to a working value. The user can adapt this
-value to his requirements but has to read it back for effective setting confirmation.
-
-22
-
-MultiCam MultiCam Acquisition Principles
-
-5.5. Web
-
-The Web acquisition mode is dedicated to applications where one object of indeterminate size
-has to be observed by a line-scan camera. The hierarchy of the web mode is shown below:
-
-The following table shows the configuration parameters for the mode:
-
-Setting AcquisitionMode = WEB automatically sets the other parameters with the default values
-written in bold characters. The mode allows a few parameters to be tuned: PageLength_Ln,
-TrigMode and BreakEffect.
-
-NextTrigMode is automatically set to REPEAT to guarantee continuous acquisition in the
-sequence.
-
-Choosing HARD or COMBINED for TrigMode requires the user to configure some parameters
-related to the hardware trigger line
-
-EndTrigMode is necessarily set to AUTO by choosing the Web acquisition mode, SeqLength_Ln
-determines the number of lines to be acquired in a sequence.
-
-The same remark applies to PageLength_Ln as in the Page mode.
-
-23
-
-MultiCam MultiCam Acquisition Principles
-
-5.6. Long Page
-
-The Long Page mode of operation is dedicated to the observation of objects of large but
-variable size. This is the most powerful acquisition mode for line-scan cameras. The name Long
-Page has been selected since the pages are assembled to form an equivalent “long page”.
-
-The following table shows the configuration parameters for the mode:
-
-Setting AcquisitionMode = LONGPAGE automatically sets the other parameters with the default
-values written in bold characters. EndTrigMode is available in Long Page, it controls the end of a
-sequence. One should note that the Long Page mode is a multi-sequences mode.
-
-The same remark applies to PageLength_Ln as in the Page mode.
-
-24
-
-MultiCam MultiCam Acquisition Principles
-
-6. A Typical Setup
-
-Procedure
-
-Setting-up a MultiCam acquisition in an application program involves several steps as
-summarized below:
-
-When the application starts:
-
-1.
-
-Initialize the driver (see McOpenDriver in the documentation).
-
-2. Create a channel (see  McCreate).
-
+1. Initialize the driver (see `McOpenDriver`).
+2. Create a channel (see `McCreate`).
 3. Link the channel to a board (see Board Linkage parameters) and a connector.
-
 4. Set the camera parameters. Two methods are proposed:
+   a. The scripting method (see `CamFile`)
+   b. The parametric method (see `Camera` and `CamConfig`)
+5. Set the acquisition parameters (see Acquisition Control and Trigger Control categories).
+6. Configure signaling (see `SignalEnable` and `McRegisterCallback`).
+7. Start the channel (see `ChannelState`).
 
-a.
-
-the scripting method (see Camfile)
-
-b. the parametric method (see Camera and CamConfig)
-
-5. Set the acquisition parameters (see Acquisition Control and Trigger Control Categories).
-
-6. Configure signaling (see SignalEnable and McRegisterCallback.
-
-7. Start the channel (see ChannelState).
-
-When the end of an image acquisition is signaled:
+**When the end of an image acquisition is signaled:**
 
 1. Perform custom image analysis, storage, transfer or display.
 
-When the application ends:
+**When the application ends:**
 
-1. Stop the channel (see ChannelState).
+1. Stop the channel (see `ChannelState`).
+2. Delete the channel (see `McDelete`).
+3. Terminate the driver (see `McCloseDriver`).
 
-2. Delete the channel (see McDelete).
+### Sample programs
 
-3. Terminate the driver (see McCloseDriver).
-
-Sample programs
-
-Numerous sample programs demonstrate the acquisition modes on many boards. They are
-available on the web site. They are classified according to the development environment, the
-board and the acquisition mode demonstrated.
+Numerous sample programs demonstrate the acquisition modes on many boards. They are available on the web site. They are classified according to the development environment, the board and the acquisition mode demonstrated.
 
 Refer to Sample Programs.
 
-Parameters Summary
-
-MultiCam offers a very large set of parameters. These parameters are related to each other:
-when a high level parameter is modified, an update of lower levels parameters may take place.
-For example, setting the Camera and CamConfig parameters modifies the Scanning, Imaging,
-Expose, Readout and ExposeOverlap parameters.
-
-25
-
-MultiCam MultiCam Acquisition Principles
-
-Camera Parameters
-
-Name
-
-Camera
-
-Meaning
-
-Model of the connected camera.
-
-CamConfig
-
-Applied camera settings.
-
-Imaging
-
-Scanning
-
-Expose
-
-Readout
-
-Camera sensor type method (AREA, LINE).
-
-Camera scanning method (INTERLACED, PROGRESSIVE).
-
-Control method of the camera exposure.
-
-Control method of the camera readout.
-
-ExposeOverlap
-
-When set, the exposure and readout can overlap.
-
-Acquisition Control Parameters
-
-Acquisition Control
-Parameters
-
-Meaning
-
-AcquisitionMode
-
-Acquisition mode.
-
-TrigMode
-
-Starting condition of an acquisition sequence.
-
-NextTrigMode
-
-Starting condition of the subsequent phases or slices of a
-sequence.
-
-EndTrigMode
-
-Termination condition of a sequence.
-
-BreakEffect
-
-Stopping condition of the channel activity in case of a user break.
-
-ActivityLength
-
-Number of acquisition sequences constituting a channel activity
-period.
-
-SeqLength_Fr
-
-Number of frames to be acquired within an acquisition sequence.
-
-SeqLength_Pg
-
-Number of pages to be acquired within an acquisition sequence.
-
-SeqLength_Ln
-
-Number of lines to be acquired within an acquisition sequence.
-
-PhaseLength_Fr
-
-Number of frames to be acquired within an acquisition phase.
-
-PageLength_Ln
-
-Number of scanned lines stored into a surface.
-
-GrabField
-
-NextGrabField
-
-Field or pair of fields to be acquired in the first phase or slice of the
-seq.
-
-Field or pair of fields to be acquired in the subsequent phases or
-slices.
-
-26
-
-MultiCam MultiCam Acquisition Principles
-
-Trigger Control Parameters
-
-Trigger Control
-Parameters
-
-Meaning
-
-TrigCtl
-
-TrigEdge
-
-TrigFilter
-
-TrigLine
-
-TrigDelay_us
-
-PageDelay_Ln
-
-Electrical style of the hardware line of the starting trigger.
-
-Edge selected as trigger condition (GOLOW, GOHIGH).
-
-Noise removal applied to the trigger.
-
-Hardware line of the starting trigger.
-
-Delay between the hardware trigger and the reset pulse sent to the
-camera (µs).
-
-Delay between the hardware trigger and the start of the acquisition
-(lines).
-
-EndTrigCtl
-
-Electrical style of the hardware line of the end trigger.
-
-EndTrigEdge
-
-Edge selected as an end trigger condition (GOLOW, GOHIGH).
-
-EndTrigFilter
-
-Noise removal applied to the end trigger.
-
-EndTrigLine
-
-Hardware line of the end trigger.
-
-EndPageDelay_Ln
-
-Optional delay between the hardware end trigger and the end of the
-acquisition.
-
-ForceTrig
-
-Generates a soft trigger when set to TRIG.
-
-TargetFrameRate_Hz
-
-Triggering rate during an acquisition sequence.
-
-27
-
-MultiCam MultiCam Acquisition Principles
-
-7. Glossary
-
-Acquisition parameter
-
-An acquisition parameter is a MultiCam item describing the way the frame grabber has to
-operate to satisfy the application requirements.
-
-Activity
-
-An activity is a period of the life of a channel where acquisition can take place.
-
-Analog camera
-
-An analog camera delivers the images in the form of an analog signal.
-
-Area-scan
-
-An area-scan camera of a camera delivers a two-dimensional array of pixels.
-
-Asynchronous reset
-
-The asynchronous reset qualifies a mode of exploitation of a camera when the instant of the
-image capture is under the control of the frame grabber board.
-
-Camera parameter
-
-A camera parameter is a MultiCam item describing the way the frame grabber has to operate to
-satisfy one camera requirement.
-
-Channel
-
-A channel is a MultiCam item representing, by a set of parameters, a path and its activity
-between a defined camera and a defined cluster of surfaces.
-
-Cluster
-
-A cluster is a set of surfaces associated to a channel and having compatible characteristics.
-
-Digital camera
-
-A digital camera delivers the images in the form of a digital signal.
-
-Event
-
-An event is an identified temporal occurrence which arises during the acquisition process.
-
-Exposure
-
-The photosites of the camera sensor are sensitive to light during the exposure period.
-
-Field
-
-A field is a set of lines issued by a camera having the same parity and representing half of the
-image.
-
-Frame
-
-A frame is a set of successive lines issued by a camera representing the image.
-
-Grabber
-
-28
-
-MultiCam MultiCam Acquisition Principles
-
-A grabber is a set of hardware resources of a frame grabber required to transfer the image
-issued by a camera to the PC memory.
-
-Hierarchy
-
-The hierarchy is one view of the MultiCam acquisition.
-
-Interlaced
-
-An interlaced camera delivers a two dimensional array of pixel by issuing the even and the odd
-lines separately.
-
-Line-scan
-
-A line-scan camera delivers a one-dimensional array of pixels.
-
-Manager
-
-A manager is a black-box which reacts to input events by issuing output events in function of its
-internal state.
-
-MultiCam
-
-MultiCam is a software tool designed to assist the customer in the control of his image
-acquisition with every Euresys frame grabber.
-
-Page
-
-A page is a set of successive lines issued by a line-scan camera stored in the same surface.
-
-Phase
-
-A phase is the capturing process of a set of slices associated to a surface.
-
-Progressive
-
-A progressive camera delivers a two-dimensional array of pixel by successively issuing adjacent
-lines.
-
-Readout
-
-The camera delivers the sensed image at its output connector during the readout period.
-
-Sequence
-
-A sequence is the capturing process of a set of phases.
-
-Signal
-
-A signal is a MultiCam item representing a particular event occurring at a precise instant and
-intended to interact with the software application.
-
-Slice
-
-A slice refers to the capture of a set of successive lines. It is the smallest bi-dimensional unity
-issued by an extremely fast camera.
-
-29
-
-
+### Parameters Summary
+
+MultiCam offers a very large set of parameters. These parameters are related to each other: when a high level parameter is modified, an update of lower levels parameters may take place. For example, setting the `Camera` and `CamConfig` parameters modifies the `Scanning`, `Imaging`, `Expose`, `Readout` and `ExposeOverlap` parameters.
+
+#### Camera Parameters
+
+| Parameter | Meaning |
+|-----------|---------|
+| `Camera` | Model of the connected camera. |
+| `CamConfig` | Applied camera settings. |
+| `Imaging` | Camera sensor type method (`AREA`, `LINE`). |
+| `Scanning` | Camera scanning method (`INTERLACED`, `PROGRESSIVE`). |
+| `Expose` | Control method of the camera exposure. |
+| `Readout` | Control method of the camera readout. |
+| `ExposeOverlap` | When set, the exposure and readout can overlap. |
+
+#### Acquisition Control Parameters
+
+| Parameter | Meaning |
+|-----------|---------|
+| `AcquisitionMode` | Acquisition mode. |
+| `TrigMode` | Starting condition of an acquisition sequence. |
+| `NextTrigMode` | Starting condition of the subsequent phases or slices of a sequence. |
+| `EndTrigMode` | Termination condition of a sequence. |
+| `BreakEffect` | Stopping condition of the channel activity in case of a user break. |
+| `ActivityLength` | Number of acquisition sequences constituting a channel activity period. |
+| `SeqLength_Fr` | Number of frames to be acquired within an acquisition sequence. |
+| `SeqLength_Pg` | Number of pages to be acquired within an acquisition sequence. |
+| `SeqLength_Ln` | Number of lines to be acquired within an acquisition sequence. |
+| `PhaseLength_Fr` | Number of frames to be acquired within an acquisition phase. |
+| `PageLength_Ln` | Number of scanned lines stored into a surface. |
+| `GrabField` | Field or pair of fields to be acquired in the first phase or slice of the sequence. |
+| `NextGrabField` | Field or pair of fields to be acquired in the subsequent phases or slices. |
+
+#### Trigger Control Parameters
+
+| Parameter | Meaning |
+|-----------|---------|
+| `TrigCtl` | Electrical style of the hardware line of the starting trigger. |
+| `TrigEdge` | Edge selected as trigger condition (`GOLOW`, `GOHIGH`). |
+| `TrigFilter` | Noise removal applied to the trigger. |
+| `TrigLine` | Hardware line of the starting trigger. |
+| `TrigDelay_us` | Delay between the hardware trigger and the reset pulse sent to the camera (us). |
+| `PageDelay_Ln` | Delay between the hardware trigger and the start of the acquisition (lines). |
+| `EndTrigCtl` | Electrical style of the hardware line of the end trigger. |
+| `EndTrigEdge` | Edge selected as an end trigger condition (`GOLOW`, `GOHIGH`). |
+| `EndTrigFilter` | Noise removal applied to the end trigger. |
+| `EndTrigLine` | Hardware line of the end trigger. |
+| `EndPageDelay_Ln` | Optional delay between the hardware end trigger and the end of the acquisition. |
+| `ForceTrig` | Generates a soft trigger when set to `TRIG`. |
+| `TargetFrameRate_Hz` | Triggering rate during an acquisition sequence. |
+
+---
+
+## 7. Glossary
+
+| Term | Definition |
+|------|------------|
+| Acquisition parameter | A MultiCam item describing the way the frame grabber has to operate to satisfy the application requirements. |
+| Activity | A period of the life of a channel where acquisition can take place. |
+| Analog camera | An analog camera delivers the images in the form of an analog signal. |
+| Area-scan | An area-scan camera delivers a two-dimensional array of pixels. |
+| Asynchronous reset | Qualifies a mode of exploitation of a camera when the instant of the image capture is under the control of the frame grabber board. |
+| Camera parameter | A MultiCam item describing the way the frame grabber has to operate to satisfy one camera requirement. |
+| Channel | A MultiCam item representing, by a set of parameters, a path and its activity between a defined camera and a defined cluster of surfaces. |
+| Cluster | A set of surfaces associated to a channel and having compatible characteristics. |
+| Digital camera | A digital camera delivers the images in the form of a digital signal. |
+| Event | An identified temporal occurrence which arises during the acquisition process. |
+| Exposure | The photosites of the camera sensor are sensitive to light during the exposure period. |
+| Field | A set of lines issued by a camera having the same parity and representing half of the image. |
+| Frame | A set of successive lines issued by a camera representing the image. |
+| Grabber | A set of hardware resources of a frame grabber required to transfer the image issued by a camera to the PC memory. |
+| Hierarchy | One view of the MultiCam acquisition. |
+| Interlaced | An interlaced camera delivers a two dimensional array of pixels by issuing the even and the odd lines separately. |
+| Line-scan | A line-scan camera delivers a one-dimensional array of pixels. |
+| Manager | A black-box which reacts to input events by issuing output events in function of its internal state. |
+| MultiCam | A software tool designed to assist the customer in the control of his image acquisition with every Euresys frame grabber. |
+| Page | A set of successive lines issued by a line-scan camera stored in the same surface. |
+| Phase | The capturing process of a set of slices associated to a surface. |
+| Progressive | A progressive camera delivers a two-dimensional array of pixels by successively issuing adjacent lines. |
+| Readout | The camera delivers the sensed image at its output connector during the readout period. |
+| Sequence | The capturing process of a set of phases. |
+| Signal | A MultiCam item representing a particular event occurring at a precise instant and intended to interact with the software application. |
+| Slice | A slice refers to the capture of a set of successive lines. It is the smallest bi-dimensional unity issued by an extremely fast camera. |
