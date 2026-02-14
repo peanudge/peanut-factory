@@ -67,10 +67,11 @@ public abstract class ImageSharpEncoderBase : IImageEncoder
                     int i = srcOffset + x * bytesPerPixel;
                     if (i + 2 < image.Pixels.Length)
                     {
+                        // MultiCam RGB24 stores pixels in BGR order (B-G-R)
                         rowSpan[x] = new Rgb24(
-                            image.Pixels[i],
-                            image.Pixels[i + 1],
-                            image.Pixels[i + 2]
+                            image.Pixels[i + 2],  // R
+                            image.Pixels[i + 1],  // G
+                            image.Pixels[i]        // B
                         );
                     }
                 }
