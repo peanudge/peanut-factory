@@ -11,6 +11,7 @@ public sealed class AcquisitionManager : IDisposable
 
     private GrabChannel? _channel;
     private ImageData? _lastFrame;
+    private string? _lastError;
     private AcquisitionStatistics? _statistics;
     private string? _activeProfileId;
     private bool _disposed;
@@ -33,6 +34,11 @@ public sealed class AcquisitionManager : IDisposable
     public ImageData? LastFrame
     {
         get { lock (_lock) return _lastFrame; }
+    }
+
+    public string? LastError
+    {
+        get { lock (_lock) return _lastError; }
     }
 
     public AcquisitionStatisticsSnapshot? GetStatistics()
@@ -63,6 +69,7 @@ public sealed class AcquisitionManager : IDisposable
             _channel = _grabService.CreateChannel(options);
             _activeProfileId = profileId;
             _lastFrame = null;
+            _lastError = null;
 
             _statistics = new AcquisitionStatistics();
 
@@ -125,6 +132,7 @@ public sealed class AcquisitionManager : IDisposable
     {
         lock (_lock)
         {
+            _lastError = e.Message;
             _statistics?.RecordError();
         }
     }

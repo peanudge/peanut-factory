@@ -54,6 +54,15 @@ public class AcquisitionStatusSpec : IClassFixture<PeanutVisionApiFactory>, IAsy
     }
 
     [Fact]
+    public async Task Status_includes_lastError_field()
+    {
+        var response = await _client.GetAsync("/api/acquisition/status");
+
+        using var doc = await response.ReadJsonDocumentAsync();
+        Assert.True(doc.RootElement.TryGetProperty("lastError", out _));
+    }
+
+    [Fact]
     public async Task Status_when_active_includes_statistics_shape()
     {
         await _client.PostJsonAsync("/api/acquisition/start",

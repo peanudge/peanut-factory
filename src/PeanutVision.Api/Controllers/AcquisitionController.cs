@@ -55,6 +55,7 @@ public class AcquisitionController : ControllerBase
             isActive = _manager.IsActive,
             profileId = _manager.ActiveProfileId,
             hasFrame = _manager.LastFrame != null,
+            lastError = _manager.LastError,
             statistics = stats.HasValue
                 ? new
                 {

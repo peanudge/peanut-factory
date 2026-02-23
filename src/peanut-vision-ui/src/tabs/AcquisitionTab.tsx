@@ -74,7 +74,7 @@ export default function AcquisitionTab() {
           <AcquisitionStats stats={status?.statistics} />
         </Grid>
         <Grid size={{ xs: 12, md: 8 }}>
-          <ImageViewer blob={capturedBlob} />
+          <ImageViewer blob={capturedBlob} errorMessage={status?.lastError} />
         </Grid>
       </Grid>
     </Box>

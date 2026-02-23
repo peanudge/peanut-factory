@@ -203,6 +203,22 @@ public class AcquisitionManagerTests : IDisposable
         Assert.Equal(0, stats.Value.FrameCount);
     }
 
+    // --- LastError ---
+
+    [Fact]
+    public void LastError_is_null_initially()
+    {
+        Assert.Null(_manager.LastError);
+    }
+
+    [Fact]
+    public void LastError_is_null_after_start()
+    {
+        _manager.Start("crevis-tc-a160k-freerun-rgb8");
+
+        Assert.Null(_manager.LastError);
+    }
+
     // --- Dispose ---
 
     [Fact]

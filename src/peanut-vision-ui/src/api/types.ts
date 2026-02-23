@@ -58,6 +58,7 @@ export interface AcquisitionStatus {
   isActive: boolean;
   profileId?: string;
   hasFrame?: boolean;
+  lastError?: string | null;
   statistics?: AcquisitionStatistics;
 }
 
