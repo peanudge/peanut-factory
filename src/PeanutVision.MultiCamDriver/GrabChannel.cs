@@ -260,7 +260,9 @@ public sealed class GrabChannel : IDisposable
         // (per Euresys official sample: MC.GetParam(surfaceHandle, "SurfaceAddr", out addr))
         int status = _hal.GetParamPtr(surfaceHandle, MultiCamApi.PN_SurfaceAddr, out IntPtr address);
         if (status != MultiCamApi.MC_OK)
+        {
             address = IntPtr.Zero;
+        }
 
         return new SurfaceData
         {

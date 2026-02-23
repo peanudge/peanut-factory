@@ -12,14 +12,36 @@ public class AcquisitionManagerTests : IDisposable
     private readonly MockMultiCamHAL _mockHal;
     private readonly GrabService _grabService;
     private readonly AcquisitionManager _manager;
+    private readonly IntPtr _surfaceMemory;
 
     public AcquisitionManagerTests()
     {
+        // Create dummy cam files so GetCamFilePath succeeds
+        var camDir = CamFileResource.GetDirectory();
+        foreach (var name in new[]
+        {
+            CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8,
+            CamFileResource.KnownCamFiles.TC_A160K_FreeRun_1TAP_RGB8,
+        })
+        {
+            var path = Path.Combine(camDir, name);
+            if (!File.Exists(path)) File.WriteAllText(path, "");
+        }
+
         // Register built-in profiles for tests
         foreach (var profile in CrevisProfiles.All)
             CameraRegistry.Default.Register(profile);
 
         _mockHal = new MockMultiCamHAL();
+
+        // Allocate native memory for simulated surface data
+        var bufferSize = _mockHal.Configuration.DefaultImageWidth
+            * _mockHal.Configuration.DefaultImageHeight * 3;
+        _surfaceMemory = Marshal.AllocHGlobal(bufferSize);
+        var zeros = new byte[bufferSize];
+        Marshal.Copy(zeros, 0, _surfaceMemory, bufferSize);
+        _mockHal.Configuration.SimulatedSurfaceAddress = _surfaceMemory;
+
         _grabService = new GrabService(_mockHal);
         _grabService.Initialize();
         _manager = new AcquisitionManager(_grabService);
@@ -29,6 +51,8 @@ public class AcquisitionManagerTests : IDisposable
     {
         _manager.Dispose();
         _grabService.Dispose();
+        if (_surfaceMemory != IntPtr.Zero)
+            Marshal.FreeHGlobal(_surfaceMemory);
     }
 
     // --- Lifecycle ---
@@ -217,6 +241,94 @@ public class AcquisitionManagerTests : IDisposable
         _manager.Start("crevis-tc-a160k-freerun-rgb8");
 
         Assert.Null(_manager.LastError);
+    }
+
+    // --- Snapshot ---
+
+    [Fact]
+    public void Snapshot_returns_image_data()
+    {
+        var image = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8");
+
+        Assert.NotNull(image);
+        Assert.Equal(_mockHal.Configuration.DefaultImageWidth, image.Width);
+        Assert.Equal(_mockHal.Configuration.DefaultImageHeight, image.Height);
+    }
+
+    [Fact]
+    public void Snapshot_sends_software_trigger()
+    {
+        _mockHal.CallLog.Reset();
+
+        _manager.Snapshot("crevis-tc-a160k-freerun-rgb8");
+
+        Assert.Equal(1, _mockHal.CallLog.SoftwareTriggerCount);
+    }
+
+    [Fact]
+    public void Snapshot_starts_and_stops_acquisition()
+    {
+        _mockHal.CallLog.Reset();
+
+        _manager.Snapshot("crevis-tc-a160k-freerun-rgb8");
+
+        Assert.True(_mockHal.CallLog.AcquisitionStarted);
+        Assert.True(_mockHal.CallLog.AcquisitionStopped);
+    }
+
+    [Fact]
+    public void Snapshot_does_not_leave_channel_active()
+    {
+        _manager.Snapshot("crevis-tc-a160k-freerun-rgb8");
+
+        Assert.False(_manager.IsActive);
+        Assert.Null(_manager.Channel);
+    }
+
+    [Fact]
+    public void Snapshot_when_active_throws_InvalidOperationException()
+    {
+        _manager.Start("crevis-tc-a160k-freerun-rgb8");
+
+        Assert.Throws<InvalidOperationException>(() =>
+            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8"));
+    }
+
+    [Fact]
+    public void Snapshot_with_unknown_profile_throws_KeyNotFoundException()
+    {
+        Assert.Throws<KeyNotFoundException>(() => _manager.Snapshot("nonexistent"));
+    }
+
+    [Fact]
+    public void Snapshot_on_timeout_throws_TimeoutException()
+    {
+        _mockHal.Configuration.WaitSignalFailure = (int)McStatus.MC_TIMEOUT;
+
+        Assert.Throws<TimeoutException>(() =>
+            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8"));
+    }
+
+    [Fact]
+    public void Snapshot_can_be_called_multiple_times()
+    {
+        var image1 = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8");
+        var image2 = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8");
+
+        Assert.NotNull(image1);
+        Assert.NotNull(image2);
+    }
+
+    [Fact]
+    public void Snapshot_uses_polling_mode_not_callback()
+    {
+        _mockHal.CallLog.Reset();
+
+        _manager.Snapshot("crevis-tc-a160k-freerun-rgb8");
+
+        // Polling mode: WaitSignal called, no callback registered
+        Assert.Equal(1, _mockHal.CallLog.WaitSignalCalls);
+        Assert.Equal(0, _mockHal.CallLog.RegisterCallbackCalls);
     }
 
     // --- Dispose ---
