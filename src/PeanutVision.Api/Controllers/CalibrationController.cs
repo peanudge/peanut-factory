@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using PeanutVision.Api.Services;
-using PeanutVision.MultiCamDriver;
 
 namespace PeanutVision.Api.Controllers;
 
@@ -8,98 +7,84 @@ namespace PeanutVision.Api.Controllers;
 [Route("api/[controller]")]
 public class CalibrationController : ControllerBase
 {
-    private readonly AcquisitionManager _manager;
+    private readonly ICalibrationService _calibration;
 
-    public CalibrationController(AcquisitionManager manager)
+    public CalibrationController(ICalibrationService calibration)
     {
-        _manager = manager;
+        _calibration = calibration;
     }
 
     [HttpPost("black")]
     public ActionResult PerformBlackCalibration()
     {
-        var channel = GetActiveChannel();
-        if (channel == null)
+        if (!_calibration.IsAvailable)
             return Conflict(new { error = "No active acquisition channel." });
 
-        channel.PerformBlackCalibration();
+        _calibration.PerformBlackCalibration();
         return Ok(new { message = "Black calibration executed. Ensure lens was covered." });
     }
 
     [HttpPost("white")]
     public ActionResult PerformWhiteCalibration()
     {
-        var channel = GetActiveChannel();
-        if (channel == null)
+        if (!_calibration.IsAvailable)
             return Conflict(new { error = "No active acquisition channel." });
 
-        channel.PerformWhiteCalibration();
+        _calibration.PerformWhiteCalibration();
         return Ok(new { message = "White calibration executed. Ensure uniform ~200DN illumination." });
     }
 
     [HttpPost("white-balance")]
     public ActionResult PerformWhiteBalance()
     {
-        var channel = GetActiveChannel();
-        if (channel == null)
+        if (!_calibration.IsAvailable)
             return Conflict(new { error = "No active acquisition channel." });
 
-        channel.PerformWhiteBalanceOnce();
+        _calibration.PerformWhiteBalanceOnce();
         return Ok(new { message = "White balance (ONCE) executed." });
     }
 
     [HttpPost("ffc")]
     public ActionResult SetFlatFieldCorrection([FromBody] FfcRequest request)
     {
-        var channel = GetActiveChannel();
-        if (channel == null)
+        if (!_calibration.IsAvailable)
             return Conflict(new { error = "No active acquisition channel." });
 
-        channel.SetFlatFieldCorrection(request.Enable);
+        _calibration.SetFlatFieldCorrection(request.Enable);
         return Ok(new { message = $"Flat field correction {(request.Enable ? "enabled" : "disabled")}." });
     }
 
     [HttpGet("exposure")]
     public ActionResult GetExposure()
     {
-        var channel = GetActiveChannel();
-        if (channel == null)
+        if (!_calibration.IsAvailable)
             return Conflict(new { error = "No active acquisition channel." });
 
+        var info = _calibration.GetExposure();
         return Ok(new
         {
-            exposureUs = channel.GetExposureUs(),
-            exposureRange = new
-            {
-                min = channel.GetExposureRange().Min,
-                max = channel.GetExposureRange().Max,
-            },
-            gainDb = channel.GetGainDb(),
+            exposureUs = info.ExposureUs,
+            exposureRange = info.ExposureRange != null
+                ? new { min = info.ExposureRange.Min, max = info.ExposureRange.Max }
+                : null,
+            gainDb = info.GainDb,
         });
     }
 
     [HttpPut("exposure")]
     public ActionResult SetExposure([FromBody] ExposureRequest request)
     {
-        var channel = GetActiveChannel();
-        if (channel == null)
+        if (!_calibration.IsAvailable)
             return Conflict(new { error = "No active acquisition channel." });
 
-        if (request.ExposureUs.HasValue)
-            channel.SetExposureUs(request.ExposureUs.Value);
-
-        if (request.GainDb.HasValue)
-            channel.SetGainDb(request.GainDb.Value);
-
+        var info = _calibration.SetExposure(request.ExposureUs, request.GainDb);
         return Ok(new
         {
             message = "Exposure settings updated.",
-            exposureUs = channel.GetExposureUs(),
-            gainDb = channel.GetGainDb(),
+            exposureUs = info.ExposureUs,
+            gainDb = info.GainDb,
         });
     }
-
-    private GrabChannel? GetActiveChannel() => _manager.Channel;
 }
 
 public class FfcRequest

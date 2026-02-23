@@ -15,4 +15,8 @@
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="PeanutVision.Api.Tests" />
+  </ItemGroup>
+
 </Project>

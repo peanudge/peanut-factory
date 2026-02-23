@@ -22,6 +22,8 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddGrabService(autoInitialize: true);
 builder.Services.AddSingleton<AcquisitionManager>();
+builder.Services.AddSingleton<IAcquisitionService>(sp => sp.GetRequiredService<AcquisitionManager>());
+builder.Services.AddSingleton<ICalibrationService, CalibrationManager>();
 
 builder.Services.AddCors(options =>
 {

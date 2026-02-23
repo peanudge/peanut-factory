@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using PeanutVision.Api.Services;
-using PeanutVision.MultiCamDriver;
 using PeanutVision.MultiCamDriver.Imaging;
 using PeanutVision.MultiCamDriver.Imaging.Encoders;
 
@@ -10,11 +9,11 @@ namespace PeanutVision.Api.Controllers;
 [Route("api/[controller]")]
 public class AcquisitionController : ControllerBase
 {
-    private readonly AcquisitionManager _manager;
+    private readonly IAcquisitionService _acquisition;
 
-    public AcquisitionController(AcquisitionManager manager)
+    public AcquisitionController(IAcquisitionService acquisition)
     {
-        _manager = manager;
+        _acquisition = acquisition;
     }
 
     [HttpPost("start")]
@@ -22,12 +21,17 @@ public class AcquisitionController : ControllerBase
     {
         try
         {
-            McTrigMode? triggerMode = request.TriggerMode != null
-                ? Enum.Parse<McTrigMode>(request.TriggerMode, ignoreCase: true)
-                : null;
+            var profileId = new ProfileId(request.ProfileId);
+            var triggerMode = request.TriggerMode is not null
+                ? TriggerMode.Parse(request.TriggerMode)
+                : (TriggerMode?)null;
 
-            _manager.Start(request.ProfileId, triggerMode);
-            return Ok(new { message = "Acquisition started", profileId = request.ProfileId });
+            _acquisition.Start(profileId, triggerMode);
+            return Ok(new { message = "Acquisition started", profileId = profileId.Value });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (KeyNotFoundException ex)
         {
@@ -42,20 +46,20 @@ public class AcquisitionController : ControllerBase
     [HttpPost("stop")]
     public ActionResult Stop()
     {
-        _manager.Stop();
+        _acquisition.Stop();
         return Ok(new { message = "Acquisition stopped" });
     }
 
     [HttpGet("status")]
     public ActionResult GetStatus()
     {
-        var stats = _manager.GetStatistics();
+        var stats = _acquisition.GetStatistics();
         return Ok(new
         {
-            isActive = _manager.IsActive,
-            profileId = _manager.ActiveProfileId,
-            hasFrame = _manager.LastFrame != null,
-            lastError = _manager.LastError,
+            isActive = _acquisition.IsActive,
+            profileId = _acquisition.ActiveProfileId?.Value,
+            hasFrame = _acquisition.HasFrame,
+            lastError = _acquisition.LastError,
             statistics = stats.HasValue
                 ? new
                 {
@@ -77,7 +81,7 @@ public class AcquisitionController : ControllerBase
     {
         try
         {
-            _manager.SendTrigger();
+            _acquisition.SendTrigger();
             return Ok(new { message = "Software trigger sent" });
         }
         catch (InvalidOperationException ex)
@@ -89,7 +93,7 @@ public class AcquisitionController : ControllerBase
     [HttpPost("capture")]
     public ActionResult Capture()
     {
-        var frame = _manager.CaptureFrame();
+        var frame = _acquisition.CaptureFrame();
         if (frame == null)
             return NotFound(new { error = "No frame available. Start acquisition first." });
 
@@ -106,11 +110,12 @@ public class AcquisitionController : ControllerBase
     {
         try
         {
-            McTrigMode? triggerMode = request.TriggerMode != null
-                ? Enum.Parse<McTrigMode>(request.TriggerMode, ignoreCase: true)
-                : null;
+            var profileId = new ProfileId(request.ProfileId);
+            var triggerMode = request.TriggerMode is not null
+                ? TriggerMode.Parse(request.TriggerMode)
+                : (TriggerMode?)null;
 
-            var image = _manager.Snapshot(request.ProfileId, triggerMode);
+            var image = _acquisition.Snapshot(profileId, triggerMode);
 
             if (!string.IsNullOrWhiteSpace(request.OutputPath))
             {
@@ -124,6 +129,10 @@ public class AcquisitionController : ControllerBase
             stream.Position = 0;
 
             return File(stream, "image/png", "snapshot.png");
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (KeyNotFoundException ex)
         {

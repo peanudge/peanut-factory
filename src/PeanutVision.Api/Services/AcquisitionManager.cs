@@ -3,7 +3,7 @@ using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.Api.Services;
 
-public sealed class AcquisitionManager : IDisposable
+public sealed class AcquisitionManager : IAcquisitionService
 {
     private readonly IGrabService _grabService;
     private readonly object _lock = new();
@@ -12,7 +12,7 @@ public sealed class AcquisitionManager : IDisposable
     private ImageData? _lastFrame;
     private string? _lastError;
     private AcquisitionStatistics? _statistics;
-    private string? _activeProfileId;
+    private ProfileId? _activeProfileId;
     private bool _disposed;
 
     public AcquisitionManager(IGrabService grabService)
@@ -25,14 +25,19 @@ public sealed class AcquisitionManager : IDisposable
         get { lock (_lock) return _channel?.IsActive == true; }
     }
 
-    public string? ActiveProfileId
+    public ProfileId? ActiveProfileId
     {
         get { lock (_lock) return _activeProfileId; }
     }
 
-    public ImageData? LastFrame
+    internal ImageData? LastFrame
     {
         get { lock (_lock) return _lastFrame; }
+    }
+
+    public bool HasFrame
+    {
+        get { lock (_lock) return _lastFrame != null; }
     }
 
     public string? LastError
@@ -48,21 +53,21 @@ public sealed class AcquisitionManager : IDisposable
         }
     }
 
-    public GrabChannel? Channel
+    internal GrabChannel? Channel
     {
         get { lock (_lock) return _channel; }
     }
 
-    public void Start(string profileId, McTrigMode? triggerMode = null)
+    public void Start(ProfileId profileId, TriggerMode? triggerMode = null)
     {
         lock (_lock)
         {
             if (_channel != null)
                 throw new InvalidOperationException("Acquisition is already active. Stop it first.");
 
-            var profile = _grabService.CameraProfiles.GetProfile(profileId);
+            var profile = _grabService.CameraProfiles.GetProfile(profileId.Value);
             var options = triggerMode.HasValue
-                ? profile.ToChannelOptions(triggerMode.Value)
+                ? profile.ToChannelOptions(triggerMode.Value.Mode)
                 : profile.ToChannelOptions();
 
             _channel = _grabService.CreateChannel(options);
@@ -116,7 +121,7 @@ public sealed class AcquisitionManager : IDisposable
         }
     }
 
-    public ImageData Snapshot(string profileId, McTrigMode? triggerMode = null)
+    public ImageData Snapshot(ProfileId profileId, TriggerMode? triggerMode = null)
     {
         lock (_lock)
         {
@@ -124,9 +129,9 @@ public sealed class AcquisitionManager : IDisposable
                 throw new InvalidOperationException("Acquisition is already active. Stop it first.");
         }
 
-        var profile = _grabService.CameraProfiles.GetProfile(profileId);
+        var profile = _grabService.CameraProfiles.GetProfile(profileId.Value);
         var options = triggerMode.HasValue
-            ? profile.ToChannelOptions(triggerMode.Value, useCallback: false)
+            ? profile.ToChannelOptions(triggerMode.Value.Mode, useCallback: false)
             : profile.ToChannelOptions(useCallback: false);
 
         var channel = _grabService.CreateChannel(options);
