@@ -78,6 +78,19 @@ export async function captureFrame(): Promise<Blob> {
   return res.blob();
 }
 
+export async function snapshot(
+  profileId: string,
+  triggerMode?: string,
+): Promise<Blob> {
+  const res = await fetch(`${API_BASE_URL}/acquisition/snapshot`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ profileId, triggerMode }),
+  });
+  if (!res.ok) await handleErrorResponse(res);
+  return res.blob();
+}
+
 // ── Calibration ──
 
 export function blackCalibration(): Promise<ApiMessage> {

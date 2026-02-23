@@ -13,6 +13,7 @@ import {
   getAcquisitionStatus,
   sendTrigger,
   captureFrame,
+  snapshot,
 } from "../api/client";
 import { useAsyncOperation } from "../hooks/useAsyncOperation";
 import { usePolling } from "../hooks/usePolling";
@@ -51,6 +52,9 @@ export default function AcquisitionTab() {
   const handleCapture = () =>
     execute(async () => { setCapturedBlob(await captureFrame()); });
 
+  const handleSnapshot = () =>
+    execute(async () => { setCapturedBlob(await snapshot(selectedProfile)); });
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       <ErrorAlert error={error} onClose={clearError} />
@@ -65,6 +69,7 @@ export default function AcquisitionTab() {
         onStop={handleStop}
         onTrigger={handleTrigger}
         onCapture={handleCapture}
+        onSnapshot={handleSnapshot}
         onRefresh={refresh}
         refreshThrottled={throttled}
       />

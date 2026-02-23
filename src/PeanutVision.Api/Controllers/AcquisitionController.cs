@@ -100,10 +100,55 @@ public class AcquisitionController : ControllerBase
 
         return File(stream, "image/png", "capture.png");
     }
+
+    [HttpPost("snapshot")]
+    public ActionResult Snapshot([FromBody] SnapshotRequest request)
+    {
+        try
+        {
+            McTrigMode? triggerMode = request.TriggerMode != null
+                ? Enum.Parse<McTrigMode>(request.TriggerMode, ignoreCase: true)
+                : null;
+
+            var image = _manager.Snapshot(request.ProfileId, triggerMode);
+
+            if (!string.IsNullOrWhiteSpace(request.OutputPath))
+            {
+                var writer = new ImageWriter();
+                writer.Save(image, request.OutputPath);
+            }
+
+            var encoder = new PngEncoder();
+            var stream = new MemoryStream();
+            encoder.Encode(image, stream);
+            stream.Position = 0;
+
+            return File(stream, "image/png", "snapshot.png");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+        catch (TimeoutException ex)
+        {
+            return StatusCode(504, new { error = ex.Message });
+        }
+    }
 }
 
 public class StartAcquisitionRequest
 {
     public required string ProfileId { get; set; }
     public string? TriggerMode { get; set; }
+}
+
+public class SnapshotRequest
+{
+    public required string ProfileId { get; set; }
+    public string? TriggerMode { get; set; }
+    public string? OutputPath { get; set; }
 }

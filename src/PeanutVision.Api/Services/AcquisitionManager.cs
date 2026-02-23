@@ -116,6 +116,44 @@ public sealed class AcquisitionManager : IDisposable
         }
     }
 
+    public ImageData Snapshot(string profileId, McTrigMode? triggerMode = null)
+    {
+        lock (_lock)
+        {
+            if (_channel != null)
+                throw new InvalidOperationException("Acquisition is already active. Stop it first.");
+        }
+
+        var profile = _grabService.CameraProfiles.GetProfile(profileId);
+        var options = triggerMode.HasValue
+            ? profile.ToChannelOptions(triggerMode.Value, useCallback: false)
+            : profile.ToChannelOptions(useCallback: false);
+
+        var channel = _grabService.CreateChannel(options);
+        try
+        {
+            channel.StartAcquisition(1);
+            channel.SendSoftwareTrigger();
+
+            var surface = channel.WaitForFrame(5000)
+                ?? throw new TimeoutException("Snapshot timed out waiting for frame.");
+
+            try
+            {
+                return ImageData.FromSurface(surface);
+            }
+            finally
+            {
+                channel.ReleaseSurface(surface);
+            }
+        }
+        finally
+        {
+            channel.StopAcquisition();
+            channel.Dispose();
+        }
+    }
+
     private void OnFrameAcquired(object? sender, FrameAcquiredEventArgs e)
     {
         var image = ImageData.FromSurface(e.Surface);

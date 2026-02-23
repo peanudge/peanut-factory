@@ -11,6 +11,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import StopIcon from "@mui/icons-material/Stop";
 import AdjustIcon from "@mui/icons-material/Adjust";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import StatusChip from "./StatusChip";
 import type { AcquisitionStatus, CameraProfile } from "../api/types";
@@ -25,6 +26,7 @@ interface Props {
   onStop: () => void;
   onTrigger: () => void;
   onCapture: () => void;
+  onSnapshot: () => void;
   onRefresh: () => void;
   refreshThrottled: boolean;
 }
@@ -39,6 +41,7 @@ export default function AcquisitionControls({
   onStop,
   onTrigger,
   onCapture,
+  onSnapshot,
   onRefresh,
   refreshThrottled,
 }: Props) {
@@ -87,6 +90,14 @@ export default function AcquisitionControls({
           onClick={onCapture}
         >
           Capture
+        </Button>
+        <Button
+          color="secondary"
+          startIcon={<PhotoCameraIcon />}
+          onClick={onSnapshot}
+          disabled={busy || !selectedProfile}
+        >
+          Snapshot
         </Button>
       </ButtonGroup>
 
