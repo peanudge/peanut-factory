@@ -1,5 +1,4 @@
 using PeanutVision.MultiCamDriver;
-using PeanutVision.MultiCamDriver.Camera;
 using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.Api.Services;
