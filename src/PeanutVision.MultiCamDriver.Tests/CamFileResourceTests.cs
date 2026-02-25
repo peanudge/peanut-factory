@@ -111,10 +111,4 @@ public class CamFileResourceTests : IDisposable
         }
     }
 
-    [Fact]
-    public void KnownCamFiles_Constants_HaveCorrectExtension()
-    {
-        Assert.EndsWith(".cam", CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8);
-        Assert.EndsWith(".cam", CamFileResource.KnownCamFiles.TC_A160K_FreeRun_1TAP_RGB8);
-    }
 }

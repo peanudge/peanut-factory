@@ -23,18 +23,6 @@ public static class CamFileResource
     }
 
     /// <summary>
-    /// Known camera configuration file names.
-    /// </summary>
-    public static class KnownCamFiles
-    {
-        /// <summary>Crevis TC-A160K, Free-run mode, 1 TAP, RGB8</summary>
-        public const string TC_A160K_FreeRun_1TAP_RGB8 = "CREVIS_TC-A160K-SEM_FreeRun_1TAP_RGB8.cam";
-
-        /// <summary>TC-A160K, Free-run mode, RGB8</summary>
-        public const string TC_A160K_FreeRun_RGB8 = "TC-A160K-SEM_freerun_RGB8.cam";
-    }
-
-    /// <summary>
     /// Gets the file path to a camera configuration file in the configured directory.
     /// </summary>
     /// <param name="camFileName">Name of the .cam file (e.g., "TC-A160K-SEM_freerun_RGB8.cam")</param>
@@ -54,14 +42,6 @@ public static class CamFileResource
         }
 
         return targetPath;
-    }
-
-    /// <summary>
-    /// Gets the file path for the TC-A160K FreeRun RGB8 configuration.
-    /// </summary>
-    public static string GetTC_A160K_FreeRunPath()
-    {
-        return GetCamFilePath(KnownCamFiles.TC_A160K_FreeRun_RGB8);
     }
 
     /// <summary>

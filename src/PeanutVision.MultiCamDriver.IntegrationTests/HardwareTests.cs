@@ -104,7 +104,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
+        using var channel = _service.CreateChannel(CameraProfile.FromCamFile("TC-A160K-SEM_freerun_RGB8.cam").ToChannelOptions());
 
         Assert.True(channel.Handle != 0);
         Assert.True(channel.ImageWidth > 0);
@@ -116,7 +116,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
+        using var channel = _service.CreateChannel(CameraProfile.FromCamFile("TC-A160K-SEM_freerun_RGB8.cam").ToChannelOptions());
 
         channel.StartAcquisition();
         Assert.True(channel.IsActive);
@@ -132,7 +132,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
+        using var channel = _service.CreateChannel(CameraProfile.FromCamFile("TC-A160K-SEM_freerun_RGB8.cam").ToChannelOptions());
 
         var stats = new AcquisitionStatistics();
         int frameCount = 0;
@@ -168,7 +168,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        var camPath = CamFileResource.GetCamFilePath(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8);
+        var camPath = CamFileResource.GetCamFilePath("TC-A160K-SEM_freerun_RGB8.cam");
 
         using var channel = _service.CreateChannel(new GrabChannelOptions
         {
@@ -208,7 +208,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
+        using var channel = _service.CreateChannel(CameraProfile.FromCamFile("TC-A160K-SEM_freerun_RGB8.cam").ToChannelOptions());
 
         try
         {
@@ -239,7 +239,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
+        using var channel = _service.CreateChannel(CameraProfile.FromCamFile("TC-A160K-SEM_freerun_RGB8.cam").ToChannelOptions());
 
         try
         {
@@ -261,7 +261,7 @@ public class HardwareTests : IDisposable
     {
         SkipIfNoHardware();
 
-        using var channel = _service.CreateChannel(CrevisProfiles.TC_A160K_FreeRun_RGB8.ToChannelOptions());
+        using var channel = _service.CreateChannel(CameraProfile.FromCamFile("TC-A160K-SEM_freerun_RGB8.cam").ToChannelOptions());
 
         var stats = new AcquisitionStatistics();
         int targetFrames = 500;

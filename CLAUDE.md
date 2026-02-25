@@ -326,6 +326,7 @@ McCloseDriver();
 4. **Driver Polling:** On `MC_SERVICE_ERROR (-25)` from `McOpenDriver`, retry in a polling loop until success.
 5. **Surface Lifecycle:** Respect the `FREE → FILLING → FILLED → PROCESSING → FREE` cycle.
 6. **Callback Performance:** Keep callback handler < 1ms; use `ConcurrentQueue` for data handoff.
+7. **API Layer Abstraction:** The API layer must be user-friendly and hide hardware mechanism details. Expose simple, intuitive endpoints (e.g., "snapshot", "start", "stop") — never leak MultiCam constants, surface lifecycle, signal handling, or driver internals to API consumers.
 
 ## Error/Status Codes
 

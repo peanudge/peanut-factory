@@ -238,7 +238,7 @@ public class AcquisitionChainTests : IDisposable
         Assert.Equal(MultiCamApi.MC_OK, status);
 
         // Step 3: Load camera file
-        var camPath = CamFileResource.GetCamFilePath(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8);
+        var camPath = CamFileResource.GetCamFilePath("TC-A160K-SEM_freerun_RGB8.cam");
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
 
         Assert.Equal(MultiCamApi.MC_OK, status);
@@ -279,7 +279,7 @@ public class AcquisitionChainTests : IDisposable
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_Connector, "M");
         Assert.Equal(MultiCamApi.MC_OK, status);
 
-        var camPath = CamFileResource.GetCamFilePath(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8);
+        var camPath = CamFileResource.GetCamFilePath("TC-A160K-SEM_freerun_RGB8.cam");
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
         Assert.Equal(MultiCamApi.MC_OK, status);
 
@@ -317,7 +317,7 @@ public class AcquisitionChainTests : IDisposable
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_Connector, "M");
         Assert.Equal(MultiCamApi.MC_OK, status);
 
-        var camPath = CamFileResource.GetCamFilePath(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8);
+        var camPath = CamFileResource.GetCamFilePath("TC-A160K-SEM_freerun_RGB8.cam");
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
         Assert.Equal(MultiCamApi.MC_OK, status);
 
@@ -348,7 +348,7 @@ public class AcquisitionChainTests : IDisposable
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_Connector, "M");
         Assert.Equal(MultiCamApi.MC_OK, status);
 
-        var camPath = CamFileResource.GetCamFilePath(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8);
+        var camPath = CamFileResource.GetCamFilePath("TC-A160K-SEM_freerun_RGB8.cam");
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
         Assert.Equal(MultiCamApi.MC_OK, status);
 
@@ -390,7 +390,7 @@ public class AcquisitionChainTests : IDisposable
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_Connector, "M");
         AssertOk(status, "SetParam(Connector)");
 
-        var camPath = CamFileResource.GetCamFilePath(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8);
+        var camPath = CamFileResource.GetCamFilePath("TC-A160K-SEM_freerun_RGB8.cam");
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
         AssertOk(status, "SetParam(CamFile)");
 
@@ -444,7 +444,7 @@ public class AcquisitionChainTests : IDisposable
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_Connector, "M");
         AssertOk(status, "SetParam(Connector)");
 
-        var camPath = CamFileResource.GetCamFilePath(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8);
+        var camPath = CamFileResource.GetCamFilePath("TC-A160K-SEM_freerun_RGB8.cam");
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
         AssertOk(status, "SetParam(CamFile)");
 
@@ -518,7 +518,7 @@ public class AcquisitionChainTests : IDisposable
         AssertOk(status, "SetParam(Connector)");
 
         // Step 3: Load camera configuration
-        var camPath = CamFileResource.GetCamFilePath(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8);
+        var camPath = CamFileResource.GetCamFilePath("TC-A160K-SEM_freerun_RGB8.cam");
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
         AssertOk(status, "SetParam(CamFile)");
 

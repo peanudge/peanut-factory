@@ -12,8 +12,8 @@ public class CameraProfileTests : IDisposable
     {
         _testDir = Path.Combine(Path.GetTempPath(), $"PeanutVision.CameraProfileTests.{Guid.NewGuid():N}");
         Directory.CreateDirectory(_testDir);
-        // Create known cam files so GetCamFilePath succeeds
-        File.WriteAllText(Path.Combine(_testDir, CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8), "");
+        // Create test cam file so GetCamFilePath succeeds
+        File.WriteAllText(Path.Combine(_testDir, "test-freerun.cam"), "");
         CamFileResource.SetDirectory(_testDir);
     }
 
@@ -104,7 +104,7 @@ public class CameraProfileTests : IDisposable
     {
         var profile = new CameraProfile.Builder()
             .WithId("test")
-            .WithCamFile(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8)
+            .WithCamFile("test-freerun.cam")
             .WithConnector("A")
             .WithTriggerMode(McTrigMode.MC_TrigMode_IMMEDIATE)
             .WithSurfaceCount(6)
@@ -124,7 +124,7 @@ public class CameraProfileTests : IDisposable
     {
         var profile = new CameraProfile.Builder()
             .WithId("test")
-            .WithCamFile(CamFileResource.KnownCamFiles.TC_A160K_FreeRun_RGB8)
+            .WithCamFile("test-freerun.cam")
             .WithTriggerMode(McTrigMode.MC_TrigMode_IMMEDIATE)
             .Build();
 
