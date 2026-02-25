@@ -12,7 +12,6 @@ public interface IAcquisitionService : IDisposable
     AcquisitionStatisticsSnapshot? GetStatistics();
     void Start(ProfileId profileId, TriggerMode? triggerMode = null);
     void Stop();
-    void SendTrigger();
-    ImageData? CaptureFrame();
+    Task<ImageData> TriggerAndWaitAsync(int timeoutMs = 5000);
     ImageData Snapshot(ProfileId profileId, TriggerMode? triggerMode = null);
 }

@@ -10,7 +10,6 @@ import Tooltip from "@mui/material/Tooltip";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import StopIcon from "@mui/icons-material/Stop";
 import AdjustIcon from "@mui/icons-material/Adjust";
-import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import StatusChip from "./StatusChip";
@@ -25,7 +24,6 @@ interface Props {
   onStart: () => void;
   onStop: () => void;
   onTrigger: () => void;
-  onCapture: () => void;
   onSnapshot: () => void;
   onRefresh: () => void;
   refreshThrottled: boolean;
@@ -40,7 +38,6 @@ export default function AcquisitionControls({
   onStart,
   onStop,
   onTrigger,
-  onCapture,
   onSnapshot,
   onRefresh,
   refreshThrottled,
@@ -83,13 +80,6 @@ export default function AcquisitionControls({
           onClick={onTrigger}
         >
           Trigger
-        </Button>
-        <Button
-          color="info"
-          startIcon={<CameraAltIcon />}
-          onClick={onCapture}
-        >
-          Capture
         </Button>
         <Button
           color="secondary"

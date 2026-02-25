@@ -66,12 +66,8 @@ export function getAcquisitionStatus(): Promise<AcquisitionStatus> {
   return request("/acquisition/status");
 }
 
-export function sendTrigger(): Promise<ApiMessage> {
-  return request("/acquisition/trigger", { method: "POST" });
-}
-
-export async function captureFrame(): Promise<Blob> {
-  const res = await fetch(`${API_BASE_URL}/acquisition/capture`, {
+export async function triggerAndCapture(): Promise<Blob> {
+  const res = await fetch(`${API_BASE_URL}/acquisition/trigger`, {
     method: "POST",
   });
   if (!res.ok) await handleErrorResponse(res);

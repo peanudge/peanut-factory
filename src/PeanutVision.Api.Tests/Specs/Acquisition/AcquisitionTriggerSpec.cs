@@ -30,7 +30,7 @@ public class AcquisitionTriggerSpec : IClassFixture<PeanutVisionApiFactory>, IAs
     }
 
     [Fact]
-    public async Task Trigger_when_active_returns_ok()
+    public async Task Trigger_when_active_returns_png_image()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
             new { profileId = "crevis-tc-a160k-freerun-rgb8" });
@@ -38,8 +38,21 @@ public class AcquisitionTriggerSpec : IClassFixture<PeanutVisionApiFactory>, IAs
         var response = await _client.PostAsync("/api/acquisition/trigger", null);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        using var doc = await response.ReadJsonDocumentAsync();
-        Assert.True(doc.RootElement.TryGetProperty("message", out _));
+        Assert.Equal("image/png", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public async Task Trigger_response_contains_valid_png_bytes()
+    {
+        await _client.PostJsonAsync("/api/acquisition/start",
+            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+
+        var response = await _client.PostAsync("/api/acquisition/trigger", null);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        // PNG magic bytes: 137 80 78 71 13 10 26 10
+        Assert.True(bytes.Length > 8);
+        Assert.Equal(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }, bytes[..8]);
     }
 
     [Fact]
@@ -49,6 +62,7 @@ public class AcquisitionTriggerSpec : IClassFixture<PeanutVisionApiFactory>, IAs
             new { profileId = "crevis-tc-a160k-freerun-rgb8" });
         _factory.ResetMockState();
 
+        // Triggers are sequential now (each awaits the frame)
         await _client.PostAsync("/api/acquisition/trigger", null);
         await _client.PostAsync("/api/acquisition/trigger", null);
 

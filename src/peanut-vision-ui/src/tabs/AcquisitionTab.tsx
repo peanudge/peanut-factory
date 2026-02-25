@@ -11,8 +11,7 @@ import {
   startAcquisition,
   stopAcquisition,
   getAcquisitionStatus,
-  sendTrigger,
-  captureFrame,
+  triggerAndCapture,
   snapshot,
 } from "../api/client";
 import { useAsyncOperation } from "../hooks/useAsyncOperation";
@@ -47,10 +46,7 @@ export default function AcquisitionTab() {
     execute(async () => { await stopAcquisition(); });
 
   const handleTrigger = () =>
-    execute(async () => { await sendTrigger(); });
-
-  const handleCapture = () =>
-    execute(async () => { setCapturedBlob(await captureFrame()); });
+    execute(async () => { setCapturedBlob(await triggerAndCapture()); });
 
   const handleSnapshot = () =>
     execute(async () => { setCapturedBlob(await snapshot(selectedProfile)); });
@@ -68,7 +64,6 @@ export default function AcquisitionTab() {
         onStart={handleStart}
         onStop={handleStop}
         onTrigger={handleTrigger}
-        onCapture={handleCapture}
         onSnapshot={handleSnapshot}
         onRefresh={refresh}
         refreshThrottled={throttled}

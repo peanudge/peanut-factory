@@ -83,12 +83,6 @@ public class AcquisitionManagerTests : IDisposable
         }
 
         [Fact]
-        public void Then_capture_frame_returns_null()
-        {
-            Assert.Null(_manager.CaptureFrame());
-        }
-
-        [Fact]
         public void Then_statistics_are_null()
         {
             Assert.Null(_manager.GetStatistics());
@@ -108,9 +102,10 @@ public class AcquisitionManagerTests : IDisposable
         }
 
         [Fact]
-        public void When_send_trigger_then_throws()
+        public async Task When_trigger_and_wait_then_throws()
         {
-            Assert.Throws<InvalidOperationException>(() => _manager.SendTrigger());
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _manager.TriggerAndWaitAsync());
         }
 
         [Fact]
@@ -149,12 +144,6 @@ public class AcquisitionManagerTests : IDisposable
         public void Then_hal_acquisition_is_started()
         {
             Assert.True(_mockHal.CallLog.AcquisitionStarted);
-        }
-
-        [Fact]
-        public void Then_capture_frame_returns_null_before_callback()
-        {
-            Assert.Null(_manager.CaptureFrame());
         }
 
         [Fact]
@@ -243,28 +232,56 @@ public class AcquisitionManagerTests : IDisposable
         }
     }
 
-    public class Given_started_and_trigger_sent : AcquisitionManagerTests
+    public class Given_started_and_trigger_and_wait : AcquisitionManagerTests
     {
-        public Given_started_and_trigger_sent()
+        public Given_started_and_trigger_and_wait()
+        {
+            _mockHal.Configuration.AutoSimulateFrameOnTrigger = true;
+        }
+
+        [Fact]
+        public async Task Then_returns_image_with_correct_dimensions()
+        {
+            int width = _mockHal.Configuration.DefaultImageWidth;
+            int height = _mockHal.Configuration.DefaultImageHeight;
+
+            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+            var image = await _manager.TriggerAndWaitAsync();
+
+            Assert.Equal(width, image.Width);
+            Assert.Equal(height, image.Height);
+        }
+
+        [Fact]
+        public async Task Then_increments_hal_trigger_count()
         {
             _manager.Start("crevis-tc-a160k-freerun-rgb8");
             _mockHal.CallLog.Reset();
 
-            _manager.SendTrigger();
-            _manager.SendTrigger();
-        }
+            await _manager.TriggerAndWaitAsync();
+            await _manager.TriggerAndWaitAsync();
 
-        [Fact]
-        public void Then_hal_trigger_count_increments()
-        {
             Assert.Equal(2, _mockHal.CallLog.SoftwareTriggerCount);
+        }
+    }
+
+    public class Given_started_and_trigger_timeout : AcquisitionManagerTests
+    {
+        [Fact]
+        public async Task Then_throws_TimeoutException()
+        {
+            // AutoSimulateFrameOnTrigger is false by default, so no frame arrives
+            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+
+            await Assert.ThrowsAsync<TimeoutException>(
+                () => _manager.TriggerAndWaitAsync(timeoutMs: 100));
         }
     }
 
     public class Given_started_and_frame_acquired : AcquisitionManagerTests
     {
         [Fact]
-        public void Then_capture_frame_returns_image_with_correct_dimensions()
+        public void Then_last_frame_has_correct_dimensions()
         {
             int width = _mockHal.Configuration.DefaultImageWidth;
             int height = _mockHal.Configuration.DefaultImageHeight;
@@ -283,7 +300,7 @@ public class AcquisitionManagerTests : IDisposable
                 _manager.Start("crevis-tc-a160k-freerun-rgb8");
                 _mockHal.SimulateFrameAcquisition(_manager.Channel!.Handle);
 
-                var frame = _manager.CaptureFrame();
+                var frame = _manager.LastFrame;
                 Assert.NotNull(frame);
                 Assert.Equal(width, frame.Width);
                 Assert.Equal(height, frame.Height);

@@ -23,6 +23,7 @@ public class PeanutVisionApiFactory : WebApplicationFactory<Program>
         var zeros = new byte[bufferSize];
         Marshal.Copy(zeros, 0, _surfaceMemory, bufferSize);
         MockHal.Configuration.SimulatedSurfaceAddress = _surfaceMemory;
+        MockHal.Configuration.AutoSimulateFrameOnTrigger = true;
 
         builder.ConfigureServices(services =>
         {

@@ -13,6 +13,7 @@ public sealed class AcquisitionManager : IAcquisitionService
     private string? _lastError;
     private AcquisitionStatistics? _statistics;
     private ProfileId? _activeProfileId;
+    private TaskCompletionSource<ImageData>? _triggerTcs;
     private bool _disposed;
 
     public AcquisitionManager(IGrabService grabService)
@@ -87,10 +88,15 @@ public sealed class AcquisitionManager : IAcquisitionService
 
     public void Stop()
     {
+        TaskCompletionSource<ImageData>? tcs;
+
         lock (_lock)
         {
             if (_channel == null)
                 return;
+
+            tcs = _triggerTcs;
+            _triggerTcs = null;
 
             _statistics?.Stop();
             _channel.StopAcquisition();
@@ -100,25 +106,36 @@ public sealed class AcquisitionManager : IAcquisitionService
             _channel = null;
             _activeProfileId = null;
         }
+
+        tcs?.TrySetCanceled();
     }
 
-    public void SendTrigger()
+    public async Task<ImageData> TriggerAndWaitAsync(int timeoutMs = 5000)
     {
+        TaskCompletionSource<ImageData> tcs;
+
         lock (_lock)
         {
             if (_channel == null || !_channel.IsActive)
                 throw new InvalidOperationException("No active acquisition. Start acquisition first.");
 
+            if (_triggerTcs != null)
+                throw new InvalidOperationException("A trigger is already pending. Wait for it to complete.");
+
+            tcs = new TaskCompletionSource<ImageData>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _triggerTcs = tcs;
             _channel.SendSoftwareTrigger();
         }
-    }
 
-    public ImageData? CaptureFrame()
-    {
-        lock (_lock)
+        var completed = await Task.WhenAny(tcs.Task, Task.Delay(timeoutMs));
+
+        if (completed != tcs.Task)
         {
-            return _lastFrame;
+            lock (_lock) { _triggerTcs = null; }
+            throw new TimeoutException("Trigger timed out waiting for frame.");
         }
+
+        return await tcs.Task;
     }
 
     public ImageData Snapshot(ProfileId profileId, TriggerMode? triggerMode = null)
@@ -162,21 +179,32 @@ public sealed class AcquisitionManager : IAcquisitionService
     private void OnFrameAcquired(object? sender, FrameAcquiredEventArgs e)
     {
         var image = ImageData.FromSurface(e.Surface);
+        TaskCompletionSource<ImageData>? tcs;
 
         lock (_lock)
         {
             _lastFrame = image;
             _statistics?.RecordFrame();
+            tcs = _triggerTcs;
+            _triggerTcs = null;
         }
+
+        tcs?.TrySetResult(image);
     }
 
     private void OnAcquisitionError(object? sender, AcquisitionErrorEventArgs e)
     {
+        TaskCompletionSource<ImageData>? tcs;
+
         lock (_lock)
         {
             _lastError = e.Message;
             _statistics?.RecordError();
+            tcs = _triggerTcs;
+            _triggerTcs = null;
         }
+
+        tcs?.TrySetException(new InvalidOperationException($"Acquisition error: {e.Message}"));
     }
 
     public void Dispose()

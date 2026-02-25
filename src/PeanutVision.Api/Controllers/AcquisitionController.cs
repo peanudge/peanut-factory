@@ -77,32 +77,27 @@ public class AcquisitionController : ControllerBase
     }
 
     [HttpPost("trigger")]
-    public ActionResult Trigger()
+    public async Task<ActionResult> Trigger()
     {
         try
         {
-            _acquisition.SendTrigger();
-            return Ok(new { message = "Software trigger sent" });
+            var image = await _acquisition.TriggerAndWaitAsync(5000);
+
+            var encoder = new PngEncoder();
+            var stream = new MemoryStream();
+            encoder.Encode(image, stream);
+            stream.Position = 0;
+
+            return File(stream, "image/png", "trigger.png");
         }
         catch (InvalidOperationException ex)
         {
             return Conflict(new { error = ex.Message });
         }
-    }
-
-    [HttpPost("capture")]
-    public ActionResult Capture()
-    {
-        var frame = _acquisition.CaptureFrame();
-        if (frame == null)
-            return NotFound(new { error = "No frame available. Start acquisition first." });
-
-        var encoder = new PngEncoder();
-        var stream = new MemoryStream();
-        encoder.Encode(frame, stream);
-        stream.Position = 0;
-
-        return File(stream, "image/png", "capture.png");
+        catch (TimeoutException ex)
+        {
+            return StatusCode(504, new { error = ex.Message });
+        }
     }
 
     [HttpPost("snapshot")]

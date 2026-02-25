@@ -507,6 +507,12 @@ public class MockMultiCamHAL : IMultiCamHAL
         if (paramName == MultiCamApi.PN_ForceTrig)
         {
             CallLog.SoftwareTriggerCount++;
+
+            if (Configuration.AutoSimulateFrameOnTrigger && inst.CallbackRegistered)
+            {
+                var handle = inst.Handle;
+                Task.Run(() => SimulateFrameAcquisition(handle));
+            }
         }
 
         if (paramName == MultiCamApi.PN_BlackCalibration && value == "ON")
@@ -708,6 +714,9 @@ public class MockHalConfiguration
 
     /// <summary>If set, WaitSignal will return this error code.</summary>
     public int? WaitSignalFailure { get; set; }
+
+    /// <summary>If true, simulate a frame acquisition when ForceTrig is set and a callback is registered.</summary>
+    public bool AutoSimulateFrameOnTrigger { get; set; }
 }
 
 /// <summary>
