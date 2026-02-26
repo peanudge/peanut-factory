@@ -68,4 +68,40 @@ public class AcquisitionTriggerSpec : IClassFixture<PeanutVisionApiFactory>, IAs
 
         Assert.Equal(2, _factory.MockHal.CallLog.SoftwareTriggerCount);
     }
+
+    [Fact]
+    public async Task Trigger_when_active_saves_image_to_output_directory()
+    {
+        var outputDir = Path.Combine(Path.GetTempPath(), $"peanut_test_{Guid.NewGuid():N}");
+        try
+        {
+            using var customFactory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.UseSetting("ImageOutputDirectory", outputDir);
+            });
+            using var client = customFactory.CreateClient();
+
+            await client.PostJsonAsync("/api/acquisition/start",
+                new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+
+            var response = await client.PostAsync("/api/acquisition/trigger", null);
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.True(response.Headers.Contains("X-Image-Path"));
+
+            var savedPath = response.Headers.GetValues("X-Image-Path").First();
+            Assert.True(File.Exists(savedPath));
+
+            var savedBytes = await File.ReadAllBytesAsync(savedPath);
+            Assert.True(savedBytes.Length > 8);
+            Assert.Equal(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }, savedBytes[..8]);
+
+            await client.PostAsync("/api/acquisition/stop", null);
+        }
+        finally
+        {
+            if (Directory.Exists(outputDir))
+                Directory.Delete(outputDir, recursive: true);
+        }
+    }
 }

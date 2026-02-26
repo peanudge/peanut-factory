@@ -10,10 +10,19 @@ namespace PeanutVision.Api.Controllers;
 public class AcquisitionController : ControllerBase
 {
     private readonly IAcquisitionService _acquisition;
+    private readonly string? _imageOutputDirectory;
 
-    public AcquisitionController(IAcquisitionService acquisition)
+    public AcquisitionController(IAcquisitionService acquisition, IConfiguration configuration, IWebHostEnvironment environment)
     {
         _acquisition = acquisition;
+
+        var outputDir = configuration["ImageOutputDirectory"];
+        if (!string.IsNullOrEmpty(outputDir))
+        {
+            _imageOutputDirectory = Path.IsPathRooted(outputDir)
+                ? outputDir
+                : Path.Combine(environment.ContentRootPath, outputDir);
+        }
     }
 
     [HttpPost("start")]
@@ -82,6 +91,15 @@ public class AcquisitionController : ControllerBase
         try
         {
             var image = await _acquisition.TriggerAndWaitAsync(5000);
+
+            if (_imageOutputDirectory is not null)
+            {
+                Directory.CreateDirectory(_imageOutputDirectory);
+                var fileName = $"trigger_{DateTime.Now:yyyyMMdd_HHmmss_fff}.png";
+                var filePath = Path.Combine(_imageOutputDirectory, fileName);
+                new ImageWriter().Save(image, filePath);
+                Response.Headers["X-Image-Path"] = filePath;
+            }
 
             var encoder = new PngEncoder();
             var stream = new MemoryStream();
