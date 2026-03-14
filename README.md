@@ -79,7 +79,7 @@ peanut-factory/
 ### Software
 
 - **Driver**: Euresys MultiCam 6.19.4 or higher
-- **Runtime**: .NET 9.0
+- **Runtime**: .NET 10.0
 - **OS**: Windows 10/11 or Linux
 
 ## Quick Start
@@ -194,11 +194,11 @@ The Camera Profile System abstracts camera-specific details into reusable, exten
 
 ### Available Profiles
 
-| Profile ID | Description |
-|------------|-------------|
-| `crevis-tc-a160k-freerun-rgb8` | Standard continuous acquisition |
-| `crevis-tc-a160k-freerun-1tap-rgb8` | Single-tap configuration |
-| `crevis-tc-a160k-softtrig-rgb8` | Software-triggered capture |
+| Profile ID                          | Description                     |
+| ----------------------------------- | ------------------------------- |
+| `crevis-tc-a160k-freerun-rgb8`      | Standard continuous acquisition |
+| `crevis-tc-a160k-freerun-1tap-rgb8` | Single-tap configuration        |
+| `crevis-tc-a160k-softtrig-rgb8`     | Software-triggered capture      |
 
 ### Using Profiles
 
@@ -360,18 +360,18 @@ dotnet test
 
 ### Test Coverage
 
-| Module | Tests |
-|--------|-------|
-| GrabService | Service lifecycle, initialization |
-| GrabChannel | Channel operations, callbacks, calibration |
-| MockMultiCamHAL | Mock behavior verification |
-| CamFileResource | Embedded resource extraction |
-| AcquisitionStatistics | Performance monitoring |
-| CameraProfile | Profile builder, options conversion |
-| CameraRegistry | Profile lookup, filtering |
-| ImageSaver | Format detection, file saving |
-| ImageWriter | OOP image writing |
-| ImageEncoderRegistry | Encoder registration |
+| Module                | Tests                                      |
+| --------------------- | ------------------------------------------ |
+| GrabService           | Service lifecycle, initialization          |
+| GrabChannel           | Channel operations, callbacks, calibration |
+| MockMultiCamHAL       | Mock behavior verification                 |
+| CamFileResource       | Embedded resource extraction               |
+| AcquisitionStatistics | Performance monitoring                     |
+| CameraProfile         | Profile builder, options conversion        |
+| CameraRegistry        | Profile lookup, filtering                  |
+| ImageSaver            | Format detection, file saving              |
+| ImageWriter           | OOP image writing                          |
+| ImageEncoderRegistry  | Encoder registration                       |
 
 ## Performance Monitoring
 
@@ -402,3 +402,4 @@ Console.WriteLine($"Interval: {snapshot.MinFrameIntervalMs:F1}-{snapshot.MaxFram
 ## License
 
 Proprietary - Internal use only.
+
