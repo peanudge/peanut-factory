@@ -145,7 +145,7 @@ public sealed class GrabChannel : IDisposable
             SetSignalEnable(McSignal.MC_SIG_SURFACE_PROCESSING, true);
             SetSignalEnable(McSignal.MC_SIG_ACQUISITION_FAILURE, true);
             SetSignalEnable(McSignal.MC_SIG_END_CHANNEL_ACTIVITY, true);
-            SetSignalEnable(McSignal.MC_SIG_UNRECOVERABLE_ERROR, true);
+            SetSignalEnable(McSignal.MC_SIG_UNRECOVERABLE_OVERRUN, true);
 
             // Register callback if requested
             if (options.UseCallback)
@@ -220,7 +220,7 @@ public sealed class GrabChannel : IDisposable
                     signal, info.Instance, info.SignalInfo, "Acquisition failure detected"));
                 break;
 
-            case McSignal.MC_SIG_UNRECOVERABLE_ERROR:
+            case McSignal.MC_SIG_UNRECOVERABLE_OVERRUN:
                 _isActive = false;
                 AcquisitionError?.Invoke(this, new AcquisitionErrorEventArgs(
                     signal, info.Instance, info.SignalInfo, "Unrecoverable error - acquisition stopped"));

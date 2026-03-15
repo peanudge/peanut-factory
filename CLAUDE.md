@@ -22,8 +22,15 @@ Converted Markdown docs in `doc/` contain the full Euresys MultiCam SDK document
 |------------------|---------------|
 | Channel setup, acquisition flow, trigger modes, start/stop control | `doc/multicam-acquisition-principles.md` |
 | Pixel formats, memory layouts, Bayer patterns, buffer pitch/stride | `doc/multicam-storage-formats.md` |
-| Grablink board config, Camera Link, I/O, serial comms, full API | `doc/grablink-functional-guide.md` |
+| Grablink board config, Camera Link, I/O, serial comms (챕터별 인덱스) | `doc/grablink/README.md` |
 | Sample code patterns and program descriptions | `doc/multicam-sample-programs.md` |
+| C API 함수 시그니처, 파라미터 상세, 반환값 | `doc/multicam-api-reference.md` |
+| 에러/상태 코드 의미와 트러블슈팅 | `doc/multicam-error-codes.md` |
+| MultiCam 개념, 드라이버 아키텍처, 오브젝트 모델 | `doc/multicam-user-guide.md` |
+| Crevis TC-A160K 카메라 스펙, 캘리브레이션, 파라미터 | `doc/crevis-tc-a160k-reference.md` |
+| Grablink Full (PC1622) 하드웨어 스펙 | `doc/grablink_full_spec.md` |
+| 하드웨어 레이아웃 (땅콩 검사 시스템 3카메라 배치) | `doc/hw-layout-description.md` |
+| Capture mode 설정 가이드 | `doc/capture-mode-guide.md` |
 
 ---
 
@@ -90,19 +97,22 @@ public static partial class MultiCamNative
 ## Signal Constants & Callback
 
 ```csharp
+// from McDef.h
 public enum McSignal
 {
-    MC_SIG_SURFACE_PROCESSING   = 1,   // Frame ready for processing (primary)
-    MC_SIG_SURFACE_FILLED       = 2,   // Surface buffer filled
-    MC_SIG_ACQUISITION_FAILURE  = 3,   // Acquisition error
-    MC_SIG_END_CHANNEL_ACTIVITY = 4,   // Acquisition stopped
-    MC_SIG_UNRECOVERABLE_ERROR  = 5,   // Fatal error
-    MC_SIG_START_OF_FRAME       = 6,
-    MC_SIG_END_OF_FRAME         = 7,
-    MC_SIG_FRAMETRIGGER_VIOLATION = 8,
-    MC_SIG_START_EXPOSURE       = 9,
-    MC_SIG_END_EXPOSURE         = 10,
-    MC_SIG_ANY                  = -1,  // Wait for any signal
+    MC_SIG_ANY                        = 0,   // Wait for any signal
+    MC_SIG_SURFACE_PROCESSING         = 1,   // Frame ready for processing (primary)
+    MC_SIG_SURFACE_FILLED             = 2,   // Surface buffer filled
+    MC_SIG_UNRECOVERABLE_OVERRUN      = 3,   // DMA overrun (fatal)
+    MC_SIG_FRAMETRIGGER_VIOLATION     = 4,   // Frame trigger timing violation
+    MC_SIG_START_EXPOSURE             = 5,   // Exposure started
+    MC_SIG_END_EXPOSURE               = 6,   // Exposure ended
+    MC_SIG_ACQUISITION_FAILURE        = 7,   // Acquisition error
+    MC_SIG_CLUSTER_UNAVAILABLE        = 8,   // No FREE surface available
+    MC_SIG_RELEASE                    = 9,   // Surface released
+    MC_SIG_END_ACQUISITION_SEQUENCE   = 10,  // Sequence ended
+    MC_SIG_START_ACQUISITION_SEQUENCE = 11,  // Sequence started
+    MC_SIG_END_CHANNEL_ACTIVITY       = 12,  // Channel activity ended
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -328,22 +338,38 @@ McCloseDriver();
 6. **Callback Performance:** Keep callback handler < 1ms; use `ConcurrentQueue` for data handoff.
 7. **API Layer Abstraction:** The API layer must be user-friendly and hide hardware mechanism details. Expose simple, intuitive endpoints (e.g., "snapshot", "start", "stop") — never leak MultiCam constants, surface lifecycle, signal handling, or driver internals to API consumers.
 
-## Error/Status Codes
+## Error/Status Codes (from McDef.h)
 
 | Code | Name | Description |
 |------|------|-------------|
 | `0` | `MC_OK` | Success |
-| `-1` | `MC_ERROR` | Generic error |
-| `-2` | `MC_INVALID_HANDLE` | Invalid instance handle |
-| `-3` | `MC_INVALID_PARAM` | Invalid parameter |
-| `-4` | `MC_TIMEOUT` | Operation timeout |
-| `-5` | `MC_NOT_READY` | Device not ready |
-| `-6` | `MC_NO_MORE_RESOURCES` | Resource exhaustion |
-| `-7` | `MC_IN_USE` | Resource in use |
-| `-8` | `MC_BUSY` | Device busy |
-| `-9` | `MC_IO_ERROR` | I/O error |
-| `-10` | `MC_INTERNAL_ERROR` | Internal error |
+| `-1` | `MC_NO_BOARD_FOUND` | No board found |
+| `-2` | `MC_BAD_PARAMETER` | Bad parameter name/ID |
+| `-3` | `MC_IO_ERROR` | I/O error |
+| `-4` | `MC_INTERNAL_ERROR` | Internal error |
+| `-5` | `MC_NO_MORE_RESOURCES` | Resource exhaustion |
+| `-6` | `MC_IN_USE` | Object still in use |
+| `-7` | `MC_NOT_SUPPORTED` | Operation not supported |
+| `-8` | `MC_DATABASE_ERROR` | Parameter database error |
+| `-9` | `MC_OUT_OF_BOUND` | Value out of bound |
+| `-10` | `MC_INSTANCE_NOT_FOUND` | Object instance not found |
+| `-11` | `MC_INVALID_HANDLE` | Invalid handle |
+| `-12` | `MC_TIMEOUT` | Operation timeout |
+| `-13` | `MC_INVALID_VALUE` | Invalid value |
+| `-14` | `MC_RANGE_ERROR` | Value not in range |
+| `-15` | `MC_BAD_HW_CONFIG` | Invalid hardware configuration |
+| `-16` | `MC_NO_EVENT` | No event |
+| `-17` | `MC_LICENSE_NOT_GRANTED` | License not granted |
+| `-18` | `MC_FATAL_ERROR` | Fatal error |
+| `-19` | `MC_HW_EVENT_CONFLICT` | Hardware event conflict |
+| `-20` | `MC_FILE_NOT_FOUND` | File not found |
+| `-21` | `MC_OVERFLOW` | Overflow |
+| `-22` | `MC_INVALID_PARAMETER_SETTING` | Parameter inconsistency |
+| `-23` | `MC_PARAMETER_ILLEGAL_ACCESS` | Illegal operation |
+| `-24` | `MC_CLUSTER_BUSY` | Cluster busy |
 | `-25` | `MC_SERVICE_ERROR` | Driver not initialized (retry) |
+| `-26` | `MC_INVALID_SURFACE` | Invalid surface |
+| `-101` | `MC_BAD_GRABBER_CONFIG` | Invalid grabber configuration |
 
 ## Project Structure
 

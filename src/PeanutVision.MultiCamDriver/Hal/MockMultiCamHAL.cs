@@ -83,7 +83,7 @@ public class MockMultiCamHAL : IMultiCamHAL
             if (!_driverOpen)
             {
                 instance = 0;
-                return (int)McStatus.MC_NOT_READY;
+                return (int)McStatus.MC_INSTANCE_NOT_FOUND;
             }
 
             instance = _nextInstanceId++;
@@ -117,7 +117,7 @@ public class MockMultiCamHAL : IMultiCamHAL
             if (!_driverOpen)
             {
                 instance = 0;
-                return (int)McStatus.MC_NOT_READY;
+                return (int)McStatus.MC_INSTANCE_NOT_FOUND;
             }
 
             instance = _nextInstanceId++;
@@ -209,7 +209,7 @@ public class MockMultiCamHAL : IMultiCamHAL
         }
 
         value = 0;
-        return (int)McStatus.MC_INVALID_PARAM;
+        return (int)McStatus.MC_BAD_PARAMETER;
     }
 
     private int GetDefaultChannelParamInt(string paramName)
@@ -242,7 +242,7 @@ public class MockMultiCamHAL : IMultiCamHAL
         }
 
         value = 0;
-        return (int)McStatus.MC_INVALID_PARAM;
+        return (int)McStatus.MC_BAD_PARAMETER;
     }
 
     public int GetParamFloat(uint instance, string paramName, out double value)
@@ -262,7 +262,7 @@ public class MockMultiCamHAL : IMultiCamHAL
         }
 
         value = 0;
-        return (int)McStatus.MC_INVALID_PARAM;
+        return (int)McStatus.MC_BAD_PARAMETER;
     }
 
     public int GetParamStr(uint instance, string paramName, out string value)
@@ -302,7 +302,7 @@ public class MockMultiCamHAL : IMultiCamHAL
         }
 
         value = string.Empty;
-        return (int)McStatus.MC_INVALID_PARAM;
+        return (int)McStatus.MC_BAD_PARAMETER;
     }
 
     private string GetDefaultChannelParamStr(string paramName)
@@ -343,7 +343,7 @@ public class MockMultiCamHAL : IMultiCamHAL
         }
 
         value = IntPtr.Zero;
-        return (int)McStatus.MC_INVALID_PARAM;
+        return (int)McStatus.MC_BAD_PARAMETER;
     }
 
     private int GetConfigurationParam(string paramName, out int value)
@@ -355,13 +355,13 @@ public class MockMultiCamHAL : IMultiCamHAL
         }
 
         value = 0;
-        return (int)McStatus.MC_INVALID_PARAM;
+        return (int)McStatus.MC_BAD_PARAMETER;
     }
 
     private int GetConfigurationParamStr(string paramName, out string value)
     {
         value = string.Empty;
-        return (int)McStatus.MC_INVALID_PARAM;
+        return (int)McStatus.MC_BAD_PARAMETER;
     }
 
     private int GetBoardParamStr(uint boardHandle, string paramName, out string value)

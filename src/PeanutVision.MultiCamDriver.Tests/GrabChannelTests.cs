@@ -121,7 +121,7 @@ public class GrabChannelTests
     [Fact]
     public void Constructor_WhenCreateFails_ThrowsException()
     {
-        _mockHal.Configuration.CreateFailure = (int)McStatus.MC_ERROR;
+        _mockHal.Configuration.CreateFailure = (int)McStatus.MC_INTERNAL_ERROR;
         var options = new GrabChannelOptions();
 
         Assert.Throws<MultiCamException>(() => new GrabChannel(options, _mockHal));
@@ -592,7 +592,7 @@ public class GrabChannelTests
         };
 
         // Simulate unrecoverable error
-        _mockHal.SimulateAcquisitionError(channel.Handle, McSignal.MC_SIG_UNRECOVERABLE_ERROR);
+        _mockHal.SimulateAcquisitionError(channel.Handle, McSignal.MC_SIG_UNRECOVERABLE_OVERRUN);
 
         Assert.True(errorFired);
         Assert.False(channel.IsActive);

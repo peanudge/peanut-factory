@@ -54,11 +54,11 @@ public class MockMultiCamHalTests
     [Fact]
     public void OpenDriver_WhenConfiguredToFail_ReturnsError()
     {
-        _mockHal.Configuration.OpenDriverFailure = (int)McStatus.MC_ERROR;
+        _mockHal.Configuration.OpenDriverFailure = (int)McStatus.MC_NO_BOARD_FOUND;
 
         int result = _mockHal.OpenDriver(null);
 
-        Assert.Equal((int)McStatus.MC_ERROR, result);
+        Assert.Equal((int)McStatus.MC_NO_BOARD_FOUND, result);
     }
 
     [Fact]

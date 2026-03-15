@@ -49,12 +49,12 @@ public class GrabServiceTests
     [Fact]
     public void Initialize_WhenDriverFails_ThrowsException()
     {
-        _mockHal.Configuration.OpenDriverFailure = (int)McStatus.MC_ERROR;
+        _mockHal.Configuration.OpenDriverFailure = (int)McStatus.MC_NO_BOARD_FOUND;
         using var service = new GrabService(_mockHal);
 
         var ex = Assert.Throws<MultiCamException>(() => service.Initialize());
 
-        Assert.Equal((int)McStatus.MC_ERROR, ex.StatusCode);
+        Assert.Equal((int)McStatus.MC_NO_BOARD_FOUND, ex.StatusCode);
     }
 
     [Fact]

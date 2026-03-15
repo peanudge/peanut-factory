@@ -54,9 +54,9 @@ public class MultiCamDriverTests
     public void McStatus_HasExpectedValues()
     {
         Assert.Equal(0, (int)McStatus.MC_OK);
-        Assert.Equal(-1, (int)McStatus.MC_ERROR);
-        Assert.Equal(-4, (int)McStatus.MC_TIMEOUT);
-        Assert.Equal(-8, (int)McStatus.MC_BUSY);
+        Assert.Equal(-1, (int)McStatus.MC_NO_BOARD_FOUND);
+        Assert.Equal(-12, (int)McStatus.MC_TIMEOUT);
+        Assert.Equal(-25, (int)McStatus.MC_SERVICE_ERROR);
     }
 
     [Fact]
@@ -64,8 +64,10 @@ public class MultiCamDriverTests
     {
         Assert.Equal(1, (int)McSignal.MC_SIG_SURFACE_PROCESSING);
         Assert.Equal(2, (int)McSignal.MC_SIG_SURFACE_FILLED);
-        Assert.Equal(3, (int)McSignal.MC_SIG_ACQUISITION_FAILURE);
-        Assert.Equal(-1, (int)McSignal.MC_SIG_ANY);
+        Assert.Equal(7, (int)McSignal.MC_SIG_ACQUISITION_FAILURE);
+        Assert.Equal(0, (int)McSignal.MC_SIG_ANY);
+        Assert.Equal(3, (int)McSignal.MC_SIG_UNRECOVERABLE_OVERRUN);
+        Assert.Equal(12, (int)McSignal.MC_SIG_END_CHANNEL_ACTIVITY);
     }
 
     [Fact]
@@ -90,9 +92,9 @@ public class MultiCamDriverTests
     [Fact]
     public void MultiCamException_ContainsStatusCodeAndOperation()
     {
-        var ex = new MultiCamException(-4, "McWaitSignal");
+        var ex = new MultiCamException(-12, "McWaitSignal");
 
-        Assert.Equal(-4, ex.StatusCode);
+        Assert.Equal(-12, ex.StatusCode);
         Assert.Equal("McWaitSignal", ex.Operation);
         Assert.Contains("MC_TIMEOUT", ex.Message);
     }
@@ -202,13 +204,13 @@ public class MultiCamDriverTests
     public void AcquisitionErrorEventArgs_ContainsErrorInfo()
     {
         var args = new AcquisitionErrorEventArgs(
-            McSignal.MC_SIG_UNRECOVERABLE_ERROR,
+            McSignal.MC_SIG_UNRECOVERABLE_OVERRUN,
             channelHandle: 456,
             signalInfo: 789,
             message: "Test error"
         );
 
-        Assert.Equal(McSignal.MC_SIG_UNRECOVERABLE_ERROR, args.Signal);
+        Assert.Equal(McSignal.MC_SIG_UNRECOVERABLE_OVERRUN, args.Signal);
         Assert.Equal(456u, args.ChannelHandle);
         Assert.Equal("Test error", args.Message);
     }
