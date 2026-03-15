@@ -1,292 +1,291 @@
-SAMPLE PROGRAMS
+# MultiCam Sample Programs
 
-MultiCam
+> Source: Euresys MultiCam 6.19.4 (Doc D404EN)
 
-MultiCam Sample Programs
+## Contents
 
-© EURESYS s.a. 2025 - Doc. D404EN-MultiCam Sample Programs-6.19.4.4059 built on 2025-12-15
+1. [Grablink Sample Programs](#1-grablink-sample-programs)
+2. [Domino Sample Programs](#2-domino-sample-programs)
+3. [Picolo Sample Programs](#3-picolo-sample-programs)
+4. [General Sample Programs](#4-general-sample-programs)
 
-MultiCam MultiCam Sample Programs
+---
 
-This documentation is provided with MultiCam 6.19.4 (doc build 4059).
-www.euresys.com
+## 1. Grablink Sample Programs
 
-2
+Sample programs for Grablink products.
 
-MultiCam MultiCam Sample Programs
+### GrablinkSnapshot
 
-Contents
+This is a simple application demonstrating the MultiCam SNAPSHOT acquisition mode on a Grablink board. The program performs continuous image acquisitions and display.
 
-1. Grablink Sample Programs
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++, C#, VB 6.0, VB.NET, Python |
+| Linux 32-/64-bit | Python |
 
-2. Domino Sample programs
+> **Note:** The sample code is written for the PC1624 Grablink Base, PC1622 Grablink Full and the PC1626 Grablink Full XR models. If you want to operate it with a PC1623 Grablink DualBase model, the `MC_Connector` MultiCam parameter has to be changed according to the sample program comments.
 
-3. Picolo Sample Programs
+### GrablinkSnapshotTrigger
 
-4. General Sample Programs
+This is a simple application demonstrating the MultiCam SNAPSHOT acquisition mode on a Grablink board. The program performs one frame acquisition and displays it each time a hardware or software trigger event occurs.
 
-4
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++, C# |
 
-8
+> **Note:** The sample code is written for the PC1624 Grablink Base, PC1623 Grablink DualBase, PC1622 Grablink Full and the PC1626 Grablink Full XR models. For any other Grablink board model, the `TrigCtl` parameter has to be updated according to the sample program comments.
 
-9
+### grablink_snapshot_trigger
 
-10
+This is a simple SDL based application demonstrating the MultiCam SNAPSHOT acquisition mode using a Grablink board. The program performs one frame acquisition and displays it each time a hardware or software trigger event occurs.
 
-3
+| Platform | Language |
+|----------|----------|
+| Linux 32-/64-bit | C/C++, SDL |
 
-MultiCam MultiCam Sample Programs
+> **Note:** The sample code is written for the PC1624 Grablink Base, PC1623 Grablink DualBase, PC1622 Grablink Full and the PC1626 Grablink Full XR models. For any other Grablink board model, the `TrigCtl` parameter has to be updated according to the sample program comments.
 
-1. Grablink Sample Programs
+### GrablinkHfr
 
-SampleprogramsforGrablinkproducts
+This is a simple application demonstrating the MultiCam HFR acquisition mode on a Grablink board. The program performs continuous image acquisitions and display.
 
-GrablinkSnapshot
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++ |
 
-This is a simple application demonstrating the MultiCam SNAPSHOT acquisition mode on a
-Grablink board. The program performs continuous image acquisitions and display.
+### GrablinkHfrTrigger
 
-NOTE
-The sample code is written for the PC1624 Grablink Base, PC1622 Grablink
-Full and the PC1626 Grablink Full XR models. If you want to operate it with a
-PC1623 Grablink DualBase model, the MC_Connector MultiCam parameter
-has to be changed according to the sample program comments.
+This is a simple application demonstrating the MultiCam HFR acquisition mode on a Grablink board. The program performs one frame acquisition and displays it each time a hardware or software trigger event occurs.
 
-GrablinkSnapshotTrigger
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++ |
 
-This is a simple application demonstrating the MultiCam SNAPSHOT acquisition mode on a
-Grablink board. The program performs one frame acquisition and displays it each time a
-hardware or software trigger event occurs.
+### GrablinkWeb
 
-NOTE
-The sample code is written for the PC1624 Grablink Base, PC1623 Grablink
-DualBase,PC1622 Grablink Full and the PC1626 Grablink Full XRmodels. For
-any other Grablink board model, the TrigCtl parameter has to be updated
-according to the sample program comments.
+This is a simple application demonstrating the MultiCam WEB acquisition mode on a Grablink board. The program performs a continuous web acquisition and display.
 
-4
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++ |
 
-Windows32-/64-bitC/C++C#VB 6.0VB.NETPythonLinux32-/64-bitPythonWindows32-/64-bitC/C++C#MultiCam MultiCam Sample Programs
+### grablink_web
 
-grablink_snapshot_trigger
+This is a simple SDL based application demonstrating the MultiCam WEB acquisition mode on a Grablink board. The program performs continuous web acquisition and display.
 
-This is a simple SDL based application demonstrating the MultiCam SNAPSHOT acquisition
-mode using a Grablink board. The program performs one frame acquisition and displays it each
-time a hardware or software trigger event occurs.
+| Platform | Language |
+|----------|----------|
+| Linux 32-/64-bit | C/C++, SDL |
 
-NOTE
-The sample code is written for the PC1624 Grablink Base, PC1623 Grablink
-DualBase,PC1622 Grablink Full and the PC1626 Grablink Full XR models. For
-any other Grablink board model, the TrigCtl parameter has to be updated
-according to the sample program comments.
+### GrablinkPageTrigger
 
-GrablinkHfr
+This is a simple application demonstrating the MultiCam PAGE acquisition mode on a Grablink board. The program performs one page acquisition and displays it each time a hardware or software trigger event occurs.
 
-This is a simple application demonstrating the MultiCam HFR acquisition mode on a Grablink
-board. The program performs continuous image acquisitions and display.
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++ |
 
-GrablinkHfrTrigger
+### GrablinkLongPageTrigger
 
-This is a simple application demonstrating the MultiCam HFR acquisition mode on a Grablink
-board. The program performs one frame acquisition and displays it each time a hardware or
-software trigger event occurs.
+This is a simple application demonstrating the MultiCam LONGPAGE acquisition mode on a Grablink board. The program performs one LONGPAGE acquisition and displays it each time a hardware or software trigger event occurs.
 
-GrablinkWeb
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++ |
 
-This is a simple application demonstrating the MultiCam WEB acquisition mode on a Grablink
-board. The program performs a continuous web acquisition and display.
+### PlanarRGB
 
-grablink_web
+This is a simple application showing the planar RGB management. The application performs image acquisition and display.
 
-This is a simple SDL based application demonstrating the MultiCam WEB acquisition mode on a
-Grablink board. The program performs continuous web acquisition and display.
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++ |
 
-GrablinkPageTrigger
+### GrablinkDualFull
 
-This is a simple application demonstrating the MultiCam PAGE acquisition mode on a Grablink
-board. The program performs one page acquisition and displays it each time a hardware or
-software trigger event occurs.
+This application demonstrates video acquisition using an AVT Bonito-CL-400B camera connected to 2 Grablink Full boards.
 
-5
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++ |
 
-Linux32-/64-bitC/C++SDLWindows32-/64-bitC/C++Windows32-/64-bitC/C++Windows32-/64-bitC/C++Linux32-/64-bitC/C++SDLWindows32-/64-bitC/C++MultiCam MultiCam Sample Programs
+### GrablinkMultiBase
 
-GrablinkLongPageTrigger
+This application demonstrates synchronized line-scan video acquisition with image stitching from several Camera Link Base line-scan cameras connected to one or several Grablink boards.
 
-This is a simple application demonstrating the MultiCam LONGPAGE acquisition mode on a
-Grablink board. The program performs one LONGPAGE acquisition and displays it each time a
-hardware or software trigger event occurs.
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++, C# |
 
-PlanarRGB
+### GrablinkPipelineController
 
-This is a simple application showing the planar RGB management. The application performs
-image acquisition and display.
+This application demonstrates the Pipeline Controller in PAGE Acquisition Mode on a Grablink board, with a hardware page trigger connected to the IIN2 input and a motion encoder connected to the IIN1 input.
 
-GrablinkDualFull
+| Platform | Language |
+|----------|----------|
+| Windows | C/C++ 32-/64-bit |
 
-This application demonstrates video acquisition using an AVT Bonito-CL-400B camera
-connected to 2 Grablink Full boards.
+### GrablinkSerialCommunication
 
-GrablinkMultiBase
+This is a simple application demonstrating Camera Link serial communication through the clseremc library on a Grablink board.
 
-This application demonstrates synchronized line-scan video acquisition with image stitching
-from several Camera Link Base line-scan cameras connected to one or several Grablink boards.
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++, C# |
 
-GrablinkPipelineController
+### GrablinkIoPorts
 
-This application demonstrates the PipelineControllerin PAGE Acquisition Mode on a Grablink
-board, with a hardware page trigger connected to the IIN2 input and a motion encoder
-connected to the IIN1 input.
+A simple graphical application showing usage of PC1624 Grablink Base, PC1623 Grablink DualBase, PC1622 Grablink Full and PC1626 Grablink Full XR I/O lines through the MultiCam Board object.
 
-GrablinkSerialCommunication
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C# |
 
-This is a simple application demonstrating Camera Link serial communication through the
-clseremc library on a Grablink board.
+### terminal
 
-GrablinkIoPorts
+This is a console application demonstrating the serial communication with Grablink boards using the clseremc Camera Link library.
 
-A simple graphical application showing usage of PC1624 Grablink Base, PC1623 Grablink
-DualBase, PC1622 Grablink Full and PC1626 Grablink Full XR I/O lines through the MultiCam
-Board object.
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | Python |
+| Linux 32-/64-bit | C/C++, Python |
 
-6
-
-Windows32-/64-bitC/C++Windows32-/64-bitC/C++Windows32-/64-bitC/C++Windows32-/64-bitC/C++C#WindowsC/C++32-/64-bitWindows32-/64-bitC/C++C#Windows32-/64-bitC#MultiCam MultiCam Sample Programs
-
-terminal
-
-This is a console application demonstrating the serial communication with Grablink boards
-using the clseremc Camera Link library.
-
-grablink-cuda
+### grablink-cuda
 
 This sample illustrates interoperability of a Grablink board, OpenGL and CUDA:
 
-● Acquisition of 8-bit monochrome buffers using a Grablink board
-
-● Basic processing with CUDA (Inverse 8-bit luminance)
-
-● Rendering with OpenGL (Rotate with click and drag)
+- Acquisition of 8-bit monochrome buffers using a Grablink board
+- Basic processing with CUDA (Inverse 8-bit luminance)
+- Rendering with OpenGL (Rotate with click and drag)
 
 See README.txt in the sample program folder for more details.
 
-7
+| Platform | Language |
+|----------|----------|
+| Windows 64-bit | C/C++, OpenGL, nVidia CUDA |
+| Linux 64-bit | C/C++, OpenGL, nVidia CUDA |
 
-Windows32-/64-bitPythonLinux32-/64-bitC/C++PythonWindows64-bitC/C++OpenGLnVidia CUDALinux64-bitC/C++OpenGLnVidia CUDAMultiCam MultiCam Sample Programs
+---
 
-2. Domino Sample programs
+## 2. Domino Sample Programs
 
-SampleprogramsforDominoproducts
+Sample programs for Domino products.
 
-DominoSnapshot
+### DominoSnapshot
 
-This is a simple application demonstrating the MultiCam Snapshotacquisitionmodeusing a
-Domino board. The program performs continuous image acquisitions and display.
+This is a simple application demonstrating the MultiCam Snapshot acquisition mode using a Domino board. The program performs continuous image acquisitions and display.
 
-DominoSnapshotTrigger
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++, C#, VB 6.0, VB.NET |
 
-This is a simple application demonstrating the MultiCam Snapshotacquisitionmodeusing a
-Domino board. Each time a hardware or software trigger event occurs, the program performs
-one frame acquisition and displays the image.
+### DominoSnapshotTrigger
 
-domino_snapshot _trigger
+This is a simple application demonstrating the MultiCam Snapshot acquisition mode using a Domino board. Each time a hardware or software trigger event occurs, the program performs one frame acquisition and displays the image.
 
-This is a simple SDL-based application demonstrating the MultiCam Snapshot acquisition mode
-using a Domino board. The program performs one frame acquisition and displays it each time a
-hardware or software trigger event occurs.
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++, C# |
 
-8
+### domino_snapshot_trigger
 
-Windows32-/64-bitC/C++C#VB 6.0VB.NETWindows32-/64-bitC/C++C#Linux32-/64-bitC/C++SDLMultiCam MultiCam Sample Programs
+This is a simple SDL-based application demonstrating the MultiCam Snapshot acquisition mode using a Domino board. The program performs one frame acquisition and displays it each time a hardware or software trigger event occurs.
 
-3. Picolo Sample Programs
+| Platform | Language |
+|----------|----------|
+| Linux 32-/64-bit | C/C++, SDL |
 
-SampleprogramsforPicoloproducts
+---
 
-PicoloVideo
+## 3. Picolo Sample Programs
 
-This is a simple application demonstrating the MultiCam Videoacquisitionmodeusing a Picolo
-board. The program performs continuous image acquisition and display.
+Sample programs for Picolo products.
 
-picolo_video
+### PicoloVideo
 
-This is a simple SDL based application that acquires and displays live images using the first
-Picolo board detected by MultiCam.
+This is a simple application demonstrating the MultiCam Video acquisition mode using a Picolo board. The program performs continuous image acquisition and display.
 
-PicoloVideoTrigger
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++, C#, VB 6.0, VB.NET |
 
-This is a simple application demonstrating the MultiCam Videoacquisitionmodeusing a Picolo
-board. Each time a hardware or software trigger event occurs, the program performs an image
-sequence acquisition and display.
+### picolo_video
 
-PicoloDirectShow
+This is a simple SDL based application that acquires and displays live images using the first Picolo board detected by MultiCam.
 
-This is a simple application demonstrating video acquisition and recording using MultiCam
-Microsoft DirectShow filters. The program performs continuous image acquisition and display
-while images are recorded in an AVI file. In order to compile this sample program, the Microsoft
-DirectShow SDK needs to be installed and the strmbase.lib (Microsoft DirectShow library) needs
-to be build. Please refer to Microsoft's website and the product documentation for further
-information on the Microsoft DirectShow SDK.
+| Platform | Language |
+|----------|----------|
+| Linux 32-/64-bit | C/C++, SDL |
 
-The ffdshow codec needs to be installed to perform any image recording. This sample has been
-tested with the ffdshow code versions 2033 and 3476.
+### PicoloVideoTrigger
 
-9
+This is a simple application demonstrating the MultiCam Video acquisition mode using a Picolo board. Each time a hardware or software trigger event occurs, the program performs an image sequence acquisition and display.
 
-Windows32-/64-bitC/C++C#VB 6.0VB.NETLinux32-/64-bitC/C++SDLWindows32-/64-bitC/C++C#Windows32-bitC/C++MultiCam MultiCam Sample Programs
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++, C# |
 
-4. General Sample Programs
+### PicoloDirectShow
 
-SampleprogramsforallMultiCamproducts
+This is a simple application demonstrating video acquisition and recording using MultiCam Microsoft DirectShow filters. The program performs continuous image acquisition and display while images are recorded in an AVI file. In order to compile this sample program, the Microsoft DirectShow SDK needs to be installed and the strmbase.lib (Microsoft DirectShow library) needs to be built. Please refer to Microsoft's website and the product documentation for further information on the Microsoft DirectShow SDK.
 
-MulticamAdvancedWaitEvent
+The ffdshow codec needs to be installed to perform any image recording. This sample has been tested with the ffdshow codec versions 2033 and 3476.
 
-A simple application demonstrating the MultiCam Snapshotacquisitionmodeusing event
-driven signaling instead of callback signaling. The program performs a continuous image
-acquisition and display.
+| Platform | Language |
+|----------|----------|
+| Windows 32-bit | C/C++ |
 
-NOTE
-This sample was written for Grablink series but can easily be converted to be
-used with any other board series.
+---
 
-MulticamAdvancedWaitSignal
+## 4. General Sample Programs
 
-A simple application demonstrating the MultiCam Snapshotacquisitionmodeusing the
-McWaitSignal function instead of the callback signaling method. The program performs a
-continuous image acquisition and display.
+Sample programs for all MultiCam products.
 
-NOTE
-This sample was written for Grablink series but can easily be converted to be
-used with any other board series.
+### MulticamAdvancedWaitEvent
 
-multicam_advanced_waitsignal
+A simple application demonstrating the MultiCam Snapshot acquisition mode using event driven signaling instead of callback signaling. The program performs a continuous image acquisition and display.
 
-This is a simple SDL based application demonstrating the MultiCam Snapshot acquisition mode
-using the McWaitSignal function instead of the callback signaling method. The program
-performs a continuous image acquisition and display.
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++, C# |
 
-NOTE
-This sample was written for Grablink series but can easily be converted to be
-used with any other board series.
+> **Note:** This sample was written for Grablink series but can easily be converted to be used with any other board series.
 
-10
+### MulticamAdvancedWaitSignal
 
-Windows32-/64-bitC/C++C#Windows32-/64-bitC/C++C#Linux32-/64-bitC/C++SDLMultiCam MultiCam Sample Programs
+A simple application demonstrating the MultiCam Snapshot acquisition mode using the `McWaitSignal` function instead of the callback signaling method. The program performs a continuous image acquisition and display.
 
-TestIo
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++, C# |
+
+> **Note:** This sample was written for Grablink series but can easily be converted to be used with any other board series.
+
+### multicam_advanced_waitsignal
+
+This is a simple SDL based application demonstrating the MultiCam Snapshot acquisition mode using the `McWaitSignal` function instead of the callback signaling method. The program performs a continuous image acquisition and display.
+
+| Platform | Language |
+|----------|----------|
+| Linux 32-/64-bit | C/C++, SDL |
+
+> **Note:** This sample was written for Grablink series but can easily be converted to be used with any other board series.
+
+### TestIo
 
 A simple console application making usage of I/O lines through the MultiCam Board object.
 
-NOTE
-The C# version of this sample program only supports PC1624 Grablink Base,
-PC1623 Grablink DualBase, PC1622 Grablink Full and PC1626 Grablink Full
-XR but the code can be easily adapted to other boards.
+| Platform | Language |
+|----------|----------|
+| Windows 32-/64-bit | C/C++, C# |
 
-io_test
+> **Note:** The C# version of this sample program only supports PC1624 Grablink Base, PC1623 Grablink DualBase, PC1622 Grablink Full and PC1626 Grablink Full XR but the code can be easily adapted to other boards.
 
-A simple console application demonstrating the usage of I/O lines with the MultiCam Board
-object.
+### io_test
 
-11
+A simple console application demonstrating the usage of I/O lines with the MultiCam Board object.
 
-Windows32-/64-bitC/C++C#Linux32-/64-bitC/C++
+| Platform | Language |
+|----------|----------|
+| Linux 32-/64-bit | C/C++ |

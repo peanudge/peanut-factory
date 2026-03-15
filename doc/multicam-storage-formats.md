@@ -1,3846 +1,944 @@
-REFERENCE MANUAL
+# MultiCam Storage Formats
 
-MultiCam
+> Source: Euresys MultiCam 6.19.4 (Doc D406EN)
 
-MultiCam Storage Formats
+## Contents
 
-© EURESYS s.a. 2025 - Doc. D406EN-MultiCam Storage Formats-6.19.4.4059 built on 2025-12-15
+1. [Introduction](#1-introduction)
+2. [Monochrome Pixel Formats](#2-monochrome-pixel-formats)
+3. [Bayer CFA Pixel Formats](#3-bayer-cfa-pixel-formats)
+4. [RGB Color Pixel Formats](#4-rgb-color-pixel-formats)
+5. [RGB Color Planar Pixel Formats](#5-rgb-color-planar-pixel-formats)
+6. [YUV Color Pixel Formats](#6-yuv-color-pixel-formats)
+7. [YUV Color Planar Pixel Formats](#7-yuv-color-planar-pixel-formats)
+8. [Raw Data Formats](#8-raw-data-formats)
 
-MultiCam MultiCam Storage Formats
+---
 
-This documentation is provided with MultiCam 6.19.4 (doc build 4059).
-www.euresys.com
+## 1. Introduction
 
-2
-
-MultiCam MultiCam Storage Formats
-
-Contents
-
-1. Introduction
-
-2. Monochrome Pixel Formats
-
-2.1. 8-bit Monochrome
-2.2. 10-bit Monochrome
-2.3. 10-bit Monochrome lsb Packed
-2.4. 10-bit Monochrome msb Packed
-2.5. 12-bit Monochrome
-2.6. 14-bit Monochrome
-2.7. 16-bit Monochrome
-
-3. Bayer CFA Pixel Formats
-
-3.1. 8-bit Bayer CFA
-3.2. 10-bit Bayer CFA
-3.3. 12-bit Bayer CFA
-3.4. 14-bit Bayer CFA
-3.5. 16-bit Bayer CFA
-
-4. RGB Color Pixel Formats
-
-4.1. 5-5-5-bit BGR
-4.2. 5-6-5-bit BGR
-4.3. 8-bit BGR
-4.4. 8-bit RGB
-4.5. 8-bit BGRa
-4.6. 8-bit RGBa
-4.7. 10-bit BGR lsb Packed
-4.8. 10-bit BGR msb Packed
-4.9. 10-bit BGRa lsb Packed
-
-5. RGB Color Planar Pixel Formats
-
-5.1. 8-bit RGB Planar
-5.2. 10-bit RGB Planar
-5.3. 12-bit RGB Planar
-5.4. 14-bit RGB Planar
-5.5. 16-bit RGB Planar
-
-6. YUV Color Pixel Formats
-
-6.1. 8-bit YUV 4:1:1
-6.2. 8-bit YUV 4:2:2
-6.3. 8-bit YUV 4:4:4
-
-7. YUV Color Planar Pixel Formats
-
-7.1. 8-bit YUV 4:1:0 Planar
-7.2. 8-bit YUV 4:1:1 Planar
-7.3. 8-bit YUV 4:2:0 Planar
-7.4. 8-bit YUV 4:2:2 Planar
-7.5. 8-bit YUV 4:4:4 Planar
-
-8. Raw Data Formats
-8.1. 8-bit Raw Data
-8.2. 10-bit Raw Data
-8.3. 12-bit Raw Data
-8.4. 14-bit Raw Data
-8.5. 16-bit Raw Data
-
-3
-
-4
-
-5
-6
-7
-8
-9
-10
-11
-12
-
-13
-14
-15
-16
-17
-18
-
-19
-20
-21
-22
-23
-24
-25
-26
-27
-28
-
-29
-30
-31
-32
-33
-34
-
-35
-36
-37
-38
-
-39
-40
-41
-42
-43
-44
-
-45
-46
-47
-48
-49
-50
-
-MultiCam MultiCam Storage Formats
-
-1. Introduction
-
-MultiCam frame grabbers store image pixel data into the user buffer according to a format
-designated by the Channel parameter ColorFormat.
+MultiCam frame grabbers store image pixel data into the user buffer according to a format designated by the Channel parameter **`ColorFormat`**.
 
 This document provides for each format:
 
-● The MultiCam name, i.e. the ColorFormat value
+- The **MultiCam name**, i.e. the `ColorFormat` value
+- The **PFNC name** as specified in the Pixel Format Naming Convention of GenICam
+- The **storage type**:
+  - **PACKED** when all the components of a pixel are stored consecutively
+  - **PLANAR** when each component of a pixel is stored separately in different planes
+- The **memory layout** describing how the first pixels of the first line(s) are stored in the user buffer
 
-● The PFNC name as specified in the Pixel Format Naming Convention of GenICam
+---
 
-● The storage type:
+## 2. Monochrome Pixel Formats
 
-□ PACKED when all the components of a pixel are stored consecutively
-□ PLANAR when each component of a pixel is stored separetely in different planes
+| MultiCam Name | PFNC Name | Bits/Pixel | Bytes/Pixel | Storage Type | Description |
+|---------------|-----------|------------|-------------|--------------|-------------|
+| `Y8` | Mono8 | 8 | 1 | N/A | [8-bit Monochrome](#21-8-bit-monochrome) |
+| `Y10` | Mono10 | 10 | 2 | N/A | [10-bit Monochrome](#22-10-bit-monochrome) |
+| `Y10P` | Mono10p | 10 | 1.25 | N/A | [10-bit Monochrome lsb Packed](#23-10-bit-monochrome-lsb-packed) |
+| N/A | Mono10pmsb | 10 | 1.25 | N/A | [10-bit Monochrome msb Packed](#24-10-bit-monochrome-msb-packed) |
+| `Y12` | Mono12 | 12 | 2 | N/A | [12-bit Monochrome](#25-12-bit-monochrome) |
+| `Y14` | Mono14 | 14 | 2 | N/A | [14-bit Monochrome](#26-14-bit-monochrome) |
+| `Y16` | Mono16 | 16 | 2 | N/A | [16-bit Monochrome](#27-16-bit-monochrome) |
 
-● The memory layout describing how the first pixels of the first line(s) are stored in the user
+---
 
-buffer.
+### 2.1. 8-bit Monochrome
 
-4
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `Y8` |
+| PFNC Name | Mono8 |
+| Storage Type | N/A |
+| Storage Requirement | 1 Byte/pixel |
 
-MultiCam MultiCam Storage Formats
+**Memory Layout**
 
-2. Monochrome Pixel Formats
+Each pixel occupies 1 byte. Pixels are stored consecutively in memory:
 
-MultiCam Name
+```
+Byte offset:    +3          +2          +1          +0
+              Pixel[3,0]  Pixel[2,0]  Pixel[1,0]  Pixel[0,0]
+```
 
-PFNC Name
+---
 
-Link
+### 2.2. 10-bit Monochrome
 
-Y8
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `Y10` |
+| PFNC Name | Mono10 |
+| Storage Type | N/A |
+| Storage Requirement | 2 Bytes/pixel |
 
-Y10
+**Memory Layout**
 
-Y10P
+Each pixel is stored in 2 bytes (16 bits), with the upper 6 bits set to zero:
 
-N/A
+```
+Byte offset:    +3          +2          +1          +0
+              000000 Pixel[1,0]  000000 Pixel[0,0]
+```
 
-Y12
+---
 
-Y14
+### 2.3. 10-bit Monochrome lsb Packed
 
-Y16
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `Y10P` |
+| PFNC Name | Mono10p |
+| Storage Type | N/A |
+| Storage Requirement | 1.25 Bytes/pixel |
 
-Mono8
+**Memory Layout**
 
-Mono10
+10-bit pixel values are packed with the least significant bits first. Groups of 4 pixels are packed into 5 bytes.
 
-"8-bit Monochrome" on page 6
+> **Note:** A pixel boundary is aligned to a 32-bit word boundary every 16 pixels (20 bytes).
 
-"10-bit Monochrome" on page 7
+---
 
-Mono10p
+### 2.4. 10-bit Monochrome msb Packed
 
-"10-bit Monochrome lsb Packed" on page 8
+| Property | Value |
+|----------|-------|
+| MultiCam Name | N/A |
+| PFNC Name | Mono10pmsb |
+| Storage Type | N/A |
+| Storage Requirement | 1.25 Bytes/pixel |
 
-Mono10pmsb
+**Memory Layout**
 
-"10-bit Monochrome msb Packed" on page 9
+10-bit pixel values are packed with the most significant bits first. Groups of 4 pixels are packed into 5 bytes.
 
-Mono12
+> **Note:** A pixel boundary is aligned to a 32-bit word boundary every 16 pixels (20 bytes).
 
-Mono14
+---
 
-Mono16
+### 2.5. 12-bit Monochrome
 
-"12-bit Monochrome" on page 10
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `Y12` |
+| PFNC Name | Mono12 |
+| Storage Type | N/A |
+| Storage Requirement | 2 Bytes/pixel |
 
-"14-bit Monochrome" on page 11
+**Memory Layout**
 
-"16-bit Monochrome" on page 12
+Each pixel is stored in 2 bytes (16 bits), with the upper 4 bits set to zero:
 
-5
+```
+Byte offset:    +3          +2          +1          +0
+              0000 Pixel[1,0]   0000 Pixel[0,0]
+```
 
-MultiCam MultiCam Storage Formats
+---
 
-2.1. 8-bit Monochrome
+### 2.6. 14-bit Monochrome
 
-MultiCam Name
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `Y14` |
+| PFNC Name | Mono14 |
+| Storage Type | N/A |
+| Storage Requirement | 2 Bytes/pixel |
 
-PFNC Name
+**Memory Layout**
 
-Storage Type
+Each pixel is stored in 2 bytes (16 bits), with the upper 2 bits set to zero:
 
-Y8
+```
+Byte offset:    +3          +2          +1          +0
+              00 Pixel[1,0]     00 Pixel[0,0]
+```
 
-Mono8
+---
 
-N/A
+### 2.7. 16-bit Monochrome
 
-Storage
-Requirement
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `Y16` |
+| PFNC Name | Mono16 |
+| Storage Type | N/A |
+| Storage Requirement | 2 Bytes/pixel |
 
-1 Byte/pixel
+**Memory Layout**
 
-Memory Layout
+Each pixel occupies a full 16-bit word:
 
-@
+```
+Byte offset:    +3          +2          +1          +0
+              Pixel[1,0]             Pixel[0,0]
+```
 
-0
+---
 
-+3
+## 3. Bayer CFA Pixel Formats
 
-+2
+| MultiCam Name | PFNC Names | Bits/Pixel | Bytes/Pixel | Description |
+|---------------|------------|------------|-------------|-------------|
+| `BAYER8` | BayerBG8, BayerGB8, BayerGR8, BayerRG8 | 8 | 1 | [8-bit Bayer CFA](#31-8-bit-bayer-cfa) |
+| `BAYER10` | BayerBG10, BayerGB10, BayerGR10, BayerRG10 | 10 | 2 | [10-bit Bayer CFA](#32-10-bit-bayer-cfa) |
+| `BAYER12` | BayerBG12, BayerGB12, BayerGR12, BayerRG12 | 12 | 2 | [12-bit Bayer CFA](#33-12-bit-bayer-cfa) |
+| `BAYER14` | BayerBG14, BayerGB14, BayerGR14, BayerRG14 | 14 | 2 | [14-bit Bayer CFA](#34-14-bit-bayer-cfa) |
+| `BAYER16` | BayerBG16, BayerGB16, BayerGR16, BayerRG16 | 16 | 2 | [16-bit Bayer CFA](#35-16-bit-bayer-cfa) |
 
-+1
+---
 
-+0
+### 3.1. 8-bit Bayer CFA
 
-Pixel[3,0]
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `BAYER8` |
+| PFNC Names | BayerBG8, BayerGB8, BayerGR8, BayerRG8 |
+| Storage Requirement | 1 Byte/pixel |
 
-Pixel[2,0]
+**Memory Layout (BG CFA example)**
 
-Pixel[1,0]
+Each pixel occupies 1 byte. The color filter array pattern determines the color component at each position. H = buffer pitch (in bytes).
 
-Pixel[0,0]
+```
+Row 0:  +3            +2            +1            +0
+        Pixel[3,0]:G  Pixel[2,0]:B  Pixel[1,0]:G  Pixel[0,0]:B
 
-6
+Row 1:  +3            +2            +1            +0
+        Pixel[3,1]:R  Pixel[2,1]:G  Pixel[1,1]:R  Pixel[0,1]:G
+```
 
-MultiCam MultiCam Storage Formats
+> **Note:** H = buffer pitch (in bytes).
 
-2.2. 10-bit Monochrome
+---
 
-MultiCam Name
+### 3.2. 10-bit Bayer CFA
 
-PFNC Name
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `BAYER10` |
+| PFNC Names | BayerBG10, BayerGB10, BayerGR10, BayerRG10 |
+| Storage Requirement | 2 Bytes/pixel |
 
-Storage Type
+**Memory Layout (BG CFA example)**
 
-Y10
+Each pixel is stored in 2 bytes with the upper 6 bits set to zero. H = buffer pitch (in bytes).
 
-Mono10
+```
+Row 0:  +3               +2               +1               +0
+        000000 Pixel[1,0]:G               000000 Pixel[0,0]:B
 
-N/A
+Row 1:  +3               +2               +1               +0
+        000000 Pixel[1,1]:R               000000 Pixel[0,1]:G
+```
 
-Storage
-Requirement
+> **Note:** H = buffer pitch (in bytes).
 
-2 Bytes/pixel
+---
 
-Memory Layout
+### 3.3. 12-bit Bayer CFA
 
-@
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `BAYER12` |
+| PFNC Names | BayerBG12, BayerGB12, BayerGR12, BayerRG12 |
+| Storage Requirement | 2 Bytes/pixel |
 
-0
+**Memory Layout (BG CFA example)**
 
-+3
+Each pixel is stored in 2 bytes with the upper 4 bits set to zero. H = buffer pitch (in bytes).
 
-+2
+```
+Row 0:  +3             +2             +1             +0
+        0000 Pixel[1,0]:G             0000 Pixel[0,0]:B
 
-+1
+Row 1:  +3             +2             +1             +0
+        0000 Pixel[1,1]:R             0000 Pixel[0,1]:G
+```
 
-+0
+> **Note:** H = buffer pitch (in bytes).
 
-0
+---
 
-0
+### 3.4. 14-bit Bayer CFA
 
-0
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `BAYER14` |
+| PFNC Names | BayerBG14, BayerGB14, BayerGR14, BayerRG14 |
+| Storage Requirement | 2 Bytes/pixel |
 
-0
+**Memory Layout (BG CFA example)**
 
-0
+Each pixel is stored in 2 bytes with the upper 2 bits set to zero. H = buffer pitch (in bytes).
 
-0
+```
+Row 0:  +3           +2           +1           +0
+        00 Pixel[1,0]:G           00 Pixel[0,0]:B
 
-Pixel[1,0]
+Row 1:  +3           +2           +1           +0
+        00 Pixel[1,1]:R           00 Pixel[0,1]:G
+```
 
-0
+> **Note:** H = buffer pitch (in bytes).
 
-0
+---
 
-0
+### 3.5. 16-bit Bayer CFA
 
-0
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `BAYER16` |
+| PFNC Names | BayerBG16, BayerGB16, BayerGR16, BayerRG16 |
+| Storage Requirement | 2 Bytes/pixel |
 
-0
+**Memory Layout (BG CFA example)**
 
-0
+Each pixel occupies a full 16-bit word. H = buffer pitch (in bytes).
 
-Pixel[0,0]
+```
+Row 0:  +3             +2      +1             +0
+        Pixel[1,0]:G           Pixel[0,0]:B
 
-7
+Row 1:  +3             +2      +1             +0
+        Pixel[1,1]:R           Pixel[0,1]:G
+```
 
-MultiCam MultiCam Storage Formats
+> **Note:** H = buffer pitch (in bytes).
 
-2.3. 10-bit Monochrome lsb Packed
+---
 
-MultiCam Name
+## 4. RGB Color Pixel Formats
 
-PFNC Name
+| MultiCam Name | PFNC Name | Bits/Pixel | Bytes/Pixel | Storage Type | Description |
+|---------------|-----------|------------|-------------|--------------|-------------|
+| `RGB15` | BGR555 | 15 (+1 unused) | 2 | PACKED | [5-5-5-bit BGR](#41-5-5-5-bit-bgr) |
+| `RGB16` | BGR565 | 16 | 2 | PACKED | [5-6-5-bit BGR](#42-5-6-5-bit-bgr) |
+| `RGB24` | BGR8 | 24 | 3 | PACKED | [8-bit BGR](#43-8-bit-bgr) |
+| N/A | RGB8 | 24 | 3 | PACKED | [8-bit RGB](#44-8-bit-rgb) |
+| `RGB32` | BGRa8 | 32 | 4 | PACKED | [8-bit BGRa](#45-8-bit-bgra) |
+| N/A | RGBa8 | 32 | 4 | PACKED | [8-bit RGBa](#46-8-bit-rgba) |
+| `RGB30P` | BGR10p | 30 | 3.75 | PACKED | [10-bit BGR lsb Packed](#47-10-bit-bgr-lsb-packed) |
+| N/A | BGR10pmsb | 30 | 3.75 | PACKED | [10-bit BGR msb Packed](#48-10-bit-bgr-msb-packed) |
+| `RGBI40P` | BGRa10p | 40 | 5 | PACKED | [10-bit BGRa lsb Packed](#49-10-bit-bgra-lsb-packed) |
 
-Storage Type
+---
 
-Storage
-Requirement
+### 4.1. 5-5-5-bit BGR
 
-Y10P
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `RGB15` |
+| PFNC Name | BGR555 |
+| Storage Type | PACKED |
+| Storage Requirement | 2 Bytes/pixel |
 
-Mono10p
+**Memory Layout**
 
-N/A
+Each pixel is packed into 2 bytes: 1 unused bit, then 5 bits each for R, G, B.
 
-1.25 Bytes/pixel
+```
+Byte offset:    +3          +2          +1          +0
+              [0|R|G|B]  Pixel[1,0]  [0|R|G|B]  Pixel[0,0]
+              (5-5-5)                (5-5-5)
+```
 
-Memory Layout
+---
 
-3
-1
+### 4.2. 5-6-5-bit BGR
 
-2
-4
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `RGB16` |
+| PFNC Name | BGR565 |
+| Storage Type | PACKED |
+| Storage Requirement | 2 Bytes/pixel |
 
-1
-6
+**Memory Layout**
 
-8
+Each pixel is packed into 2 bytes: 5 bits R, 6 bits G, 5 bits B.
 
-0
+```
+Byte offset:    +3          +2          +1          +0
+              [R|G|B]    Pixel[1,0]  [R|G|B]    Pixel[0,0]
+              (5-6-5)                (5-6-5)
+```
 
-@
+---
 
-+3
+### 4.3. 8-bit BGR
 
-+2
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `RGB24` |
+| PFNC Name | BGR8 |
+| Storage Type | PACKED |
+| Storage Requirement | 3 Bytes/pixel |
 
-+1
+**Memory Layout**
 
-+0
+Pixels are stored in B-G-R byte order. Since 3 bytes per pixel does not align to 4-byte boundaries, successive pixels wrap across 32-bit words:
 
-Pixel[2,0]
+```
+Word @+0:   Pixel[1,0]:B  Pixel[0,0]:R  Pixel[0,0]:G  Pixel[0,0]:B
+Word @+4:   Pixel[2,0]:G  Pixel[2,0]:B  Pixel[1,0]:R  Pixel[1,0]:G
+Word @+8:   Pixel[3,0]:R  Pixel[3,0]:G  Pixel[3,0]:B  Pixel[2,0]:R
+```
 
-Pixel[1,0]
+---
 
-Pixel[0,0]
+### 4.4. 8-bit RGB
 
-...
-(1,
-0)
+| Property | Value |
+|----------|-------|
+| MultiCam Name | N/A |
+| PFNC Name | RGB8 |
+| Storage Type | PACKED |
+| Storage Requirement | 3 Bytes/pixel |
 
-...
-(3,0)
+**Memory Layout**
 
-...
-(5:0)
+Pixels are stored in R-G-B byte order. Since 3 bytes per pixel does not align to 4-byte boundaries, successive pixels wrap across 32-bit words:
 
-0
+```
+Word @+0:   Pixel[1,0]:R  Pixel[0,0]:B  Pixel[0,0]:G  Pixel[0,0]:R
+Word @+4:   Pixel[2,0]:G  Pixel[2,0]:R  Pixel[1,0]:B  Pixel[1,0]:G
+Word @+8:   Pixel[3,0]:B  Pixel[3,0]:G  Pixel[3,0]:R  Pixel[2,0]:B
+```
 
-4
+---
 
-8
+### 4.5. 8-bit BGRa
 
-1
-2
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `RGB32` |
+| PFNC Name | BGRa8 |
+| Storage Type | PACKED |
+| Storage Requirement | 4 Bytes/pixel |
 
-1
-6
+**Memory Layout**
 
-Pixel[5,0]
+Each pixel occupies exactly one 32-bit word in B-G-R-a byte order:
 
-Pixel[4,0]
+```
+Byte offset:    +3          +2          +1          +0
+              Pixel[0,0]:a  Pixel[0,0]:R  Pixel[0,0]:G  Pixel[0,0]:B
+```
 
-Pixel[8,0]
+---
 
-Pixel[7,0]
+### 4.6. 8-bit RGBa
 
-Pixel[3,0]
-(9:2)...
+| Property | Value |
+|----------|-------|
+| MultiCam Name | N/A |
+| PFNC Name | RGBa8 |
+| Storage Type | PACKED |
+| Storage Requirement | 4 Bytes/pixel |
 
-Pixel[6,0]
-(9:4)...
+**Memory Layout**
 
-Pixel[9,0]
-(9:6)...
+Each pixel occupies exactly one 32-bit word in R-G-B-a byte order:
 
-Pixel[12,0]
-...(7:0)
+```
+Byte offset:    +3          +2          +1          +0
+              Pixel[0,0]:a  Pixel[0,0]:B  Pixel[0,0]:G  Pixel[0,0]:R
+```
 
-Pixel[11,0]
+---
 
-Pixel[10,0]
+### 4.7. 10-bit BGR lsb Packed
 
-Pixel[15,0]
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `RGB30P` |
+| PFNC Name | BGR10p |
+| Storage Type | PACKED |
+| Storage Requirement | 3.75 Bytes/pixel |
 
-Pixel[14,0]
+**Memory Layout**
 
-Pixel[13,0]
+Three 10-bit color components (B, G, R) are packed per pixel with least significant bits first. The first 32-bit word contains Pixel[0,0] with B, G, R packed from bit 0 upward, with 2 unused bits.
 
-....
-(9:
-8)
+> **Note:** A pixel boundary is aligned to a 32-bit word boundary every 16 pixels (60 bytes).
 
-NOTE
-A pixel boundary is aligned to a 32-bit word boundary every 16 pixels (20
-bytes)
+---
 
-8
+### 4.8. 10-bit BGR msb Packed
 
-MultiCam MultiCam Storage Formats
+| Property | Value |
+|----------|-------|
+| MultiCam Name | N/A |
+| PFNC Name | BGR10pmsb |
+| Storage Type | PACKED |
+| Storage Requirement | 3.75 Bytes/pixel |
 
-2.4. 10-bit Monochrome msb Packed
+**Memory Layout**
 
-MultiCam Name
+Three 10-bit color components (B, G, R) are packed per pixel with most significant bits first. The first 32-bit word contains Pixel[0,0] with B, G, R packed from the most significant bit downward, with 2 unused bits.
 
-PFNC Name
+> **Note:** A pixel boundary is aligned to a 32-bit word boundary every 16 pixels (60 bytes).
 
-Storage Type
+---
 
-Storage
-Requirement
+### 4.9. 10-bit BGRa lsb Packed
 
-N/A
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `RGBI40P` |
+| PFNC Name | BGRa10p |
+| Storage Type | PACKED |
+| Storage Requirement | 5 Bytes/pixel |
 
-Mono10pmsb
+**Memory Layout**
 
-N/A
+Four 10-bit components (B, G, R, a) are packed per pixel with least significant bits first, totaling 40 bits (5 bytes) per pixel.
 
-1.25 Bytes/pixel
+> **Note:** A pixel boundary is aligned to a 32-bit word boundary every 4 pixels (20 bytes).
 
-Memory Layout
+---
 
-3
-1
+## 5. RGB Color Planar Pixel Formats
 
-2
-4
+| MultiCam Name | PFNC Name | Bits/Pixel | Bytes/Pixel | Storage Type | Description |
+|---------------|-----------|------------|-------------|--------------|-------------|
+| `RGB24PL` | N/A | 24 | 3 | PLANAR | [8-bit RGB Planar](#51-8-bit-rgb-planar) |
+| `RGB30PL` | N/A | 30 | 6 | PLANAR | [10-bit RGB Planar](#52-10-bit-rgb-planar) |
+| `RGB36PL` | N/A | 36 | 6 | PLANAR | [12-bit RGB Planar](#53-12-bit-rgb-planar) |
+| `RGB42PL` | N/A | 42 | 6 | PLANAR | [14-bit RGB Planar](#54-14-bit-rgb-planar) |
+| `RGB48PL` | N/A | 48 | 6 | PLANAR | [16-bit RGB Planar](#55-16-bit-rgb-planar) |
 
-1
-6
+---
 
-8
+### 5.1. 8-bit RGB Planar
 
-@
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `RGB24PL` |
+| PFNC Name | N/A |
+| Storage Type | PLANAR |
+| Storage Requirement | 3 Bytes/pixel |
 
-+0
+**Memory Layout**
 
-+1
+Three separate planes, each storing 1 byte per pixel:
 
-+2
+- **Plane 0 (R):** `Pixel[3,0]:R  Pixel[2,0]:R  Pixel[1,0]:R  Pixel[0,0]:R`
+- **Plane 1 (G):** `Pixel[3,0]:G  Pixel[2,0]:G  Pixel[1,0]:G  Pixel[0,0]:G`
+- **Plane 2 (B):** `Pixel[3,0]:B  Pixel[2,0]:B  Pixel[1,0]:B  Pixel[0,0]:B`
 
-+3
+---
 
-Pixel[0,0]
+### 5.2. 10-bit RGB Planar
 
-Pixel[1,0]
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `RGB30PL` |
+| PFNC Name | N/A |
+| Storage Type | PLANAR |
+| Storage Requirement | 6 Bytes/pixel |
 
-Pixel[2,0]
+**Memory Layout**
 
-Pixel[3,0]
-...(7:0)
+Three separate planes, each storing 2 bytes per pixel (upper 6 bits zero):
 
-Pixel[4,0]
+- **Plane 0 (R):** `000000 Pixel[1,0]:R  |  000000 Pixel[0,0]:R`
+- **Plane 1 (G):** `000000 Pixel[1,0]:G  |  000000 Pixel[0,0]:G`
+- **Plane 2 (B):** `000000 Pixel[1,0]:B  |  000000 Pixel[0,0]:B`
 
-Pixel[5,0]
+---
 
-Pixel[7,0]
+### 5.3. 12-bit RGB Planar
 
-Pixel[8,0]
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `RGB36PL` |
+| PFNC Name | N/A |
+| Storage Type | PLANAR |
+| Storage Requirement | 6 Bytes/pixel |
 
-Pixel[10,0]
+**Memory Layout**
 
-Pixel[11,0]
+Three separate planes, each storing 2 bytes per pixel (upper 4 bits zero):
 
-0
+- **Plane 0 (R):** `0000 Pixel[1,0]:R  |  0000 Pixel[0,0]:R`
+- **Plane 1 (G):** `0000 Pixel[1,0]:G  |  0000 Pixel[0,0]:G`
+- **Plane 2 (B):** `0000 Pixel[1,0]:B  |  0000 Pixel[0,0]:B`
 
-4
+---
 
-8
+### 5.4. 14-bit RGB Planar
 
-1
-2
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `RGB42PL` |
+| PFNC Name | N/A |
+| Storage Type | PLANAR |
+| Storage Requirement | 6 Bytes/pixel |
 
-1
-6
+**Memory Layout**
 
-...
-(5:0)
+Three separate planes, each storing 2 bytes per pixel (upper 2 bits zero):
 
-...
-(3,0)
+- **Plane 0 (R):** `00 Pixel[1,0]:R  |  00 Pixel[0,0]:R`
+- **Plane 1 (G):** `00 Pixel[1,0]:G  |  00 Pixel[0,0]:G`
+- **Plane 2 (B):** `00 Pixel[1,0]:B  |  00 Pixel[0,0]:B`
 
-...
-(1,
-0)
+---
 
-Pixel[13,0]
+### 5.5. 16-bit RGB Planar
 
-Pixel[14,0]
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `RGB48PL` |
+| PFNC Name | N/A |
+| Storage Type | PLANAR |
+| Storage Requirement | 6 Bytes/pixel |
 
-Pixel[15,0]
+**Memory Layout**
 
-0
+Three separate planes, each storing 2 bytes per pixel (full 16-bit values):
 
-...
-(9:
-8)
+- **Plane 0 (R):** `Pixel[1,0]:R  |  Pixel[0,0]:R`
+- **Plane 1 (G):** `Pixel[1,0]:G  |  Pixel[0,0]:G`
+- **Plane 2 (B):** `Pixel[1,0]:B  |  Pixel[0,0]:B`
 
-Pixel[6,0]
-(9:6)...
+---
 
-Pixel[9,0]
-(9:4)...
+## 6. YUV Color Pixel Formats
 
-Pixel[12,0]
-(9:2)...
+| MultiCam Name | Alias | PFNC Name | Bytes/Pixel | Storage Type | Description |
+|---------------|-------|-----------|-------------|--------------|-------------|
+| `YUV411` | Y41P | YUV411_8_UYVYUYVYYYYY | 1.5 | PACKED | [8-bit YUV 4:1:1](#61-8-bit-yuv-411) |
+| `YUV422` | Y42P | YUV422_8_YUYV | 2 | PACKED | [8-bit YUV 4:2:2](#62-8-bit-yuv-422) |
+| `YUV444` | IYU2 | YUV444_8_UYV | 3 | PACKED | [8-bit YUV 4:4:4](#63-8-bit-yuv-444) |
 
-NOTE
-A pixel boundary is aligned to a 32-bit word boundary every 16 pixels (20
-bytes)
+---
 
-9
+### 6.1. 8-bit YUV 4:1:1
 
-MultiCam MultiCam Storage Formats
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `YUV411` / Y41P |
+| PFNC Name | YUV411_8_UYVYUYVYYYYY |
+| Storage Type | PACKED |
+| Storage Requirement | 1.5 Bytes/pixel |
 
-2.5. 12-bit Monochrome
+**Memory Layout**
 
-MultiCam Name
+8 pixels are packed into 12 bytes. Only 1 U(Cb) and 1 V(Cr) sample are captured every 4 pixels.
 
-PFNC Name
+```
+Word @+0:   Pixel[1,0]:Y   Pixel[0,0]:V(Cr)  Pixel[0,0]:Y   Pixel[0,0]:U(Cb)
+Word @+4:   Pixel[3,0]:Y   Pixel[4,0]:V(Cr)  Pixel[2,0]:Y   Pixel[4,0]:U(Cb)
+Word @+8:   Pixel[7,0]:Y   Pixel[6,0]:Y      Pixel[5,0]:Y   Pixel[4,0]:Y
+```
 
-Storage Type
+> **Note:** Only 1 U(Cb) and 1 V(Cr) samples are captured every 4 pixels.
 
-Y12
+---
 
-Mono12
+### 6.2. 8-bit YUV 4:2:2
 
-N/A
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `YUV422` / Y42P |
+| PFNC Name | YUV422_8_YUYV |
+| Storage Type | PACKED |
+| Storage Requirement | 2 Bytes/pixel |
 
-Storage
-Requirement
+**Memory Layout**
 
-2 Bytes/pixel
+2 pixels are packed into 4 bytes:
 
-Memory Layout
+```
+Byte offset:    +3              +2            +1              +0
+              Pixel[0,0]:V(Cr)  Pixel[1,0]:Y  Pixel[0,0]:U(Cb)  Pixel[0,0]:Y
+```
 
-@
+> **Note:** Only 1 U(Cb) and 1 V(Cr) samples are captured every 2 pixels.
 
-0
+---
 
-+3
+### 6.3. 8-bit YUV 4:4:4
 
-+2
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `YUV444` / IYU2 |
+| PFNC Name | YUV444_8_UYV |
+| Storage Type | PACKED |
+| Storage Requirement | 3 Bytes/pixel |
 
-+1
+**Memory Layout**
 
-+0
+Each pixel has its own U, Y, V components stored in 3 bytes. Since 3 bytes per pixel does not align to 4-byte boundaries, successive pixels wrap across 32-bit words:
 
-0
+```
+Word @+0:   Pixel[1,0]:U(Cb)  Pixel[0,0]:V(Cr)  Pixel[0,0]:Y      Pixel[0,0]:U(Cb)
+Word @+4:   Pixel[2,0]:Y      Pixel[2,0]:U(Cb)   Pixel[1,0]:V(Cr)  Pixel[1,0]:Y
+Word @+8:   Pixel[3,0]:V(Cr)  Pixel[3,0]:Y       Pixel[3,0]:U(Cb)  Pixel[2,0]:V(Cr)
+```
 
-0
+---
 
-0
+## 7. YUV Color Planar Pixel Formats
 
-0
+| MultiCam Name | Alias | PFNC Name | Bytes/Pixel | Storage Type | Description |
+|---------------|-------|-----------|-------------|--------------|-------------|
+| `YUV411PL_Dec` | YUV9, YVU9 | YUV410_8_Planar | 1.125 | PLANAR | [8-bit YUV 4:1:0 Planar](#71-8-bit-yuv-410-planar) |
+| `YUV411PL` | Y41B | YUV411_8_Planar | 1.5 | PLANAR | [8-bit YUV 4:1:1 Planar](#72-8-bit-yuv-411-planar) |
+| `YUV422PL_Dec` | I420, IYUV, YV12 | YUV420_8_Planar | 1.5 | PLANAR | [8-bit YUV 4:2:0 Planar](#73-8-bit-yuv-420-planar) |
+| `YUV422PL` | Y42B | YUV422_8_Planar | 2 | PLANAR | [8-bit YUV 4:2:2 Planar](#74-8-bit-yuv-422-planar) |
+| `YUV444PL` | -- | YUV444_8_Planar | 3 | PLANAR | [8-bit YUV 4:4:4 Planar](#75-8-bit-yuv-444-planar) |
 
-Pixel[1,0]
+---
 
-0
+### 7.1. 8-bit YUV 4:1:0 Planar
 
-0
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `YUV411PL_Dec` / YUV9 / YVU9 |
+| PFNC Name | YUV410_8_Planar |
+| Storage Type | PLANAR |
+| Storage Requirement | 1.125 Bytes/pixel |
 
-0
+**Memory Layout**
 
-0
+- **Plane 0 (Y):** 1 byte per pixel, all pixels stored.
+  ```
+  Pixel[3,0]:Y  Pixel[2,0]:Y  Pixel[1,0]:Y  Pixel[0,0]:Y
+  ```
 
-Pixel[0,0]
+- **Plane 1 (U/Cb):** 1 U(Cb) sample every 4 pixels in 1 line every 4 lines. H = buffer pitch.
+  ```
+  Row 0:  Pixel[12,0]:U(Cb)  Pixel[8,0]:U(Cb)  Pixel[4,0]:U(Cb)  Pixel[0,0]:U(Cb)
+  Row 4:  Pixel[12,4]:U(Cb)  Pixel[8,4]:U(Cb)  Pixel[4,4]:U(Cb)  Pixel[0,4]:U(Cb)
+  ```
 
-10
+- **Plane 2 (V/Cr):** 1 V(Cr) sample every 4 pixels in 1 line every 4 lines.
+  ```
+  Row 0:  Pixel[12,0]:V(Cr)  Pixel[8,0]:V(Cr)  Pixel[4,0]:V(Cr)  Pixel[0,0]:V(Cr)
+  Row 4:  Pixel[12,4]:V(Cr)  Pixel[8,4]:V(Cr)  Pixel[4,4]:V(Cr)  Pixel[0,4]:V(Cr)
+  ```
 
-MultiCam MultiCam Storage Formats
+> **Note:** Only 1 U(Cb) and 1 V(Cr) sample is captured every 4 pixels in 1 line every 4 lines.
 
-2.6. 14-bit Monochrome
+---
 
-MultiCam Name
+### 7.2. 8-bit YUV 4:1:1 Planar
 
-PFNC Name
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `YUV411PL` / Y41B |
+| PFNC Name | YUV411_8_Planar |
+| Storage Type | PLANAR |
+| Storage Requirement | 1.5 Bytes/pixel |
 
-Storage Type
+**Memory Layout**
 
-Y14
+- **Plane 0 (Y):** 1 byte per pixel, all pixels stored.
 
-Mono14
+- **Plane 1 (U/Cb):** 1 U(Cb) sample every 4 pixels.
+  ```
+  Pixel[12,0]:U(Cb)  Pixel[8,0]:U(Cb)  Pixel[4,0]:U(Cb)  Pixel[0,0]:U(Cb)
+  ```
 
-N/A
+- **Plane 2 (V/Cr):** 1 V(Cr) sample every 4 pixels.
+  ```
+  Pixel[12,0]:V(Cr)  Pixel[8,0]:V(Cr)  Pixel[4,0]:V(Cr)  Pixel[0,0]:V(Cr)
+  ```
 
-Storage
-Requirement
+> **Note:** Only 1 U(Cb) and 1 V(Cr) sample is captured every 4 pixels.
 
-2 Bytes/pixel
+---
 
-Memory Layout
+### 7.3. 8-bit YUV 4:2:0 Planar
 
-@
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `YUV422PL_Dec` / I420 / IYUV / YV12 |
+| PFNC Name | YUV420_8_Planar |
+| Storage Type | PLANAR |
+| Storage Requirement | 1.5 Bytes/pixel |
 
-0
+**Memory Layout**
 
-+3
+- **Plane 0 (Y):** 1 byte per pixel, all pixels stored.
+  ```
+  Pixel[3,0]:Y  Pixel[2,0]:Y  Pixel[1,0]:Y  Pixel[0,0]:Y
+  ```
 
-+2
+- **Plane 1 (U/Cb):** 1 U(Cb) sample every 2 pixels in 1 line every 2 lines. H = buffer pitch.
+  ```
+  Row 0:  Pixel[6,0]:U(Cb)  Pixel[4,0]:U(Cb)  Pixel[2,0]:U(Cb)  Pixel[0,0]:U(Cb)
+  Row 2:  Pixel[6,2]:U(Cb)  Pixel[4,2]:U(Cb)  Pixel[2,2]:U(Cb)  Pixel[0,2]:U(Cb)
+  ```
 
-+1
+- **Plane 2 (V/Cr):** 1 V(Cr) sample every 2 pixels in 1 line every 2 lines.
+  ```
+  Row 0:  Pixel[6,0]:V(Cr)  Pixel[4,0]:V(Cr)  Pixel[2,0]:V(Cr)  Pixel[0,0]:V(Cr)
+  Row 2:  Pixel[6,2]:V(Cr)  Pixel[4,2]:V(Cr)  Pixel[2,2]:V(Cr)  Pixel[0,2]:V(Cr)
+  ```
 
-+0
+> **Note:** Only 1 U(Cb) and 1 V(Cr) sample is captured every 2 pixels in 1 line every 2 lines.
 
-0
+---
 
-0
+### 7.4. 8-bit YUV 4:2:2 Planar
 
-Pixel[1,0]
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `YUV422PL` / Y42B |
+| PFNC Name | YUV422_8_Planar |
+| Storage Type | PLANAR |
+| Storage Requirement | 2 Bytes/pixel |
 
-0
+**Memory Layout**
 
-0
+- **Plane 0 (Y):** 1 byte per pixel, all pixels stored.
 
-Pixel[0,0]
+- **Plane 1 (U/Cb):** 1 U(Cb) sample every 2 pixels.
+  ```
+  Pixel[6,0]:U(Cb)  Pixel[4,0]:U(Cb)  Pixel[2,0]:U(Cb)  Pixel[0,0]:U(Cb)
+  ```
 
-11
+- **Plane 2 (V/Cr):** 1 V(Cr) sample every 2 pixels.
+  ```
+  Pixel[6,0]:V(Cr)  Pixel[4,0]:V(Cr)  Pixel[2,0]:V(Cr)  Pixel[0,0]:V(Cr)
+  ```
 
-MultiCam MultiCam Storage Formats
+> **Note:** Only 1 U(Cb) and 1 V(Cr) sample is captured every 2 pixels.
 
-2.7. 16-bit Monochrome
+---
 
-MultiCam Name
+### 7.5. 8-bit YUV 4:4:4 Planar
 
-PFNC Name
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `YUV444PL` |
+| PFNC Name | YUV444_8_Planar |
+| Storage Type | PLANAR |
+| Storage Requirement | 3 Bytes/pixel |
 
-Storage Type
+**Memory Layout**
 
-Y16
+Three separate planes, each storing 1 byte per pixel:
 
-Mono16
+- **Plane 0 (Y):** `Pixel[3,0]:Y  Pixel[2,0]:Y  Pixel[1,0]:Y  Pixel[0,0]:Y`
+- **Plane 1 (U/Cb):** `Pixel[3,0]:U(Cb)  Pixel[2,0]:U(Cb)  Pixel[1,0]:U(Cb)  Pixel[0,0]:U(Cb)`
+- **Plane 2 (V/Cr):** `Pixel[3,0]:V(Cr)  Pixel[2,0]:V(Cr)  Pixel[1,0]:V(Cr)  Pixel[0,0]:V(Cr)`
 
-N/A
+---
 
-Storage
-Requirement
+## 8. Raw Data Formats
 
-2 Bytes/pixel
+| MultiCam Name | PFNC Name | Bits/Pixel | Bytes/Pixel | Storage Type | Description |
+|---------------|-----------|------------|-------------|--------------|-------------|
+| `RAW8` | Raw8 | 8 | 1 | N/A | [8-bit Raw Data](#81-8-bit-raw-data) |
+| `RAW10` | Raw10 | 10 | 2 | N/A | [10-bit Raw Data](#82-10-bit-raw-data) |
+| `RAW12` | Raw12 | 12 | 2 | N/A | [12-bit Raw Data](#83-12-bit-raw-data) |
+| `RAW14` | Raw14 | 14 | 2 | N/A | [14-bit Raw Data](#84-14-bit-raw-data) |
+| `RAW16` | Raw16 | 16 | 2 | N/A | [16-bit Raw Data](#85-16-bit-raw-data) |
 
-Memory Layout
+---
 
-@
+### 8.1. 8-bit Raw Data
 
-0
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `RAW8` |
+| PFNC Name | Raw8 |
+| Storage Type | N/A |
+| Storage Requirement | 1 Byte/pixel |
 
-+3
+**Memory Layout**
 
-+2
+Each pixel occupies 1 byte:
 
-+1
+```
+Byte offset:    +3          +2          +1          +0
+              Pixel[3,0]  Pixel[2,0]  Pixel[1,0]  Pixel[0,0]
+```
 
-+0
+---
 
-Pixel[1,0]
+### 8.2. 10-bit Raw Data
 
-Pixel[0,0]
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `RAW10` |
+| PFNC Name | Raw10 |
+| Storage Type | N/A |
+| Storage Requirement | 2 Bytes/pixel |
 
-12
+**Memory Layout**
 
-MultiCam MultiCam Storage Formats
+Each pixel is stored in 2 bytes (16 bits), with the upper 6 bits set to zero:
 
-3. Bayer CFA Pixel Formats
+```
+Byte offset:    +3          +2          +1          +0
+              000000 Pixel[1,0]  000000 Pixel[0,0]
+```
 
-MultiCam Name
+---
 
-PFNC Name
+### 8.3. 12-bit Raw Data
 
-Link
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `RAW12` |
+| PFNC Name | Raw12 |
+| Storage Type | N/A |
+| Storage Requirement | 2 Bytes/pixel |
 
-BAYER8
+**Memory Layout**
 
-BAYER10
+Each pixel is stored in 2 bytes (16 bits), with the upper 4 bits set to zero:
 
-BAYER12
+```
+Byte offset:    +3          +2          +1          +0
+              0000 Pixel[1,0]   0000 Pixel[0,0]
+```
 
-BAYER14
+---
 
-BAYER16
+### 8.4. 14-bit Raw Data
 
-BayerBG8
-BayerGB8
-BayerGR8
-BayerRG8
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `RAW14` |
+| PFNC Name | Raw14 |
+| Storage Type | N/A |
+| Storage Requirement | 2 Bytes/pixel |
 
-BayerBG10
-BayerGB10
-BayerGR10
-BayerRG10
+**Memory Layout**
 
-BayerBG12
-BayerGB12
-BayerGR12
-BayerRG12
+Each pixel is stored in 2 bytes (16 bits), with the upper 2 bits set to zero:
 
-BayerBG14
-BayerGB14
-BayerGR14
-BayerRG14
+```
+Byte offset:    +3          +2          +1          +0
+              00 Pixel[1,0]     00 Pixel[0,0]
+```
 
-BayerBG16
-BayerGB16
-BayerGR16
-BayerRG16
+---
 
-"8-bit Bayer CFA" on page 14
+### 8.5. 16-bit Raw Data
 
-"10-bit Bayer CFA" on page 15
+| Property | Value |
+|----------|-------|
+| MultiCam Name | `RAW16` |
+| PFNC Name | Raw16 |
+| Storage Type | N/A |
+| Storage Requirement | 2 Bytes/pixel |
 
-"12-bit Bayer CFA" on page 16
+**Memory Layout**
 
-"14-bit Bayer CFA" on page 17
+Each pixel occupies a full 16-bit word:
 
-"16-bit Bayer CFA" on page 18
-
-13
-
-MultiCam MultiCam Storage Formats
-
-3.1. 8-bit Bayer CFA
-
-MultiCam Name
-
-PFNC Name
-
-Color Filter Array
-
-Bayer8
-
-BayerBG8
-
-BayerGB8
-
-BayerGR8
-
-BayerRG8
-
-Memory Layout - BG CFA
-
-Storage
-Requirement
-
-1 Byte/pixel
-
-@
-
-0
-
-:
-
-H
-
-:
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[3,0]:G
-
-Pixel[2,0]: B
-
-Pixel[1,0]: G
-
-Pixel[0,0]: B
-
-:
-
-:
-
-:
-
-:
-
-Pixel[3,1]: R
-
-Pixel[2,1]: G
-
-Pixel[1,1]: R
-
-Pixel[0,1]: G
-
-:
-
-:
-
-:
-
-:
-
-NOTE
-H = buffer pitch (in bytes)
-
-14
-
-MultiCam MultiCam Storage Formats
-
-3.2. 10-bit Bayer CFA
-
-MultiCam Name
-
-PFNC Name
-
-Color Filter Array
-
-Bayer10
-
-BayerBG10
-
-BayerGB10
-
-BayerGR10
-
-BayerRG10
-
-Memory Layout - BG CFA
-
-Storage
-Requirement
-
-2 Bytes/pixel
-
-@
-
-0
-
-:
-
-0
-
-0
-
-0
-
-H 0
-
-0
-
-0
-
-:
-
-+3
-
-0
-
-:
-
-0
-
-:
-
-+2
-
-0
-
-0
-
-Pixel[1,0]: G
-
-0
-
-0
-
-0
-
-:
-
-0
-
-0
-
-Pixel[1,1]: R
-
-0
-
-0
-
-0
-
-:
-
-+1
-
-0
-
-:
-
-0
-
-:
-
-+0
-
-0
-
-0
-
-Pixel[0,0]: B
-
-:
-
-0
-
-0
-
-Pixel[0,1]: G
-
-:
-
-NOTE
-H = buffer pitch (in bytes)
-
-15
-
-MultiCam MultiCam Storage Formats
-
-3.3. 12-bit Bayer CFA
-
-MultiCam Name
-
-PFNC Name
-
-Color Filter Array
-
-Bayer12
-
-BayerBG12
-
-BayerGB12
-
-BayerGR12
-
-BayerRG12
-
-Memory Layout - BG CFA
-
-Storage
-Requirement
-
-2 Bytes/pixel
-
-@
-
-0
-
-:
-
-H
-
-:
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-0
-
-0
-
-0
-
-Pixel[1,0]: G
-
-0
-
-0
-
-0
-
-0
-
-Pixel[0,0]: B
-
-0
-
-0
-
-0
-
-:
-
-:
-
-0
-
-:
-
-Pixel[1,1]: R
-
-0
-
-0
-
-0
-
-:
-
-:
-
-:
-
-:
-
-0
-
-Pixel[0,1]: G
-
-:
-
-NOTE
-H = buffer pitch (in bytes)
-
-16
-
-MultiCam MultiCam Storage Formats
-
-3.4. 14-bit Bayer CFA
-
-MultiCam Name
-
-PFNC Name
-
-Color Filter Array
-
-Bayer14
-
-BayerBG14
-
-BayerGB14
-
-BayerGR14
-
-BayerRG14
-
-Memory Layout - BG CFA
-
-Storage
-Requirement
-
-2 Bytes/pixel
-
-@
-
-0
-
-:
-
-H
-
-:
-
-0
-
-0
-
-0
-
-0
-
-+3
-
-:
-
-:
-
-+2
-
-Pixel[1,0]: G
-
-Pixel[1,1]: R
-
-:
-
-:
-
-0
-
-0
-
-0
-
-0
-
-+1
-
-:
-
-:
-
-Pixel[0,0]: B
-
-Pixel[0,1]: G
-
-+0
-
-:
-
-:
-
-NOTE
-H = buffer pitch (in bytes)
-
-17
-
-MultiCam MultiCam Storage Formats
-
-3.5. 16-bit Bayer CFA
-
-MultiCam Name
-
-PFNC Name
-
-Color Filter Array
-
-Storage
-Requirement
-
-2 Bytes/pixel
-
-Bayer16
-
-BayerBG16
-
-BayerGB16
-
-BayerGR16
-
-BayerRG16
-
-Memory Layout - BG CFA
-
-@
-
-0
-
-:
-
-H
-
-:
-
-+3
-
-:
-
-:
-
-Pixel[1,0]: G
-
-Pixel[1,1]: R
-
-+2
-
-:
-
-:
-
-NOTE
-H = buffer pitch (in bytes)
-
-+1
-
-:
-
-:
-
-Pixel[0,0]: B
-
-Pixel[0,1]: G
-
-+0
-
-:
-
-:
-
-18
-
-MultiCam MultiCam Storage Formats
-
-4. RGB Color Pixel Formats
-
-MultiCam Name
-
-PFNC Name
-
-Link
-
-RGB15
-
-RGB16
-
-RGB24
-
-N/A
-
-RGB32
-
-N/A
-
-BGR555
-
-BGR565
-
-BGR8
-
-RGB8
-
-BGRa8
-
-RGBa8
-
-"5-5-5-bit BGR" on page 20
-
-"5-6-5-bit BGR" on page 21
-
-"8-bit BGR " on page 22
-
-"8-bit RGB" on page 23
-
-"8-bit BGRa" on page 24
-
-"8-bit RGBa" on page 25
-
-RGB30P
-
-BGR10p
-
-"10-bit BGR lsb Packed" on page 26
-
-N/A
-
-BGR10pmsb
-
-"10-bit BGR msb Packed" on page 27
-
-RGBI40P
-
-BGRa10p
-
-"10-bit BGRa lsb Packed" on page 28
-
-19
-
-MultiCam MultiCam Storage Formats
-
-4.1. 5-5-5-bit BGR
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-RGB15
-
-BGR555
-
-PACKED
-
-Storage
-Requirement
-
-2 Bytes/pixel
-
-Memory Layout
-
-@
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-0
-
-Pixel[1,0]:
-R
-
-Pixel[1,0]:
-G
-
-Pixel[1,0]:
-B
-
-0
-
-Pixel[0,0]:
-R
-
-Pixel[0,0]:
-G
-
-Pixel[0,0]:
-B
-
-20
-
-MultiCam MultiCam Storage Formats
-
-4.2. 5-6-5-bit BGR
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-RGB16
-
-BGR565
-
-PACKED
-
-Storage
-Requirement
-
-2 Bytes/pixel
-
-Memory Layout
-
-@
-
-+3
-
-+2
-
-+1
-
-0
-
-Pixel[1,0]: R
-
-Pixel[1,0]: G
-
-Pixel[1,0]: B
-
-Pixel[0,0]: R
-
-Pixel[0,0]: G
-
-+0
-
-Pixel[0,0]:
-B
-
-21
-
-MultiCam MultiCam Storage Formats
-
-4.3. 8-bit BGR
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-RGB24
-
-BGR8
-
-PACKED
-
-Storage
-Requirement
-
-3 Bytes/pixel
-
-Memory Layout
-
-@
-
-0
-
-4
-
-8
-
-+3
-
-Pixel[1,0]: B
-
-Pixel[2,0]: G
-
-Pixel[3,0]: R
-
-+2
-
-Pixel[0,0]: R
-
-Pixel[2,0]: B
-
-Pixel[3,0]: G
-
-+1
-
-+0
-
-Pixel[0,0]: G
-
-Pixel[0,0]: B
-
-Pixel[1,0]: R
-
-Pixel[1,0]: G
-
-Pixel[3,0]: B
-
-Pixel[2,0]: R
-
-22
-
-MultiCam MultiCam Storage Formats
-
-4.4. 8-bit RGB
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-N/A
-
-BGR8
-
-PACKED
-
-Storage
-Requirement
-
-3 Bytes/pixel
-
-Memory Layout
-
-@
-
-0
-
-4
-
-8
-
-+3
-
-Pixel[1,0]: R
-
-Pixel[2,0]: G
-
-Pixel[3,0]: B
-
-+2
-
-Pixel[0,0]: B
-
-Pixel[2,0]: R
-
-Pixel[3,0]: G
-
-+1
-
-+0
-
-Pixel[0,0]: G
-
-Pixel[0,0]: R
-
-Pixel[1,0]: B
-
-Pixel[1,0]: G
-
-Pixel[3,0]: R
-
-Pixel[2,0]: B
-
-23
-
-MultiCam MultiCam Storage Formats
-
-4.5. 8-bit BGRa
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-RGB32
-
-BGRa8
-
-PACKED
-
-Storage
-Requirement
-
-4 Bytes/pixel
-
-Memory Layout
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-Pixel[0,0]: R
-
-Pixel[0,0]: G
-
-Pixel[0,0]: B
-
-24
-
-MultiCam MultiCam Storage Formats
-
-4.6. 8-bit RGBa
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-N/A
-
-RGBa8
-
-PACKED
-
-Storage
-Requirement
-
-4 Bytes/pixel
-
-Memory Layout
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-Pixel[0,0]: B
-
-Pixel[0,0]: G
-
-Pixel[0,0]: R
-
-25
-
-MultiCam MultiCam Storage Formats
-
-4.7. 10-bit BGR lsb Packed
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-Storage
-Requirement
-
-RGB30P
-
-BGR10p
-
-N/A
-
-3.75 Bytes/pixel
-
-Memory Layout
-
-3
-1
-
-2
-4
-
-1
-6
-
-8
-
-0
-
-@
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[0,0]R
-
-Pixel[0,0]G
-
-Pixel[0,0]B
-
-...
-(1,
-0)
-
-...
-(3,0)
-
-...
-(5:0)
-
-0
-
-4
-
-8
-
-1
-2
-
-1
-6
-
-:
-
-5
-6
-
-Pixel[1,0]R
-
-Pixel[1,0]G
-
-Pixel[2,0]R
-
-Pixel[2,0]G
-
-Pixel[1,0]B
-(9:2)...
-
-Pixel[2,0]B
-(9:4)...
-
-Pixel
-[3,0]B
-(9:6)...
-
-Pixel[4,0]B
-...(7:0)
-
-Pixel[3,0]R
-
-Pixel[3,0]G
-
-Pixel[5,0]B
-
-Pixel[4,0]R
-
-Pixel[4,0]G
-
-Pixel[15,0]R
-
-Pixel[15,0]G
-
-Pixel[15,0]B
-
-NOTE
-A pixel boundary is aligned to a 32-bit word boundary every 16 pixels (60
-bytes)
-
-...
-(9:
-8)
-
-...
-(9:
-8)
-
-26
-
-0
-
-4
-
-8
-
-1
-2
-
-1
-6
-
-:
-
-5
-6
-
-MultiCam MultiCam Storage Formats
-
-4.8. 10-bit BGR msb Packed
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-Storage
-Requirement
-
-N/A
-
-BGR10pmsb
-
-N/A
-
-1.25 Bytes/pixel
-
-Memory Layout
-
-3
-1
-
-2
-4
-
-1
-6
-
-8
-
-@
-
-+0
-
-+1
-
-+2
-
-+3
-
-Pixel[0,0]B
-
-Pixel[0,0]G
-
-Pixel[0,0]R
-
-0
-
-...
-(9:
-8)
-
-Pixel[1,0]B
-...(7:0)
-
-...
-(5:0)
-
-...
-(3,0)
-
-Pixel[1,0]G
-
-Pixel[1,0]R
-
-Pixel[2,0]G
-
-Pixel[2,0]R
-
-Pixel[3,0]G
-
-Pixel[3,0]R
-
-Pixel
-[2,0]B
-(9:6)...
-
-Pixel[3,0]B
-(9:4)...
-
-Pixel[4,0]B
-(9:2)...
-
-...
-(1,
-0)
-
-...
-(1,
-0)
-
-Pixel[4,0]G
-
-Pixel[4,0]R
-
-Pixel[5,0]B
-
-Pixel[15,0]B
-
-Pixel[15,0]G
-
-Pixel[15,0]R
-
-NOTE
-A pixel boundary is aligned to a 32-bit word boundary every 16 pixels (60
-bytes)
-
-27
-
-MultiCam MultiCam Storage Formats
-
-4.9. 10-bit BGRa lsb Packed
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-RGBI40P
-
-BGRa10p
-
-N/A
-
-Storage
-Requirement
-
-5 Bytes/pixel
-
-Memory Layout
-
-3
-1
-
-2
-4
-
-1
-6
-
-8
-
-0
-
-@
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-4
-
-8
-
-1
-2
-
-1
-6
-
-...
-(1,
-0)
-
-...
-(3,0)
-
-...
-(5:0)
-
-Pixel[0,0]R
-
-Pixel[0,0]G
-
-Pixel[0,0]B
-
-Pixel[1,0]G
-
-Pixel[1,0]B
-
-Pixel[2,0]B
-
-Pixel[1,0]a
-
-Pixel[0,0]a
-(9:2)...
-
-Pixel[1,0]R
-(9:4)...
-
-Pixel[3,0]B
-...(7:0)
-
-Pixel[2,0]a
-
-Pixel[2,0]R
-
-Pixel[3,0]a
-
-Pixel[3,0]R
-
-Pixel[3,0]G
-
-Pixel
-[2,0]G
-(9:6)...
-
-...
-(9:
-8)
-
-NOTE
-A pixel boundary is aligned to a 32-bit word boundary every 4 pixels (20
-bytes)
-
-28
-
-MultiCam MultiCam Storage Formats
-
-5. RGB Color Planar Pixel Formats
-
-MultiCam Name
-
-PFNC Name
-
-Link
-
-RGB24PL
-
-RGB30PL
-
-RGB36PL
-
-RGB42PL
-
-RGB48PL
-
-N/A
-
-N/A
-
-N/A
-
-N/A
-
-N/A
-
-"8-bit RGB Planar" on page 30
-
-"10-bit RGB Planar" on page 31
-
-"12-bit RGB Planar" on page 32
-
-"14-bit RGB Planar" on page 33
-
-"16-bit RGB Planar" on page 34
-
-29
-
-MultiCam MultiCam Storage Formats
-
-5.1. 8-bit RGB Planar
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-RGB24PL
-
-N/A
-
-PLANAR
-
-Storage
-Requirement
-
-3 Bytes/pixel
-
-Memory Layout - Plane 0
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[3,0]: R
-
-Pixel[2,0]: R
-
-Pixel[1,0]: R
-
-Pixel[0,0]: R
-
-Memory Layout - Plane 1
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[3,0]: G
-
-Pixel[2,0]: G
-
-Pixel[1,0]: G
-
-Pixel[0,0]: G
-
-Memory Layout - Plane 2
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[3,0]: B
-
-Pixel[2,0]: B
-
-Pixel[1,0]: B
-
-Pixel[0,0]: B
-
-30
-
-MultiCam MultiCam Storage Formats
-
-5.2. 10-bit RGB Planar
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-RGB30PL
-
-N/A
-
-PLANAR
-
-Storage
-Requirement
-
-6 Bytes/pixel
-
-Memory Layout - Plane 0
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-Pixel[1,0]: R
-
-0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-Pixel[0,0]: R
-
-Memory Layout - Plane 1
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-Pixel[1,0]: G
-
-0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-Pixel[0,0]: G
-
-Memory Layout - Plane 2
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-Pixel[1,0]: B
-
-0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-Pixel[0,0]: B
-
-31
-
-MultiCam MultiCam Storage Formats
-
-5.3. 12-bit RGB Planar
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-RGB36PL
-
-N/A
-
-PLANAR
-
-Storage
-Requirement
-
-6 Bytes/pixel
-
-Memory Layout - Plane 0
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-0
-
-0
-
-0
-
-Pixel[1,0]: R
-
-0
-
-0
-
-0
-
-0
-
-Pixel[0,0]: R
-
-Memory Layout - Plane 1
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-0
-
-0
-
-0
-
-Pixel[1,0]: G
-
-0
-
-0
-
-0
-
-0
-
-Pixel[0,0]: G
-
-Memory Layout - Plane 2
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-0
-
-0
-
-0
-
-Pixel[1,0]: B
-
-0
-
-0
-
-0
-
-0
-
-Pixel[0,0]: B
-
-32
-
-MultiCam MultiCam Storage Formats
-
-5.4. 14-bit RGB Planar
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-RGB42PL
-
-N/A
-
-PLANAR
-
-Storage
-Requirement
-
-6 Bytes/pixel
-
-Memory Layout - Plane 0
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-0
-
-Pixel[1,0]: R
-
-0
-
-0
-
-Pixel[0,0]: R
-
-Memory Layout - Plane 1
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-0
-
-Pixel[1,0]: G
-
-0
-
-0
-
-Pixel[0,0]: G
-
-Memory Layout - Plane 2
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-0
-
-Pixel[1,0]: B
-
-0
-
-0
-
-Pixel[0,0]: B
-
-33
-
-MultiCam MultiCam Storage Formats
-
-5.5. 16-bit RGB Planar
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-RGB48PL
-
-N/A
-
-PLANAR
-
-Storage
-Requirement
-
-6 Bytes/pixel
-
-Memory Layout - Plane 0
-
-@
-
-0
-
-+3
-
-Pixel[1,0]: R
-
-Memory Layout - Plane 1
-
-@
-
-0
-
-+3
-
-Pixel[1,0]: G
-
-Memory Layout - Plane 2
-
-@
-
-0
-
-+3
-
-+2
-
-+2
-
-+2
-
-+1
-
-+1
-
-+1
-
-Pixel[0,0]: R
-
-Pixel[0,0]: G
-
-+0
-
-+0
-
-+0
-
-Pixel[1,0]: B
-
-Pixel[0,0]: B
-
-34
-
-MultiCam MultiCam Storage Formats
-
-6. YUV Color Pixel Formats
-
-MultiCam Name
-
-PFNC Name
-
-Link
-
-YUV411
-Y41P
-
-YUV422
-Y42P
-
-YUV444
-IYU2
-
-YUV411_8_UYVYUYVYYYYY
-
-"8-bit YUV 4:1:1" on page 36
-
-YUV422_8_YUYV
-
-"8-bit YUV 4:2:2" on page 37
-
-YUV444_8_UYV
-
-"8-bit YUV 4:4:4" on page 38
-
-35
-
-MultiCam MultiCam Storage Formats
-
-6.1. 8-bit YUV 4:1:1
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-Storage
-Requirement
-
-YUV411
-
-Y41P
-
-YUV411_8_
-UYVYUYVYYYYY
-
-PACKED
-
-1.5 Bytes/pixel
-
-Memory Layout
-
-@
-
-0
-
-4
-
-8
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[1,0]: Y
-
-Pixel[0,0]: V(Cr)
-
-Pixel[0,0]: Y
-
-Pixel[0,0]: U(Cb)
-
-Pixel[3,0]: Y
-
-Pixel[4,0]: V(Cr)
-
-Pixel[2,0]: Y
-
-Pixel[4,0]: U(Cb)
-
-Pixel[7,0]: Y
-
-Pixel[6,0]: Y
-
-Pixel[5,0]: Y
-
-Pixel[4,0]: Y
-
-NOTE
-Only 1 U(Cb) and 1 V(Cr) samples are captured every 4 pixels
-
-36
-
-MultiCam MultiCam Storage Formats
-
-6.2. 8-bit YUV 4:2:2
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-Storage
-Requirement
-
-YUV422
-
-Y42P
-
-Memory Layout
-
-YUV422_8_YUYV
-
-PACKED
-
-2 Bytes/pixel
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[0,0]: V(Cr)
-
-Pixel[1,0]: Y
-
-Pixel[0,0]: U(Cb)
-
-Pixel[0,0]: Y
-
-NOTE
-Only 1 U(Cb) and 1 V(Cr) samples are captured every 2 pixels
-
-37
-
-MultiCam MultiCam Storage Formats
-
-6.3. 8-bit YUV 4:4:4
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-Storage
-Requirement
-
-YUV444
-
-IYU2
-
-Memory Layout
-
-YUV444_8_UYV
-
-PACKED
-
-3 Bytes/pixel
-
-@
-
-0
-
-4
-
-8
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[1,0]: U(Cb)
-
-Pixel[0,0]: V(Cr)
-
-Pixel[0,0]: Y
-
-Pixel[0,0]: U(Cb)
-
-Pixel[2,0]: Y
-
-Pixel[2,0]: U(Cb)
-
-Pixel[1,0]: V(Cr)
-
-Pixel[1,0]: Y
-
-Pixel[3,0]: V(Cr)
-
-Pixel[3,0]: Y
-
-Pixel[3,0]: U(Cb)
-
-Pixel[2,0]: V(Cr)
-
-38
-
-MultiCam MultiCam Storage Formats
-
-7. YUV Color Planar Pixel Formats
-
-MultiCam Name
-
-PFNC Name
-
-Link
-
-YUV411PL_Dec
-YUV9
-YVU9
-
-YUV411PL
-Y41B
-
-YUV422PL_Dec
-I420
-IYUV
-YV12
-
-YUV422PL
-Y42B
-
-YUV410_8_Planar
-
-"8-bit YUV 4:1:0 Planar" on page 40
-
-YUV411_8_Planar
-
-"8-bit YUV 4:1:1 Planar" on page 41
-
-YUV420_8_Planar
-
-"8-bit YUV 4:2:0 Planar" on page 42
-
-YUV422_8_Planar
-
-"8-bit YUV 4:2:2 Planar" on page 43
-
-YUV444PL
-
-YUV444_8_Planar
-
-"8-bit YUV 4:4:4 Planar" on page 44
-
-39
-
-MultiCam MultiCam Storage Formats
-
-7.1. 8-bit YUV 4:1:0 Planar
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-Storage
-Requirement
-
-YUV411PL_Dec
-
-YUV9
-
-YVU9
-
-YUV410_8_Planar
-
-PLANAR
-
-1.125 Bytes/pixel
-
-Memory Layout - Plane 0
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[3,0]: Y
-
-Pixel[2,0]: Y
-
-Pixel[1,0]: Y
-
-Pixel[0,0]: Y
-
-NOTE
-H = buffer pitch (in bytes)
-
-Memory Layout - Plane 1
-
-@
-
-0
-
-:
-
-H
-
-:
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[12,0]: U(Cb)
-
-Pixel[8,0]: U(Cb)
-
-Pixel[4,0]: U(Cb)
-
-Pixel[0,0]: U(Cb)
-
-:
-
-:
-
-:
-
-:
-
-Pixel[12,4]: U(Cb)
-
-Pixel[8,4]: U(Cb)
-
-Pixel[4,4]: U(Cb)
-
-Pixel[0,4]: U(Cb)
-
-:
-
-:
-
-:
-
-:
-
-NOTE
-Only 1 U(Cb) sample is captured every 4 pixels in 1 line every 4 lines
-
-Memory Layout - Plane 2
-
-@
-
-0
-
-:
-
-0
-
-:
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[12,0]: V(Cr)
-
-Pixel[8,0]: V(Cr)
-
-Pixel[4,0]: V(Cr)
-
-Pixel[0,0]: V(Cr)
-
-:
-
-:
-
-:
-
-:
-
-Pixel[12,4]: V(Cr)
-
-Pixel[8,4]: V(Cr)
-
-Pixel[4,4]: V(Cr)
-
-Pixel[0,4]: V(Cr)
-
-:
-
-:
-
-:
-
-:
-
-NOTE
-Only 1 V(Cr) sample is captured every 4 pixels in 1 line every 4 lines
-
-40
-
-MultiCam MultiCam Storage Formats
-
-7.2. 8-bit YUV 4:1:1 Planar
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-Storage
-Requirement
-
-YUV411PL
-
-Y41B
-
-YUV411_8_Planar
-
-PLANAR
-
-1.5 Bytes/pixel
-
-Memory Layout - Plane 0
-
-@
-
-0
-
-4
-
-8
-
-12
-
-+3
-
-Pixel[3,0]: Y
-
-Pixel[7,0]: Y
-
-+2
-
-Pixel[2,0]: Y
-
-Pixel[6,0]: Y
-
-Pixel[11,0]: Y
-
-Pixel[10,0]: Y
-
-+1
-
-Pixel[1,0]: Y
-
-Pixel[5,0]: Y
-
-Pixel[9,0]: Y
-
-+0
-
-Pixel[0,0]: Y
-
-Pixel[4,0]: Y
-
-Pixel[8,0]: Y
-
-Pixel[15,0]: Y
-
-Pixel[14,0]: Y
-
-Pixel[13,0]: Y
-
-Pixel[12,0]: Y
-
-Memory Layout - Plane 1
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[12,0]: U(Cb)
-
-Pixel[8,0]: U(Cb)
-
-Pixel[4,0]: U(Cb)
-
-Pixel[0,0]: U(Cb)
-
-NOTE
-Only 1 U(Cb) sample is captured every 4 pixels
-
-Memory Layout - Plane 2
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[12,0]: V(Cr)
-
-Pixel[8,0]: V(Cr)
-
-Pixel[4,0]: V(Cr)
-
-Pixel[0,0]: V(Cr)
-
-NOTE
-Only 1 V(Cr) sample is captured every 4 pixels
-
-41
-
-MultiCam MultiCam Storage Formats
-
-7.3. 8-bit YUV 4:2:0 Planar
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-Storage
-Requirement
-
-YUV422PL_Dec
-
-I420
-
-IYUV
-
-YV12
-
-YUV420_8_Planar
-
-PLANAR
-
-1.5 Bytes/pixel
-
-Memory Layout - Plane 0
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[3,0]: Y
-
-Pixel[2,0]: Y
-
-Pixel[1,0]: Y
-
-Pixel[0,0]: Y
-
-Memory Layout - Plane 1
-
-@
-
-0
-
-:
-
-2H
-
-:
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[6,0]: U(Cb)
-
-Pixel[4,0]: U(Cb)
-
-Pixel[2,0]: U(Cb)
-
-Pixel[0,0]: U(Cb)
-
-:
-
-:
-
-:
-
-:
-
-Pixel[6,2]: U(Cb)
-
-Pixel[4,2]: U(Cb)
-
-Pixel[2,2]: U(Cb)
-
-Pixel[0,2]: U(Cb)
-
-:
-
-:
-
-:
-
-:
-
-NOTE
-Only 1 U(Cb) sample is captured every 2 pixels in 1 line every 2 lines
-
-Memory Layout - Plane 2
-
-@
-
-0
-
-:
-
-H
-
-:
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[6,0]: V(Cr)
-
-Pixel[4,0]: V(Cr)
-
-Pixel[2,0]: V(Cr)
-
-Pixel[0,0]: V(Cr)
-
-:
-
-:
-
-:
-
-:
-
-Pixel[6,2]: V(Cr)
-
-Pixel[4,2]: V(Cr)
-
-Pixel[2,2]: V(Cr)
-
-Pixel[0,2]: V(Cr)
-
-:
-
-:
-
-:
-
-:
-
-NOTE
-Only 1 V(Cr) sample is captured every 2 pixels in 1 line every 2 lines
-
-42
-
-MultiCam MultiCam Storage Formats
-
-7.4. 8-bit YUV 4:2:2 Planar
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-Storage
-Requirement
-
-YUV422PL
-
-Y42B
-
-YUV422_8_Planar
-
-PLANAR
-
-2 Bytes/pixel
-
-Memory Layout - Plane 0
-
-@
-
-0
-
-4
-
-+3
-
-Pixel[3,0]: Y
-
-Pixel[7,0]: Y
-
-+2
-
-Pixel[2,0]: Y
-
-Pixel[6,0]: Y
-
-+1
-
-Pixel[1,0]: Y
-
-Pixel[5,0]: Y
-
-+0
-
-Pixel[0,0]: Y
-
-Pixel[4,0]: Y
-
-Memory Layout - Plane 1
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[6,0]: U(Cb)
-
-Pixel[4,0]: U(Cb)
-
-Pixel[2,0]: U(Cb)
-
-Pixel[0,0]: U(Cb)
-
-NOTE
-Only 1 U(Cb) sample is captured every 2 pixels
-
-Memory Layout - Plane 2
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[6,0]: V(Cr)
-
-Pixel[4,0]: V(Cr)
-
-Pixel[2,0]: V(Cr)
-
-Pixel[0,0]: V(Cr)
-
-NOTE
-Only 1 V(Cr) sample is captured every 2 pixels
-
-43
-
-MultiCam MultiCam Storage Formats
-
-7.5. 8-bit YUV 4:4:4 Planar
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-YUV444PL
-
-YUV444_8_Planar
-
-PLANAR
-
-Storage
-Requirement
-
-3 Bytes/pixel
-
-Memory Layout - Plane 0
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[3,0]: Y
-
-Pixel[2,0]: Y
-
-Pixel[1,0]: Y
-
-Pixel[0,0]: Y
-
-Memory Layout - Plane 1
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[3,0]: U(Cb)
-
-Pixel[2,0]: U(Cb)
-
-Pixel[1,0]: U(Cb)
-
-Pixel[0,0]: U(Cb)
-
-Memory Layout - Plane 2
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[3,0]: V(Cr)
-
-Pixel[2,0]: V(Cr)
-
-Pixel[1,0]: V(Cr)
-
-Pixel[0,0]: V(Cr)
-
-44
-
-MultiCam MultiCam Storage Formats
-
-8. Raw Data Formats
-
-MultiCam Name
-
-PFNC Name
-
-Link
-
-RAW8
-
-RAW10
-
-RAW12
-
-RAW14
-
-RAW16
-
-Raw8
-
-Raw10
-
-Raw12
-
-Raw14
-
-Raw16
-
-"8-bit Raw Data" on page 46
-
-"10-bit Raw Data" on page 47
-
-"12-bit Raw Data" on page 48
-
-"14-bit Raw Data" on page 49
-
-"16-bit Raw Data" on page 50
-
-8.1. 8-bit Raw Data
-
-8.2. 10-bit Raw Data
-
-8.3. 12-bit Raw Data
-
-8.4. 14-bit Raw Data
-
-8.5. 16-bit Raw Data
-
-46
-
-47
-
-48
-
-49
-
-50
-
-45
-
-MultiCam MultiCam Storage Formats
-
-8.1. 8-bit Raw Data
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-RAW8
-
-Raw8
-
-N/A
-
-Storage
-Requirement
-
-1 Byte/pixel
-
-Memory Layout
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[3,0]
-
-Pixel[2,0]
-
-Pixel[1,0]
-
-Pixel[0,0]
-
-46
-
-MultiCam MultiCam Storage Formats
-
-8.2. 10-bit Raw Data
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-RAW10
-
-Raw10
-
-N/A
-
-Storage
-Requirement
-
-2 Bytes/pixel
-
-Memory Layout
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-Pixel[1,0]
-
-0
-
-0
-
-0
-
-0
-
-0
-
-0
-
-Pixel[0,0]
-
-47
-
-MultiCam MultiCam Storage Formats
-
-8.3. 12-bit Raw Data
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-RAW12
-
-Raw12
-
-N/A
-
-Storage
-Requirement
-
-2 Bytes/pixel
-
-Memory Layout
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-0
-
-0
-
-0
-
-Pixel[1,0]
-
-0
-
-0
-
-0
-
-0
-
-Pixel[0,0]
-
-48
-
-MultiCam MultiCam Storage Formats
-
-8.4. 14-bit Raw Data
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-RAW14
-
-Raw14
-
-N/A
-
-Storage
-Requirement
-
-2 Bytes/pixel
-
-Memory Layout
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-0
-
-0
-
-Pixel[1,0]
-
-0
-
-0
-
-Pixel[0,0]
-
-49
-
-MultiCam MultiCam Storage Formats
-
-8.5. 16-bit Raw Data
-
-MultiCam Name
-
-PFNC Name
-
-Storage Type
-
-RAW16
-
-Raw16
-
-N/A
-
-Storage
-Requirement
-
-2 Bytes/pixel
-
-Memory Layout
-
-@
-
-0
-
-+3
-
-+2
-
-+1
-
-+0
-
-Pixel[1,0]
-
-Pixel[0,0]
-
-50
-
-
+```
+Byte offset:    +3          +2          +1          +0
+              Pixel[1,0]             Pixel[0,0]
+```
