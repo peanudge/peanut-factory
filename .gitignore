@@ -485,6 +485,7 @@ $RECYCLE.BIN/
 
 # PDF documentation (source files; markdown conversions are tracked)
 doc/*.pdf
+setup/sdk_pdfs/
 
 # Claude 
 .mcp.json

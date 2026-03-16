@@ -27,10 +27,16 @@ Converted Markdown docs in `doc/` contain the full Euresys MultiCam SDK document
 | C API 함수 시그니처, 파라미터 상세, 반환값 | `doc/multicam-api-reference.md` |
 | 에러/상태 코드 의미와 트러블슈팅 | `doc/multicam-error-codes.md` |
 | MultiCam 개념, 드라이버 아키텍처, 오브젝트 모델 | `doc/multicam-user-guide.md` |
+| **파라미터 전체 레퍼런스 (이름, 타입, 범위, 기본값)** | `doc/multicam-parameters.md` |
 | Crevis TC-A160K 카메라 스펙, 캘리브레이션, 파라미터 | `doc/crevis-tc-a160k-reference.md` |
 | Grablink Full (PC1622) 하드웨어 스펙 | `doc/grablink_full_spec.md` |
+| Grablink 커넥터 핀배치, 전기 스펙, 배선 | `doc/grablink-hardware-manual.md` |
+| Grablink GPIO I/O 설정, 신호 라우팅, 전기 특성 | `doc/grablink-gpio-guide.md` |
 | 하드웨어 레이아웃 (땅콩 검사 시스템 3카메라 배치) | `doc/hw-layout-description.md` |
 | Capture mode 설정 가이드 | `doc/capture-mode-guide.md` |
+| MultiCam 릴리스 노트, 알려진 이슈 | `doc/multicam-release-notes.md` |
+| Grablink 설치 절차 | `doc/grablink-installation-guide.md` |
+| Grablink 세대별 마이그레이션 가이드 | `doc/grablink-migration-guide.md` |
 
 ---
 
