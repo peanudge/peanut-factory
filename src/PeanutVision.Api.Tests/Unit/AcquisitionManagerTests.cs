@@ -281,7 +281,7 @@ public class AcquisitionManagerTests : IDisposable
     public class Given_started_and_frame_acquired : AcquisitionManagerTests
     {
         [Fact]
-        public void Then_last_frame_has_correct_dimensions()
+        public async Task Then_last_frame_has_correct_dimensions()
         {
             int width = _mockHal.Configuration.DefaultImageWidth;
             int height = _mockHal.Configuration.DefaultImageHeight;
@@ -298,7 +298,9 @@ public class AcquisitionManagerTests : IDisposable
                 _mockHal.Configuration.SimulatedSurfaceAddress = pinnedHandle.AddrOfPinnedObject();
 
                 _manager.Start("crevis-tc-a160k-freerun-rgb8");
+                var signalProcessed = _manager.PrepareSignalWaiter();
                 _mockHal.SimulateFrameAcquisition(_manager.Channel!.Handle);
+                await signalProcessed.WaitAsync(TimeSpan.FromSeconds(1));
 
                 var frame = _manager.LastFrame;
                 Assert.NotNull(frame);
