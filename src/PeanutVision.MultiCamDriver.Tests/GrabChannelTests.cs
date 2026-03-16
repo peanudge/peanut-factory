@@ -598,5 +598,40 @@ public class GrabChannelTests
         Assert.False(channel.IsActive);
     }
 
+    [Fact]
+    public void ClusterUnavailable_FiresAcquisitionError()
+    {
+        var options = new GrabChannelOptions { UseCallback = true };
+        using var channel = new GrabChannel(options, _mockHal);
+        bool errorFired = false;
+        McSignal? receivedSignal = null;
+
+        channel.AcquisitionError += (sender, args) =>
+        {
+            errorFired = true;
+            receivedSignal = args.Signal;
+        };
+
+        _mockHal.SimulateAcquisitionError(channel.Handle, McSignal.MC_SIG_CLUSTER_UNAVAILABLE);
+
+        Assert.True(errorFired);
+        Assert.Equal(McSignal.MC_SIG_CLUSTER_UNAVAILABLE, receivedSignal);
+    }
+
+    [Fact]
+    public void ClusterUnavailable_IncrementsCounter()
+    {
+        var options = new GrabChannelOptions { UseCallback = true };
+        using var channel = new GrabChannel(options, _mockHal);
+
+        Assert.Equal(0, channel.ClusterUnavailableCount);
+
+        _mockHal.SimulateAcquisitionError(channel.Handle, McSignal.MC_SIG_CLUSTER_UNAVAILABLE);
+        Assert.Equal(1, channel.ClusterUnavailableCount);
+
+        _mockHal.SimulateAcquisitionError(channel.Handle, McSignal.MC_SIG_CLUSTER_UNAVAILABLE);
+        Assert.Equal(2, channel.ClusterUnavailableCount);
+    }
+
     #endregion
 }

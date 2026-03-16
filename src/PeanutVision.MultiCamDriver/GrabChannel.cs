@@ -50,6 +50,10 @@ public sealed class GrabChannel : IDisposable
     private int _bufferPitch;
     private int _bufferSize;
     private int _surfaceCount;
+    private int _clusterUnavailableCount;
+
+    /// <summary>Number of times cluster unavailable signal was received (frame drops)</summary>
+    public int ClusterUnavailableCount => _clusterUnavailableCount;
 
     /// <summary>Channel handle for direct native API access if needed</summary>
     public uint Handle => _channelHandle;
@@ -146,6 +150,7 @@ public sealed class GrabChannel : IDisposable
             SetSignalEnable(McSignal.MC_SIG_ACQUISITION_FAILURE, true);
             SetSignalEnable(McSignal.MC_SIG_END_CHANNEL_ACTIVITY, true);
             SetSignalEnable(McSignal.MC_SIG_UNRECOVERABLE_OVERRUN, true);
+            SetSignalEnable(McSignal.MC_SIG_CLUSTER_UNAVAILABLE, true);
 
             // Register callback if requested
             if (options.UseCallback)
@@ -224,6 +229,13 @@ public sealed class GrabChannel : IDisposable
                 _isActive = false;
                 AcquisitionError?.Invoke(this, new AcquisitionErrorEventArgs(
                     signal, info.Instance, info.SignalInfo, "Unrecoverable error - acquisition stopped"));
+                break;
+
+            case McSignal.MC_SIG_CLUSTER_UNAVAILABLE:
+                Interlocked.Increment(ref _clusterUnavailableCount);
+                AcquisitionError?.Invoke(this, new AcquisitionErrorEventArgs(
+                    signal, info.Instance, info.SignalInfo,
+                    "Surface cluster unavailable - all surfaces busy, frame dropped"));
                 break;
 
             case McSignal.MC_SIG_END_CHANNEL_ACTIVITY:
