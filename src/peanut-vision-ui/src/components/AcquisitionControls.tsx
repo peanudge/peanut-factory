@@ -13,7 +13,7 @@ import AdjustIcon from "@mui/icons-material/Adjust";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import StatusChip from "./StatusChip";
-import type { AcquisitionStatus, CamFileInfo } from "../api/types";
+import type { AcquisitionAction, AcquisitionStatus, CamFileInfo } from "../api/types";
 
 interface Props {
   cameras: CamFileInfo[];
@@ -46,7 +46,7 @@ export default function AcquisitionControls({
   hasWarnings,
   hasErrors,
 }: Props) {
-  const allowed = (action: string) => status?.allowedActions?.includes(action) ?? false;
+  const allowed = (action: AcquisitionAction) => status?.allowedActions?.includes(action) ?? false;
 
   const startDisabled = busy || !allowed("start") || !selectedProfile;
   const stopDisabled = busy || !allowed("stop");
