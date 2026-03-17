@@ -27,6 +27,8 @@ interface Props {
   onSnapshot: () => void;
   onRefresh: () => void;
   refreshThrottled: boolean;
+  hasWarnings?: boolean;
+  hasErrors?: boolean;
 }
 
 export default function AcquisitionControls({
@@ -41,6 +43,8 @@ export default function AcquisitionControls({
   onSnapshot,
   onRefresh,
   refreshThrottled,
+  hasWarnings,
+  hasErrors,
 }: Props) {
   const allowed = (action: string) => status?.allowedActions?.includes(action) ?? false;
 
@@ -121,6 +125,8 @@ export default function AcquisitionControls({
         <StatusChip
           active={status.isActive}
           label={status.isActive ? `Active (${status.profileId ?? ""})` : "Inactive"}
+          hasWarnings={hasWarnings}
+          hasErrors={hasErrors}
         />
       )}
 

@@ -25,6 +25,10 @@ export default function AcquisitionTab() {
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
   const { busy, error, clearError, execute } = useAsyncOperation();
 
+  const hasWarnings = (status?.statistics?.droppedFrameCount ?? 0) > 0
+    || (status?.statistics?.clusterUnavailableCount ?? 0) > 0;
+  const hasErrors = !!status?.lastError || (status?.statistics?.errorCount ?? 0) > 0;
+
   const fetchStatus = useCallback(() => {
     getAcquisitionStatus().then(setStatus).catch(() => {});
   }, []);
@@ -68,6 +72,8 @@ export default function AcquisitionTab() {
         onSnapshot={handleSnapshot}
         onRefresh={refresh}
         refreshThrottled={throttled}
+        hasWarnings={hasWarnings}
+        hasErrors={hasErrors}
       />
 
       <Grid container spacing={3}>
