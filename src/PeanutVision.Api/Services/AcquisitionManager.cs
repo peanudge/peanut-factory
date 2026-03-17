@@ -132,6 +132,8 @@ public sealed class AcquisitionManager : IAcquisitionService
 
             if (intervalMs.HasValue && intervalMs.Value > 0)
             {
+                const int minIntervalMs = 50;
+                var period = Math.Max(intervalMs.Value, minIntervalMs);
                 _triggerTimer = new Timer(_ =>
                 {
                     lock (_lock)
@@ -139,7 +141,7 @@ public sealed class AcquisitionManager : IAcquisitionService
                         if (_channel?.IsActive == true)
                             _channel.SendSoftwareTrigger();
                     }
-                }, null, 0, intervalMs.Value);
+                }, null, 0, period);
             }
 
             _eventLog.Add(new ChannelEvent(
