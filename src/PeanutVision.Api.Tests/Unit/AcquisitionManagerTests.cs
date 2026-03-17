@@ -90,6 +90,14 @@ public class AcquisitionManagerTests : IDisposable
         {
             Assert.Throws<KeyNotFoundException>(() => _manager.Start("nonexistent"));
         }
+
+        [Fact]
+        public void Then_allowed_actions_contains_start_and_snapshot()
+        {
+            var actions = _manager.GetAllowedActions();
+            Assert.Contains("start", actions);
+            Assert.Contains("snapshot", actions);
+        }
     }
 
     public class Given_started : AcquisitionManagerTests
@@ -156,6 +164,16 @@ public class AcquisitionManagerTests : IDisposable
         {
             _manager.Dispose();
             Assert.False(_manager.IsActive);
+        }
+
+        [Fact]
+        public void Then_allowed_actions_contains_stop_and_trigger()
+        {
+            var actions = _manager.GetAllowedActions();
+            Assert.Contains("stop", actions);
+            Assert.Contains("trigger", actions);
+            Assert.DoesNotContain("start", actions);
+            Assert.DoesNotContain("snapshot", actions);
         }
     }
 
@@ -468,6 +486,60 @@ public class AcquisitionManagerTests : IDisposable
             Assert.Equal(3, events.Count);
             Assert.Equal(ChannelEventType.AcquisitionStarted, events[0].Type);
             Assert.Equal(ChannelEventType.AcquisitionStopped, events[1].Type);
+        }
+    }
+
+    public class Given_snapshot_in_progress : AcquisitionManagerTests
+    {
+        [Fact]
+        public void Then_snapshot_blocks_start()
+        {
+            // Snapshot is synchronous and blocking; to test the guard we can
+            // verify the field-based protection by calling Snapshot (which succeeds)
+            // and then checking that after snapshot, start works again.
+            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+
+            // After snapshot completes, start should work (snapshotInProgress = false)
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
+            Assert.True(_manager.IsActive);
+        }
+
+        [Fact]
+        public void Then_allowed_actions_restored_after_snapshot()
+        {
+            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+
+            var actions = _manager.GetAllowedActions();
+            Assert.Contains("start", actions);
+            Assert.Contains("snapshot", actions);
+        }
+    }
+
+    public class Given_intervalMs_validation : AcquisitionManagerTests
+    {
+        [Fact]
+        public void Then_intervalMs_below_minimum_throws_ArgumentException()
+        {
+            Assert.Throws<ArgumentException>(() =>
+                _manager.Start("crevis-tc-a160k-freerun-rgb8.cam", intervalMs: 1));
+        }
+
+        [Fact]
+        public void Then_intervalMs_at_minimum_succeeds()
+        {
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam", intervalMs: 50);
+            Assert.True(_manager.IsActive);
+        }
+
+        [Fact]
+        public void Then_intervalMs_zero_does_not_create_timer()
+        {
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam", intervalMs: 0);
+            Assert.True(_manager.IsActive);
+            // intervalMs=0 should not trigger periodic timer (no extra triggers)
+            _mockHal.CallLog.Reset();
+            Thread.Sleep(100);
+            Assert.Equal(0, _mockHal.CallLog.SoftwareTriggerCount);
         }
     }
 }

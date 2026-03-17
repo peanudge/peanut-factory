@@ -85,4 +85,33 @@ public class AcquisitionStartSpec : IClassFixture<PeanutVisionApiFactory>, IAsyn
         Assert.True(doc.RootElement.TryGetProperty("message", out var msg));
         Assert.False(string.IsNullOrEmpty(msg.GetString()));
     }
+
+    [Fact]
+    public async Task Start_with_frameCount_and_intervalMs_returns_ok()
+    {
+        var response = await _client.PostJsonAsync("/api/acquisition/start",
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam", frameCount = 10, intervalMs = 100 });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Start_with_intervalMs_below_minimum_returns_bad_request()
+    {
+        var response = await _client.PostJsonAsync("/api/acquisition/start",
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam", intervalMs = 1 });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var doc = await response.ReadJsonDocumentAsync();
+        Assert.True(doc.RootElement.TryGetProperty("error", out _));
+    }
+
+    [Fact]
+    public async Task Start_with_intervalMs_zero_returns_ok()
+    {
+        var response = await _client.PostJsonAsync("/api/acquisition/start",
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam", intervalMs = 0 });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
 }
