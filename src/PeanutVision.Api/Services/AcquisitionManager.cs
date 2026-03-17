@@ -19,6 +19,7 @@ public sealed class AcquisitionManager : IAcquisitionService
     private TaskCompletionSource<ImageData>? _triggerTcs;
     private bool _disposed;
     private Timer? _triggerTimer;
+    private bool _snapshotInProgress;
 
     // Test synchronization
     private TaskCompletionSource? _signalProcessedTcs;
@@ -85,6 +86,9 @@ public sealed class AcquisitionManager : IAcquisitionService
     {
         lock (_lock)
         {
+            if (_snapshotInProgress)
+                return new HashSet<string>();
+
             var actions = new HashSet<string>();
             if (_channel == null || !_channel.IsActive)
             {
@@ -107,8 +111,16 @@ public sealed class AcquisitionManager : IAcquisitionService
 
     public void Start(ProfileId profileId, TriggerMode? triggerMode = null, int? frameCount = null, int? intervalMs = null)
     {
+        const int minIntervalMs = 50;
+
+        if (intervalMs.HasValue && intervalMs.Value > 0 && intervalMs.Value < minIntervalMs)
+            throw new ArgumentException($"intervalMs must be at least {minIntervalMs}ms, got {intervalMs.Value}ms.");
+
         lock (_lock)
         {
+            if (_snapshotInProgress)
+                throw new InvalidOperationException("A snapshot is in progress. Wait for it to complete.");
+
             if (_channel != null)
                 throw new InvalidOperationException("Acquisition is already active. Stop it first.");
 
@@ -132,8 +144,6 @@ public sealed class AcquisitionManager : IAcquisitionService
 
             if (intervalMs.HasValue && intervalMs.Value > 0)
             {
-                const int minIntervalMs = 50;
-                var period = Math.Max(intervalMs.Value, minIntervalMs);
                 _triggerTimer = new Timer(_ =>
                 {
                     lock (_lock)
@@ -141,7 +151,7 @@ public sealed class AcquisitionManager : IAcquisitionService
                         if (_channel?.IsActive == true)
                             _channel.SendSoftwareTrigger();
                     }
-                }, null, 0, period);
+                }, null, 0, intervalMs.Value);
             }
 
             _eventLog.Add(new ChannelEvent(
@@ -220,35 +230,47 @@ public sealed class AcquisitionManager : IAcquisitionService
         {
             if (_channel != null)
                 throw new InvalidOperationException("Acquisition is already active. Stop it first.");
+
+            _snapshotInProgress = true;
         }
 
-        var camFile = _camFileService.GetByFileName(profileId.Value);
-        var options = triggerMode.HasValue
-            ? camFile.ToChannelOptions(triggerMode.Value.Mode, useCallback: false)
-            : camFile.ToChannelOptions(useCallback: false);
-
-        var channel = _grabService.CreateChannel(options);
         try
         {
-            channel.StartAcquisition(1);
-            channel.SendSoftwareTrigger();
+            var camFile = _camFileService.GetByFileName(profileId.Value);
+            var options = triggerMode.HasValue
+                ? camFile.ToChannelOptions(triggerMode.Value.Mode, useCallback: false)
+                : camFile.ToChannelOptions(useCallback: false);
 
-            var surface = channel.WaitForFrame(5000)
-                ?? throw new TimeoutException("Snapshot timed out waiting for frame.");
-
+            var channel = _grabService.CreateChannel(options);
             try
             {
-                return ImageData.FromSurface(surface);
+                channel.StartAcquisition(1);
+                channel.SendSoftwareTrigger();
+
+                var surface = channel.WaitForFrame(5000)
+                    ?? throw new TimeoutException("Snapshot timed out waiting for frame.");
+
+                try
+                {
+                    return ImageData.FromSurface(surface);
+                }
+                finally
+                {
+                    channel.ReleaseSurface(surface);
+                }
             }
             finally
             {
-                channel.ReleaseSurface(surface);
+                channel.StopAcquisition();
+                channel.Dispose();
             }
         }
         finally
         {
-            channel.StopAcquisition();
-            channel.Dispose();
+            lock (_lock)
+            {
+                _snapshotInProgress = false;
+            }
         }
     }
 

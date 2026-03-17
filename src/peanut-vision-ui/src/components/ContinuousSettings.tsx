@@ -62,7 +62,8 @@ export default function ContinuousSettings({
           onIntervalMsChange(isNaN(v) || v < 0 ? null : v);
         }}
         disabled={disabled}
-        slotProps={{ htmlInput: { min: 0 } }}
+        helperText="최소 50ms"
+        slotProps={{ htmlInput: { min: 50 } }}
         sx={{ width: 130 }}
       />
     </Box>
