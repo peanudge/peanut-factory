@@ -245,6 +245,8 @@ public readonly struct AcquisitionStatisticsSnapshot
     public double MinFrameIntervalMs { get; init; }
     public double MaxFrameIntervalMs { get; init; }
     public double AverageFrameIntervalMs { get; init; }
+    public int CopyDropCount { get; init; }
+    public int ClusterUnavailableCount { get; init; }
 
     public override string ToString()
     {

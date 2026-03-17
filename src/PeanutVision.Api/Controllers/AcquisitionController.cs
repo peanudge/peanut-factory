@@ -80,8 +80,16 @@ public class AcquisitionController : ControllerBase
                     minFrameIntervalMs = Math.Round(stats.Value.MinFrameIntervalMs, 2),
                     maxFrameIntervalMs = Math.Round(stats.Value.MaxFrameIntervalMs, 2),
                     averageFrameIntervalMs = Math.Round(stats.Value.AverageFrameIntervalMs, 2),
+                    copyDropCount = stats.Value.CopyDropCount,
+                    clusterUnavailableCount = stats.Value.ClusterUnavailableCount,
                 }
                 : null,
+            recentEvents = _acquisition.GetRecentEvents(50).Select(e => new
+            {
+                timestamp = e.Timestamp,
+                type = e.Type.ToString(),
+                message = e.Message,
+            }),
         });
     }
 

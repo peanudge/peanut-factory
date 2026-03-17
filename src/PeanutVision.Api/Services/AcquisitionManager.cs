@@ -7,6 +7,7 @@ public sealed class AcquisitionManager : IAcquisitionService
 {
     private readonly IGrabService _grabService;
     private readonly object _lock = new();
+    private readonly ChannelEventLog _eventLog = new();
 
     private GrabChannel? _channel;
     private ImageData? _lastFrame;
@@ -53,8 +54,22 @@ public sealed class AcquisitionManager : IAcquisitionService
     {
         lock (_lock)
         {
-            return _statistics?.GetSnapshot();
+            var snapshot = _statistics?.GetSnapshot();
+            if (snapshot.HasValue && _channel != null)
+            {
+                return snapshot.Value with
+                {
+                    CopyDropCount = _channel.CopyDropCount,
+                    ClusterUnavailableCount = _channel.ClusterUnavailableCount,
+                };
+            }
+            return snapshot;
         }
+    }
+
+    public IReadOnlyList<ChannelEvent> GetRecentEvents(int max = 50)
+    {
+        return _eventLog.GetRecent(max);
     }
 
     internal GrabChannel? Channel
@@ -86,6 +101,10 @@ public sealed class AcquisitionManager : IAcquisitionService
 
             _statistics.Start();
             _channel.StartAcquisition();
+
+            _eventLog.Add(new ChannelEvent(
+                DateTime.UtcNow, ChannelEventType.AcquisitionStarted,
+                $"Acquisition started with profile '{profileId.Value}'"));
         }
     }
 
@@ -111,6 +130,10 @@ public sealed class AcquisitionManager : IAcquisitionService
             _channel = null;
             _activeProfileId = null;
         }
+
+        _eventLog.Add(new ChannelEvent(
+            DateTime.UtcNow, ChannelEventType.AcquisitionStopped,
+            "Acquisition stopped"));
 
         tcs?.TrySetCanceled();
         channelToDispose?.Dispose();
@@ -250,6 +273,13 @@ public sealed class AcquisitionManager : IAcquisitionService
             processedTcs = _signalProcessedTcs;
             _signalProcessedTcs = null;
         }
+
+        var eventType = signal switch
+        {
+            McSignal.MC_SIG_CLUSTER_UNAVAILABLE => ChannelEventType.BufferUnavailable,
+            _ => ChannelEventType.AcquisitionError,
+        };
+        _eventLog.Add(new ChannelEvent(DateTime.UtcNow, eventType, message));
 
         tcs?.TrySetException(new InvalidOperationException($"Acquisition error: {message}"));
         processedTcs?.TrySetResult();

@@ -52,6 +52,14 @@ export interface AcquisitionStatistics {
   minFrameIntervalMs: number;
   maxFrameIntervalMs: number;
   averageFrameIntervalMs: number;
+  copyDropCount: number;
+  clusterUnavailableCount: number;
+}
+
+export interface ChannelEvent {
+  timestamp: string;
+  type: string;
+  message: string;
 }
 
 export interface AcquisitionStatus {
@@ -60,6 +68,7 @@ export interface AcquisitionStatus {
   hasFrame?: boolean;
   lastError?: string | null;
   statistics?: AcquisitionStatistics;
+  recentEvents?: ChannelEvent[];
 }
 
 export interface ExposureInfo {

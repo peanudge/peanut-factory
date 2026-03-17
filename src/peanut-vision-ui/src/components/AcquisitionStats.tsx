@@ -30,6 +30,8 @@ export default function AcquisitionStats({ stats }: Props) {
               label="Min / Max"
               value={`${stats.minFrameIntervalMs.toFixed(1)} / ${stats.maxFrameIntervalMs.toFixed(1)} ms`}
             />
+            <StatLine label="Copy Drops" value={stats.copyDropCount} />
+            <StatLine label="Buffer Full" value={stats.clusterUnavailableCount} />
           </Box>
         ) : (
           <Typography variant="body2" color="text.secondary">

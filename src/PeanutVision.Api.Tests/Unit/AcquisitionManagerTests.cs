@@ -441,4 +441,56 @@ public class AcquisitionManagerTests : IDisposable
             Assert.True(stats.Value.FrameCount + channel.CopyDropCount > 0);
         }
     }
+
+    public class Given_statistics_include_channel_diagnostics : AcquisitionManagerTests
+    {
+        [Fact]
+        public void Then_statistics_contain_copy_drop_and_cluster_counts()
+        {
+            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+
+            var stats = _manager.GetStatistics();
+            Assert.NotNull(stats);
+            Assert.Equal(0, stats.Value.CopyDropCount);
+            Assert.Equal(0, stats.Value.ClusterUnavailableCount);
+        }
+    }
+
+    public class Given_event_log : AcquisitionManagerTests
+    {
+        [Fact]
+        public void Then_start_records_event()
+        {
+            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+
+            var events = _manager.GetRecentEvents();
+            Assert.Single(events);
+            Assert.Equal(ChannelEventType.AcquisitionStarted, events[0].Type);
+        }
+
+        [Fact]
+        public void Then_stop_records_event()
+        {
+            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+            _manager.Stop();
+
+            var events = _manager.GetRecentEvents();
+            Assert.Equal(2, events.Count);
+            Assert.Equal(ChannelEventType.AcquisitionStopped, events[0].Type);
+            Assert.Equal(ChannelEventType.AcquisitionStarted, events[1].Type);
+        }
+
+        [Fact]
+        public void Then_events_persist_across_sessions()
+        {
+            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+            _manager.Stop();
+            _manager.Start("crevis-tc-a160k-softtrig-rgb8");
+
+            var events = _manager.GetRecentEvents();
+            Assert.Equal(3, events.Count);
+            Assert.Equal(ChannelEventType.AcquisitionStarted, events[0].Type);
+            Assert.Equal(ChannelEventType.AcquisitionStopped, events[1].Type);
+        }
+    }
 }

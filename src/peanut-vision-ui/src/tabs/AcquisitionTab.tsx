@@ -4,6 +4,7 @@ import Grid from "@mui/material/Grid";
 import ErrorAlert from "../components/ErrorAlert";
 import AcquisitionControls from "../components/AcquisitionControls";
 import AcquisitionStats from "../components/AcquisitionStats";
+import EventLog from "../components/EventLog";
 import ImageViewer from "../components/ImageViewer";
 import type { AcquisitionStatus, CameraProfile } from "../api/types";
 import {
@@ -71,7 +72,10 @@ export default function AcquisitionTab() {
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 4 }}>
-          <AcquisitionStats stats={status?.statistics} />
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <AcquisitionStats stats={status?.statistics} />
+            <EventLog events={status?.recentEvents} />
+          </Box>
         </Grid>
         <Grid size={{ xs: 12, md: 8 }}>
           <ImageViewer blob={capturedBlob} errorMessage={status?.lastError} />
