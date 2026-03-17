@@ -1,5 +1,7 @@
 using System.Runtime.InteropServices;
+using System.Threading.Channels;
 using PeanutVision.MultiCamDriver.Hal;
+using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.MultiCamDriver;
 
@@ -52,14 +54,26 @@ public sealed class GrabChannel : IDisposable
     private int _surfaceCount;
     private int _clusterUnavailableCount;
 
+    // Internal copy thread (only active when UseCallback=true)
+    private Channel<uint>? _surfaceQueue;
+    private Task? _copyTask;
+    private CancellationTokenSource? _copyCts;
+    private int _copyDropCount;
+
     /// <summary>Number of times cluster unavailable signal was received (frame drops)</summary>
     public int ClusterUnavailableCount => _clusterUnavailableCount;
+
+    /// <summary>Number of frames dropped because the internal copy queue was full</summary>
+    public int CopyDropCount => _copyDropCount;
 
     /// <summary>Channel handle for direct native API access if needed</summary>
     public uint Handle => _channelHandle;
 
     /// <summary>Whether the channel is currently acquiring</summary>
     public bool IsActive => _isActive;
+
+    /// <summary>Number of surfaces in the cluster</summary>
+    public int SurfaceCount => _surfaceCount;
 
     /// <summary>Image width in pixels</summary>
     public int ImageWidth => _imageWidth;
@@ -68,8 +82,8 @@ public sealed class GrabChannel : IDisposable
     public int ImageHeight => _imageHeight;
 
     /// <summary>
-    /// Fired when a frame is ready for processing.
-    /// WARNING: Called from MultiCam thread - keep handler fast and thread-safe.
+    /// Fired when a frame has been copied and is ready for processing.
+    /// Called from the internal copy thread — the surface is already released.
     /// </summary>
     public event EventHandler<FrameAcquiredEventArgs>? FrameAcquired;
 
@@ -156,6 +170,7 @@ public sealed class GrabChannel : IDisposable
             if (options.UseCallback)
             {
                 RegisterCallback();
+                InitializeCopyThread();
             }
 
             // Read back image parameters
@@ -245,24 +260,78 @@ public sealed class GrabChannel : IDisposable
         }
     }
 
+    private void InitializeCopyThread()
+    {
+        _surfaceQueue = Channel.CreateBounded<uint>(
+            new BoundedChannelOptions(_surfaceCount)
+            {
+                SingleReader = true,
+                SingleWriter = true,
+            });
+        _copyCts = new CancellationTokenSource();
+        _copyTask = Task.Run(() => CopyLoopAsync(_copyCts.Token));
+    }
+
+    /// <summary>
+    /// Enqueues the surface handle for background copy. Must be &lt; 1ms.
+    /// </summary>
     private void ProcessSurfaceSignal(ref McSignalInfo info)
     {
-        // SignalInfo contains the surface HANDLE (not index)
         uint surfaceHandle = info.SignalInfo;
+
+        if (_surfaceQueue != null && _surfaceQueue.Writer.TryWrite(surfaceHandle))
+        {
+            return;
+        }
+
+        // Queue full or not initialized — release surface immediately
+        Interlocked.Increment(ref _copyDropCount);
+        ReleaseSurface(surfaceHandle);
+    }
+
+    /// <summary>
+    /// Background loop: copies surface data, releases surface, fires event.
+    /// </summary>
+    private async Task CopyLoopAsync(CancellationToken ct)
+    {
+        if (_surfaceQueue == null) return;
 
         try
         {
-            // Get surface data
-            var surface = GetSurfaceData(surfaceHandle);
+            await foreach (var surfaceHandle in _surfaceQueue.Reader.ReadAllAsync(ct))
+            {
+                ImageData? image = null;
+                try
+                {
+                    var surface = GetSurfaceData(surfaceHandle);
+                    image = ImageData.FromSurface(surface);
+                }
+                catch
+                {
+                    // Copy failed — still must release surface
+                }
+                finally
+                {
+                    ReleaseSurface(surfaceHandle);
+                }
 
-            // Fire event
-            FrameAcquired?.Invoke(this, new FrameAcquiredEventArgs(
-                surface, _channelHandle, McSignal.MC_SIG_SURFACE_PROCESSING));
+                if (image != null)
+                {
+                    try
+                    {
+                        FrameAcquired?.Invoke(this, new FrameAcquiredEventArgs(
+                            image, _channelHandle, McSignal.MC_SIG_SURFACE_PROCESSING));
+                    }
+                    catch
+                    {
+                        // Don't let subscriber exceptions kill the copy loop
+                    }
+                }
+            }
         }
-        finally
+        catch (OperationCanceledException)
         {
-            // CRITICAL: Release surface back to MultiCam for next acquisition
-            ReleaseSurface(surfaceHandle);
+            // Normal shutdown
         }
     }
 
@@ -375,6 +444,9 @@ public sealed class GrabChannel : IDisposable
 
             _isActive = false;
         }
+
+        // Signal copy thread that no more surfaces will arrive
+        _surfaceQueue?.Writer.TryComplete();
     }
 
     /// <summary>
@@ -713,7 +785,13 @@ public sealed class GrabChannel : IDisposable
                 catch { /* Ignore cleanup errors */ }
                 _isActive = false;
             }
+        }
 
+        // Shut down copy thread (outside lock to avoid deadlock)
+        ShutdownCopyThread();
+
+        lock (_lock)
+        {
             // Delete channel
             if (_channelHandle != 0)
             {
@@ -730,6 +808,32 @@ public sealed class GrabChannel : IDisposable
 
             _nativeCallback = null;
         }
+    }
+
+    private void ShutdownCopyThread()
+    {
+        _surfaceQueue?.Writer.TryComplete();
+        _copyCts?.Cancel();
+
+        if (_copyTask != null)
+        {
+            try { _copyTask.Wait(TimeSpan.FromSeconds(2)); }
+            catch { /* Ignore timeout/cancellation */ }
+        }
+
+        // Drain any remaining surfaces that weren't processed
+        if (_surfaceQueue != null)
+        {
+            while (_surfaceQueue.Reader.TryRead(out var surfaceHandle))
+            {
+                ReleaseSurface(surfaceHandle);
+            }
+        }
+
+        _copyCts?.Dispose();
+        _copyCts = null;
+        _surfaceQueue = null;
+        _copyTask = null;
     }
 
     #endregion

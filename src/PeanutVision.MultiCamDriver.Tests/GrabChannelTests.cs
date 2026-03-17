@@ -1,4 +1,6 @@
+using System.Runtime.InteropServices;
 using PeanutVision.MultiCamDriver.Hal;
+using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.MultiCamDriver.Tests;
 
@@ -516,25 +518,40 @@ public class GrabChannelTests
     #region Events
 
     [Fact]
-    public void FrameAcquired_FiredOnSurfaceProcessing()
+    public async Task FrameAcquired_FiredOnSurfaceProcessing()
     {
-        var options = new GrabChannelOptions { UseCallback = true };
-        using var channel = new GrabChannel(options, _mockHal);
-        bool eventFired = false;
-        SurfaceData? receivedSurface = null;
-
-        channel.FrameAcquired += (sender, args) =>
+        // Allocate real surface memory so Marshal.Copy in the copy thread works
+        int width = _mockHal.Configuration.DefaultImageWidth;
+        int height = _mockHal.Configuration.DefaultImageHeight;
+        int bufferSize = width * height * 3;
+        IntPtr surfaceMemory = Marshal.AllocHGlobal(bufferSize);
+        try
         {
-            eventFired = true;
-            receivedSurface = args.Surface;
-        };
+            var zeros = new byte[bufferSize];
+            Marshal.Copy(zeros, 0, surfaceMemory, bufferSize);
+            _mockHal.Configuration.SimulatedSurfaceAddress = surfaceMemory;
 
-        // Simulate frame acquisition
-        _mockHal.SimulateFrameAcquisition(channel.Handle);
+            var options = new GrabChannelOptions { UseCallback = true };
+            using var channel = new GrabChannel(options, _mockHal);
+            var tcs = new TaskCompletionSource<ImageData>();
 
-        Assert.True(eventFired);
-        Assert.NotNull(receivedSurface);
-        Assert.NotEqual(0u, receivedSurface.Value.SurfaceHandle);
+            channel.FrameAcquired += (sender, args) =>
+            {
+                tcs.TrySetResult(args.Image);
+            };
+
+            _mockHal.SimulateFrameAcquisition(channel.Handle);
+
+            var image = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(2));
+
+            Assert.NotNull(image);
+            Assert.Equal(width, image.Width);
+            Assert.Equal(height, image.Height);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(surfaceMemory);
+        }
     }
 
     [Fact]

@@ -53,13 +53,10 @@ public static class AcquisitionExample
             frameCount++;
 
             // Process frame data here
-            // WARNING: This callback runs on MultiCam's thread - keep it fast!
+            // The image data is already copied — safe to use freely.
 
-            // Example: Copy data to managed array for later processing
-            // byte[] frameData = args.Surface.ToArray();
-
-            // Or use Span for zero-copy access (only valid during callback)
-            // ReadOnlySpan<byte> span = args.Surface.AsSpan();
+            // Example: Access the pixel data
+            // byte[] frameData = args.Image.Pixels;
 
             if (frameCount % 100 == 0)
             {

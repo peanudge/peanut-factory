@@ -1,3 +1,5 @@
+using PeanutVision.MultiCamDriver.Imaging;
+
 namespace PeanutVision.MultiCamDriver.Tests;
 
 public class MultiCamDriverTests
@@ -183,19 +185,14 @@ public class MultiCamDriverTests
     }
 
     [Fact]
-    public void FrameAcquiredEventArgs_ContainsSurfaceData()
+    public void FrameAcquiredEventArgs_ContainsImageData()
     {
-        var surface = new SurfaceData
-        {
-            SurfaceHandle = 2,
-            Width = 1920,
-            Height = 1080
-        };
+        var image = new ImageData(new byte[1920 * 1080 * 3], 1920, 1080, 1920 * 3);
 
-        var args = new FrameAcquiredEventArgs(surface, 123, McSignal.MC_SIG_SURFACE_PROCESSING);
+        var args = new FrameAcquiredEventArgs(image, 123, McSignal.MC_SIG_SURFACE_PROCESSING);
 
-        Assert.Equal(2u, args.Surface.SurfaceHandle);
-        Assert.Equal(1920, args.Surface.Width);
+        Assert.Equal(1920, args.Image.Width);
+        Assert.Equal(1080, args.Image.Height);
         Assert.Equal(123u, args.ChannelHandle);
         Assert.Equal(McSignal.MC_SIG_SURFACE_PROCESSING, args.Signal);
     }

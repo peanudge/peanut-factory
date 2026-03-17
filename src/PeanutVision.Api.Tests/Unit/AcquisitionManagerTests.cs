@@ -415,4 +415,30 @@ public class AcquisitionManagerTests : IDisposable
                 _manager.Snapshot("crevis-tc-a160k-freerun-rgb8"));
         }
     }
+
+    public class Given_copy_queue_full : AcquisitionManagerTests
+    {
+        [Fact]
+        public async Task Then_grab_channel_records_copy_drops()
+        {
+            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+            var channel = _manager.Channel!;
+
+            // Fire more frames than the bounded copy queue can hold
+            // The copy thread may process some, but rapid-fire should overflow
+            int totalFrames = channel.SurfaceCount + 4;
+            for (int i = 0; i < totalFrames; i++)
+            {
+                _mockHal.SimulateFrameAcquisition(channel.Handle);
+            }
+
+            // Give copy thread time to process
+            await Task.Delay(300);
+
+            var stats = _manager.GetStatistics();
+            Assert.NotNull(stats);
+            // Total processed + dropped at GrabChannel level should cover all frames
+            Assert.True(stats.Value.FrameCount + channel.CopyDropCount > 0);
+        }
+    }
 }

@@ -1,4 +1,3 @@
-using System.Threading.Channels;
 using PeanutVision.MultiCamDriver;
 using PeanutVision.MultiCamDriver.Imaging;
 
@@ -17,10 +16,7 @@ public sealed class AcquisitionManager : IAcquisitionService
     private TaskCompletionSource<ImageData>? _triggerTcs;
     private bool _disposed;
 
-    // Queue-based signal processing
-    private Channel<AcquisitionSignal>? _signalChannel;
-    private Task? _processingTask;
-    private CancellationTokenSource? _processingCts;
+    // Test synchronization
     private TaskCompletionSource? _signalProcessedTcs;
 
     public AcquisitionManager(IGrabService grabService)
@@ -85,12 +81,6 @@ public sealed class AcquisitionManager : IAcquisitionService
 
             _statistics = new AcquisitionStatistics();
 
-            // Set up queue-based signal processing
-            _signalChannel = System.Threading.Channels.Channel.CreateUnbounded<AcquisitionSignal>(
-                new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
-            _processingCts = new CancellationTokenSource();
-            _processingTask = Task.Run(() => ProcessSignalsAsync(_processingCts.Token));
-
             _channel.FrameAcquired += OnFrameAcquired;
             _channel.AcquisitionError += OnAcquisitionError;
 
@@ -102,7 +92,7 @@ public sealed class AcquisitionManager : IAcquisitionService
     public void Stop()
     {
         TaskCompletionSource<ImageData>? tcs;
-        Task? processingTask;
+        GrabChannel? channelToDispose;
 
         lock (_lock)
         {
@@ -116,29 +106,14 @@ public sealed class AcquisitionManager : IAcquisitionService
             _channel.StopAcquisition();
             _channel.FrameAcquired -= OnFrameAcquired;
             _channel.AcquisitionError -= OnAcquisitionError;
-            _channel.Dispose();
+
+            channelToDispose = _channel;
             _channel = null;
             _activeProfileId = null;
-
-            // Signal the processing task to stop
-            _signalChannel?.Writer.TryComplete();
-            _processingCts?.Cancel();
-            processingTask = _processingTask;
-            _processingTask = null;
         }
 
         tcs?.TrySetCanceled();
-
-        // Wait for processing task to finish outside the lock
-        if (processingTask != null)
-        {
-            try { processingTask.GetAwaiter().GetResult(); }
-            catch (OperationCanceledException) { }
-        }
-
-        _processingCts?.Dispose();
-        _processingCts = null;
-        _signalChannel = null;
+        channelToDispose?.Dispose();
     }
 
     public async Task<ImageData> TriggerAndWaitAsync(int timeoutMs = 5000)
@@ -208,24 +183,19 @@ public sealed class AcquisitionManager : IAcquisitionService
     }
 
     /// <summary>
-    /// Callback handler - copies data and enqueues, no lock contention.
-    /// Called from MultiCam native thread, must be fast.
+    /// Frame callback — receives already-copied ImageData from GrabChannel's copy thread.
     /// </summary>
     private void OnFrameAcquired(object? sender, FrameAcquiredEventArgs e)
     {
-        // Copy image data from surface (must happen before surface is released)
-        var image = ImageData.FromSurface(e.Surface);
-
-        // Fire-and-forget enqueue - if channel is closed, just drop
-        _signalChannel?.Writer.TryWrite(new AcquisitionSignal.FrameReady(image));
+        ProcessFrame(e.Image);
     }
 
     /// <summary>
-    /// Error callback handler - enqueues error signal, no lock contention.
+    /// Error callback — called from GrabChannel's native callback thread.
     /// </summary>
     private void OnAcquisitionError(object? sender, AcquisitionErrorEventArgs e)
     {
-        _signalChannel?.Writer.TryWrite(new AcquisitionSignal.Error(e.Message, e.Signal));
+        ProcessError(e.Message, e.Signal);
     }
 
     /// <summary>
@@ -243,48 +213,10 @@ public sealed class AcquisitionManager : IAcquisitionService
         return tcs.Task;
     }
 
-    /// <summary>
-    /// Background consumer that processes queued signals sequentially.
-    /// All state mutations happen here - single reader, no contention.
-    /// </summary>
-    private async Task ProcessSignalsAsync(CancellationToken ct)
-    {
-        if (_signalChannel == null) return;
-
-        try
-        {
-            await foreach (var signal in _signalChannel.Reader.ReadAllAsync(ct))
-            {
-                switch (signal)
-                {
-                    case AcquisitionSignal.FrameReady frame:
-                        ProcessFrame(frame.Image);
-                        break;
-
-                    case AcquisitionSignal.Error error:
-                        ProcessError(error.Message, error.Signal);
-                        break;
-                }
-
-                // Notify waiters that a signal was processed
-                TaskCompletionSource? processedTcs;
-                lock (_lock)
-                {
-                    processedTcs = _signalProcessedTcs;
-                    _signalProcessedTcs = null;
-                }
-                processedTcs?.TrySetResult();
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            // Normal shutdown
-        }
-    }
-
     private void ProcessFrame(ImageData image)
     {
         TaskCompletionSource<ImageData>? tcs;
+        TaskCompletionSource? processedTcs;
 
         lock (_lock)
         {
@@ -292,14 +224,18 @@ public sealed class AcquisitionManager : IAcquisitionService
             _statistics?.RecordFrame();
             tcs = _triggerTcs;
             _triggerTcs = null;
+            processedTcs = _signalProcessedTcs;
+            _signalProcessedTcs = null;
         }
 
         tcs?.TrySetResult(image);
+        processedTcs?.TrySetResult();
     }
 
     private void ProcessError(string message, McSignal signal)
     {
         TaskCompletionSource<ImageData>? tcs;
+        TaskCompletionSource? processedTcs;
 
         lock (_lock)
         {
@@ -311,9 +247,12 @@ public sealed class AcquisitionManager : IAcquisitionService
 
             tcs = _triggerTcs;
             _triggerTcs = null;
+            processedTcs = _signalProcessedTcs;
+            _signalProcessedTcs = null;
         }
 
         tcs?.TrySetException(new InvalidOperationException($"Acquisition error: {message}"));
+        processedTcs?.TrySetResult();
     }
 
     public void Dispose()
@@ -322,13 +261,4 @@ public sealed class AcquisitionManager : IAcquisitionService
         _disposed = true;
         Stop();
     }
-}
-
-/// <summary>
-/// Discriminated union for signals passed through the acquisition queue.
-/// </summary>
-internal abstract record AcquisitionSignal
-{
-    public sealed record FrameReady(ImageData Image) : AcquisitionSignal;
-    public sealed record Error(string Message, McSignal Signal) : AcquisitionSignal;
 }

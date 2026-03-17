@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.MultiCamDriver;
 
@@ -81,12 +82,13 @@ public readonly struct SurfaceData
 }
 
 /// <summary>
-/// Event arguments for frame acquired events
+/// Event arguments for frame acquired events.
+/// Contains already-copied image data — safe to use after the event returns.
 /// </summary>
 public class FrameAcquiredEventArgs : EventArgs
 {
-    /// <summary>The acquired surface data</summary>
-    public SurfaceData Surface { get; }
+    /// <summary>The acquired image data (already copied from surface buffer)</summary>
+    public ImageData Image { get; }
 
     /// <summary>Channel handle that generated the frame</summary>
     public uint ChannelHandle { get; }
@@ -94,9 +96,9 @@ public class FrameAcquiredEventArgs : EventArgs
     /// <summary>Signal type that triggered this event</summary>
     public McSignal Signal { get; }
 
-    public FrameAcquiredEventArgs(SurfaceData surface, uint channelHandle, McSignal signal)
+    public FrameAcquiredEventArgs(ImageData image, uint channelHandle, McSignal signal)
     {
-        Surface = surface;
+        Image = image;
         ChannelHandle = channelHandle;
         Signal = signal;
     }
