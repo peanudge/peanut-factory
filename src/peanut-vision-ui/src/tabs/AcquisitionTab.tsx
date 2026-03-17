@@ -8,6 +8,7 @@ import AcquisitionControls from "../components/AcquisitionControls";
 import AcquisitionStats from "../components/AcquisitionStats";
 import EventLog from "../components/EventLog";
 import ImageViewer from "../components/ImageViewer";
+import ContinuousSettings from "../components/ContinuousSettings";
 import type { AcquisitionMode, AcquisitionStatus, CamFileInfo } from "../api/types";
 import {
   getCameras,
@@ -29,6 +30,8 @@ export default function AcquisitionTab() {
   const [cameras, setCameras] = useState<CamFileInfo[]>([]);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [mode, setMode] = useState<AcquisitionMode>("single");
+  const [frameCount, setFrameCount] = useState<number | null>(null);
+  const [intervalMs, setIntervalMs] = useState<number | null>(null);
   const [status, setStatus] = useState<AcquisitionStatus | null>(null);
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
   const [snackbar, setSnackbar] = useState<{
@@ -75,7 +78,7 @@ export default function AcquisitionTab() {
 
   const handleStart = () =>
     execute(async () => {
-      await startAcquisition(selectedProfile);
+      await startAcquisition(selectedProfile, undefined, frameCount, intervalMs);
       fetchStatus();
       setSnackbar({ message: "촬영이 시작되었습니다", severity: "success" });
     });
@@ -128,6 +131,16 @@ export default function AcquisitionTab() {
         hasWarnings={hasWarnings}
         hasErrors={hasErrors}
       />
+
+      {mode === "continuous" && (
+        <ContinuousSettings
+          frameCount={frameCount}
+          onFrameCountChange={setFrameCount}
+          intervalMs={intervalMs}
+          onIntervalMsChange={setIntervalMs}
+          disabled={status?.isActive}
+        />
+      )}
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 4 }}>

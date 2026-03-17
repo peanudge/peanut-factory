@@ -1,0 +1,70 @@
+import { useState } from "react";
+import Box from "@mui/material/Box";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import TextField from "@mui/material/TextField";
+
+interface Props {
+  frameCount: number | null;
+  onFrameCountChange: (value: number | null) => void;
+  intervalMs: number | null;
+  onIntervalMsChange: (value: number | null) => void;
+  disabled?: boolean;
+}
+
+export default function ContinuousSettings({
+  frameCount,
+  onFrameCountChange,
+  intervalMs,
+  onIntervalMsChange,
+  disabled,
+}: Props) {
+  const [infinite, setInfinite] = useState(frameCount === null);
+
+  const handleInfiniteChange = (checked: boolean) => {
+    setInfinite(checked);
+    onFrameCountChange(checked ? null : 10);
+  };
+
+  return (
+    <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
+      <TextField
+        label="Frame Count"
+        type="number"
+        size="small"
+        value={infinite ? "" : (frameCount ?? "")}
+        onChange={(e) => {
+          const v = parseInt(e.target.value, 10);
+          onFrameCountChange(isNaN(v) || v < 1 ? null : v);
+        }}
+        disabled={disabled || infinite}
+        slotProps={{ htmlInput: { min: 1 } }}
+        sx={{ width: 130 }}
+      />
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={infinite}
+            onChange={(e) => handleInfiniteChange(e.target.checked)}
+            size="small"
+            disabled={disabled}
+          />
+        }
+        label="Infinite"
+      />
+      <TextField
+        label="Interval (ms)"
+        type="number"
+        size="small"
+        value={intervalMs ?? ""}
+        onChange={(e) => {
+          const v = parseInt(e.target.value, 10);
+          onIntervalMsChange(isNaN(v) || v < 0 ? null : v);
+        }}
+        disabled={disabled}
+        slotProps={{ htmlInput: { min: 0 } }}
+        sx={{ width: 130 }}
+      />
+    </Box>
+  );
+}

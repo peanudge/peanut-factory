@@ -18,6 +18,7 @@ public sealed class AcquisitionManager : IAcquisitionService
     private ProfileId? _activeProfileId;
     private TaskCompletionSource<ImageData>? _triggerTcs;
     private bool _disposed;
+    private Timer? _triggerTimer;
 
     // Test synchronization
     private TaskCompletionSource? _signalProcessedTcs;
@@ -104,7 +105,7 @@ public sealed class AcquisitionManager : IAcquisitionService
         get { lock (_lock) return _channel; }
     }
 
-    public void Start(ProfileId profileId, TriggerMode? triggerMode = null)
+    public void Start(ProfileId profileId, TriggerMode? triggerMode = null, int? frameCount = null, int? intervalMs = null)
     {
         lock (_lock)
         {
@@ -127,11 +128,25 @@ public sealed class AcquisitionManager : IAcquisitionService
             _channel.AcquisitionError += OnAcquisitionError;
 
             _statistics.Start();
-            _channel.StartAcquisition();
+            _channel.StartAcquisition(frameCount ?? -1);
+
+            if (intervalMs.HasValue && intervalMs.Value > 0)
+            {
+                _triggerTimer = new Timer(_ =>
+                {
+                    lock (_lock)
+                    {
+                        if (_channel?.IsActive == true)
+                            _channel.SendSoftwareTrigger();
+                    }
+                }, null, 0, intervalMs.Value);
+            }
 
             _eventLog.Add(new ChannelEvent(
                 DateTime.UtcNow, ChannelEventType.AcquisitionStarted,
-                $"Acquisition started with profile '{profileId.Value}'"));
+                $"Acquisition started with profile '{profileId.Value}'" +
+                (frameCount.HasValue ? $", frameCount={frameCount}" : "") +
+                (intervalMs.HasValue ? $", intervalMs={intervalMs}" : "")));
         }
     }
 
@@ -147,6 +162,9 @@ public sealed class AcquisitionManager : IAcquisitionService
 
             tcs = _triggerTcs;
             _triggerTcs = null;
+
+            _triggerTimer?.Dispose();
+            _triggerTimer = null;
 
             _statistics?.Stop();
             _channel.StopAcquisition();

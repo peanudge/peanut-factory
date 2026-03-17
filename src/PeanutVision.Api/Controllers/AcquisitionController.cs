@@ -35,7 +35,7 @@ public class AcquisitionController : ControllerBase
                 ? TriggerMode.Parse(request.TriggerMode)
                 : (TriggerMode?)null;
 
-            _acquisition.Start(profileId, triggerMode);
+            _acquisition.Start(profileId, triggerMode, request.FrameCount, request.IntervalMs);
             return Ok(new { message = "Acquisition started", profileId = profileId.Value });
         }
         catch (ArgumentException ex)
@@ -190,6 +190,8 @@ public class StartAcquisitionRequest
 {
     public required string ProfileId { get; set; }
     public string? TriggerMode { get; set; }
+    public int? FrameCount { get; set; }
+    public int? IntervalMs { get; set; }
 }
 
 public class SnapshotRequest
