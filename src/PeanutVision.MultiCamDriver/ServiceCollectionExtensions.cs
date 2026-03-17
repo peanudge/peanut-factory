@@ -1,6 +1,7 @@
 #if NET6_0_OR_GREATER
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using PeanutVision.MultiCamDriver.Camera;
 
 namespace PeanutVision.MultiCamDriver;
 
@@ -65,6 +66,16 @@ public static class ServiceCollectionExtensions
             return service;
         });
 
+        return services;
+    }
+
+    /// <summary>
+    /// Adds the ICamFileService to the service collection as a singleton.
+    /// Scans the specified directory for .cam files and parses their metadata.
+    /// </summary>
+    public static IServiceCollection AddCamFileService(this IServiceCollection services, string directory)
+    {
+        services.TryAddSingleton<ICamFileService>(new CamFileService(directory));
         return services;
     }
 

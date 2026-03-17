@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using PeanutVision.Api.Services;
+using PeanutVision.Api.Tests.Infrastructure;
 using PeanutVision.MultiCamDriver;
 using PeanutVision.MultiCamDriver.Camera;
 using PeanutVision.MultiCamDriver.Hal;
@@ -9,9 +10,6 @@ namespace PeanutVision.Api.Tests.Unit;
 
 public class AcquisitionManagerTests : IDisposable
 {
-    private static readonly object _initLock = new();
-    private static bool _initialized;
-
     protected readonly MockMultiCamHAL _mockHal;
     protected readonly GrabService _grabService;
     protected readonly AcquisitionManager _manager;
@@ -19,27 +17,6 @@ public class AcquisitionManagerTests : IDisposable
 
     public AcquisitionManagerTests()
     {
-        lock (_initLock)
-        {
-            if (!_initialized)
-            {
-                var camDir = CamFileResource.GetDirectory();
-                foreach (var name in new[]
-                {
-                    "crevis-tc-a160k-freerun-rgb8.cam",
-                    "crevis-tc-a160k-freerun-1tap-rgb8.cam",
-                    "crevis-tc-a160k-softtrig-rgb8.cam",
-                })
-                {
-                    var path = Path.Combine(camDir, name);
-                    if (!File.Exists(path)) File.WriteAllText(path, "");
-                    CameraRegistry.Default.Register(CameraProfile.FromCamFile(name));
-                }
-
-                _initialized = true;
-            }
-        }
-
         _mockHal = new MockMultiCamHAL();
 
         var bufferSize = _mockHal.Configuration.DefaultImageWidth
@@ -51,7 +28,7 @@ public class AcquisitionManagerTests : IDisposable
 
         _grabService = new GrabService(_mockHal);
         _grabService.Initialize();
-        _manager = new AcquisitionManager(_grabService);
+        _manager = new AcquisitionManager(_grabService, TestCamFileHelper.GetOrCreate());
     }
 
     public void Dispose()
@@ -119,7 +96,7 @@ public class AcquisitionManagerTests : IDisposable
     {
         public Given_started()
         {
-            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
         }
 
         [Fact]
@@ -131,7 +108,7 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void Then_active_profile_id_matches()
         {
-            Assert.Equal(new ProfileId("crevis-tc-a160k-freerun-rgb8"), _manager.ActiveProfileId);
+            Assert.Equal(new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"), _manager.ActiveProfileId);
         }
 
         [Fact]
@@ -164,14 +141,14 @@ public class AcquisitionManagerTests : IDisposable
         public void When_start_again_then_throws()
         {
             Assert.Throws<InvalidOperationException>(() =>
-                _manager.Start("crevis-tc-a160k-freerun-rgb8"));
+                _manager.Start("crevis-tc-a160k-freerun-rgb8.cam"));
         }
 
         [Fact]
         public void When_snapshot_then_throws()
         {
             Assert.Throws<InvalidOperationException>(() =>
-                _manager.Snapshot("crevis-tc-a160k-freerun-rgb8"));
+                _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam"));
         }
 
         [Fact]
@@ -186,7 +163,7 @@ public class AcquisitionManagerTests : IDisposable
     {
         public Given_started_with_trigger_mode()
         {
-            _manager.Start("crevis-tc-a160k-freerun-rgb8", TriggerMode.Soft);
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam", TriggerMode.Soft);
         }
 
         [Fact]
@@ -200,7 +177,7 @@ public class AcquisitionManagerTests : IDisposable
     {
         public Given_started_then_stopped()
         {
-            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
             _manager.Stop();
         }
 
@@ -225,10 +202,10 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void When_restart_with_different_profile_then_activates()
         {
-            _manager.Start("crevis-tc-a160k-softtrig-rgb8");
+            _manager.Start("crevis-tc-a160k-softtrig-rgb8.cam");
 
             Assert.True(_manager.IsActive);
-            Assert.Equal(new ProfileId("crevis-tc-a160k-softtrig-rgb8"), _manager.ActiveProfileId);
+            Assert.Equal(new ProfileId("crevis-tc-a160k-softtrig-rgb8.cam"), _manager.ActiveProfileId);
         }
     }
 
@@ -245,7 +222,7 @@ public class AcquisitionManagerTests : IDisposable
             int width = _mockHal.Configuration.DefaultImageWidth;
             int height = _mockHal.Configuration.DefaultImageHeight;
 
-            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
             var image = await _manager.TriggerAndWaitAsync();
 
             Assert.Equal(width, image.Width);
@@ -255,7 +232,7 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public async Task Then_increments_hal_trigger_count()
         {
-            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
             _mockHal.CallLog.Reset();
 
             await _manager.TriggerAndWaitAsync();
@@ -271,7 +248,7 @@ public class AcquisitionManagerTests : IDisposable
         public async Task Then_throws_TimeoutException()
         {
             // AutoSimulateFrameOnTrigger is false by default, so no frame arrives
-            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
 
             await Assert.ThrowsAsync<TimeoutException>(
                 () => _manager.TriggerAndWaitAsync(timeoutMs: 100));
@@ -297,7 +274,7 @@ public class AcquisitionManagerTests : IDisposable
             {
                 _mockHal.Configuration.SimulatedSurfaceAddress = pinnedHandle.AddrOfPinnedObject();
 
-                _manager.Start("crevis-tc-a160k-freerun-rgb8");
+                _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
                 var signalProcessed = _manager.PrepareSignalWaiter();
                 _mockHal.SimulateFrameAcquisition(_manager.Channel!.Handle);
                 await signalProcessed.WaitAsync(TimeSpan.FromSeconds(1));
@@ -321,7 +298,7 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void Then_returns_image_data()
         {
-            var image = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8");
+            var image = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
 
             Assert.NotNull(image);
             Assert.Equal(_mockHal.Configuration.DefaultImageWidth, image.Width);
@@ -333,7 +310,7 @@ public class AcquisitionManagerTests : IDisposable
         {
             _mockHal.CallLog.Reset();
 
-            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8");
+            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
 
             Assert.Equal(1, _mockHal.CallLog.SoftwareTriggerCount);
         }
@@ -343,7 +320,7 @@ public class AcquisitionManagerTests : IDisposable
         {
             _mockHal.CallLog.Reset();
 
-            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8");
+            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
 
             Assert.True(_mockHal.CallLog.AcquisitionStarted);
             Assert.True(_mockHal.CallLog.AcquisitionStopped);
@@ -352,7 +329,7 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void Then_does_not_leave_channel_active()
         {
-            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8");
+            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
 
             Assert.False(_manager.IsActive);
             Assert.Null(_manager.Channel);
@@ -363,7 +340,7 @@ public class AcquisitionManagerTests : IDisposable
         {
             _mockHal.CallLog.Reset();
 
-            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8");
+            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
 
             Assert.Equal(1, _mockHal.CallLog.WaitSignalCalls);
             Assert.Equal(0, _mockHal.CallLog.RegisterCallbackCalls);
@@ -372,8 +349,8 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void Then_can_be_called_multiple_times()
         {
-            var image1 = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8");
-            var image2 = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8");
+            var image1 = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+            var image2 = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
 
             Assert.NotNull(image1);
             Assert.NotNull(image2);
@@ -390,14 +367,14 @@ public class AcquisitionManagerTests : IDisposable
     {
         public Snapshot_given_active()
         {
-            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
         }
 
         [Fact]
         public void Then_throws()
         {
             Assert.Throws<InvalidOperationException>(() =>
-                _manager.Snapshot("crevis-tc-a160k-freerun-rgb8"));
+                _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam"));
         }
     }
 
@@ -412,7 +389,7 @@ public class AcquisitionManagerTests : IDisposable
         public void Then_throws_TimeoutException()
         {
             Assert.Throws<TimeoutException>(() =>
-                _manager.Snapshot("crevis-tc-a160k-freerun-rgb8"));
+                _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam"));
         }
     }
 
@@ -421,7 +398,7 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public async Task Then_grab_channel_records_copy_drops()
         {
-            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
             var channel = _manager.Channel!;
 
             // Fire more frames than the bounded copy queue can hold
@@ -447,7 +424,7 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void Then_statistics_contain_copy_drop_and_cluster_counts()
         {
-            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
 
             var stats = _manager.GetStatistics();
             Assert.NotNull(stats);
@@ -461,7 +438,7 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void Then_start_records_event()
         {
-            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
 
             var events = _manager.GetRecentEvents();
             Assert.Single(events);
@@ -471,7 +448,7 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void Then_stop_records_event()
         {
-            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
             _manager.Stop();
 
             var events = _manager.GetRecentEvents();
@@ -483,9 +460,9 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void Then_events_persist_across_sessions()
         {
-            _manager.Start("crevis-tc-a160k-freerun-rgb8");
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
             _manager.Stop();
-            _manager.Start("crevis-tc-a160k-softtrig-rgb8");
+            _manager.Start("crevis-tc-a160k-softtrig-rgb8.cam");
 
             var events = _manager.GetRecentEvents();
             Assert.Equal(3, events.Count);

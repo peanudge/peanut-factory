@@ -13,10 +13,10 @@ import AdjustIcon from "@mui/icons-material/Adjust";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import StatusChip from "./StatusChip";
-import type { AcquisitionStatus, CameraProfile } from "../api/types";
+import type { AcquisitionStatus, CamFileInfo } from "../api/types";
 
 interface Props {
-  cameras: CameraProfile[];
+  cameras: CamFileInfo[];
   selectedProfile: string;
   onProfileChange: (id: string) => void;
   status: AcquisitionStatus | null;
@@ -52,8 +52,8 @@ export default function AcquisitionControls({
           onChange={(e) => onProfileChange(e.target.value)}
         >
           {cameras.map((c) => (
-            <MenuItem key={c.id} value={c.id}>
-              {c.displayName}
+            <MenuItem key={c.fileName} value={c.fileName}>
+              {c.fileName}
             </MenuItem>
           ))}
         </Select>

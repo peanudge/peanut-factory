@@ -1,25 +1,19 @@
 using PeanutVision.Api.Services;
 using PeanutVision.MultiCamDriver;
-using PeanutVision.MultiCamDriver.Camera;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure cam file directory from appsettings.json (relative to project root)
-var camFileDir = builder.Configuration["CamFileDirectory"];
-if (!string.IsNullOrEmpty(camFileDir))
-{
-    var fullPath = Path.IsPathRooted(camFileDir)
-        ? camFileDir
-        : Path.Combine(builder.Environment.ContentRootPath, camFileDir);
-    CamFileResource.SetDirectory(fullPath);
-}
-
-// Load camera profiles from cam files in the directory
-CameraRegistry.Default.LoadFromDirectory();
+var camFileDir = builder.Configuration["CamFileDirectory"]
+    ?? "CamFiles";
+var camFilePath = Path.IsPathRooted(camFileDir)
+    ? camFileDir
+    : Path.Combine(builder.Environment.ContentRootPath, camFileDir);
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
+builder.Services.AddCamFileService(camFilePath);
 builder.Services.AddGrabService(autoInitialize: true);
 builder.Services.AddSingleton<AcquisitionManager>();
 builder.Services.AddSingleton<IAcquisitionService>(sp => sp.GetRequiredService<AcquisitionManager>());

@@ -6,7 +6,7 @@ import AcquisitionControls from "../components/AcquisitionControls";
 import AcquisitionStats from "../components/AcquisitionStats";
 import EventLog from "../components/EventLog";
 import ImageViewer from "../components/ImageViewer";
-import type { AcquisitionStatus, CameraProfile } from "../api/types";
+import type { AcquisitionStatus, CamFileInfo } from "../api/types";
 import {
   getCameras,
   startAcquisition,
@@ -19,7 +19,7 @@ import { useAsyncOperation } from "../hooks/useAsyncOperation";
 import { usePolling } from "../hooks/usePolling";
 
 export default function AcquisitionTab() {
-  const [cameras, setCameras] = useState<CameraProfile[]>([]);
+  const [cameras, setCameras] = useState<CamFileInfo[]>([]);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [status, setStatus] = useState<AcquisitionStatus | null>(null);
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
@@ -35,7 +35,7 @@ export default function AcquisitionTab() {
     getCameras()
       .then((c) => {
         setCameras(c);
-        if (c.length > 0) setSelectedProfile(c[0].id);
+        if (c.length > 0) setSelectedProfile(c[0].fileName);
       })
       .catch(() => {});
   }, []);

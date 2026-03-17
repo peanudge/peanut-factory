@@ -62,7 +62,7 @@ public class CalibrationOperationsSpec : IClassFixture<PeanutVisionApiFactory>, 
     public async Task BlackCalibration_with_active_channel_returns_ok()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
         _factory.ResetMockState();
 
         var response = await _client.PostAsync("/api/calibration/black", null);
@@ -75,7 +75,7 @@ public class CalibrationOperationsSpec : IClassFixture<PeanutVisionApiFactory>, 
     public async Task WhiteCalibration_with_active_channel_returns_ok()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
         _factory.ResetMockState();
 
         var response = await _client.PostAsync("/api/calibration/white", null);
@@ -88,7 +88,7 @@ public class CalibrationOperationsSpec : IClassFixture<PeanutVisionApiFactory>, 
     public async Task WhiteBalance_with_active_channel_returns_ok()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
         _factory.ResetMockState();
 
         var response = await _client.PostAsync("/api/calibration/white-balance", null);
@@ -101,7 +101,7 @@ public class CalibrationOperationsSpec : IClassFixture<PeanutVisionApiFactory>, 
     public async Task Ffc_enable_with_active_channel_returns_ok()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         var response = await _client.PostJsonAsync("/api/calibration/ffc",
             new { enable = true });
@@ -115,7 +115,7 @@ public class CalibrationOperationsSpec : IClassFixture<PeanutVisionApiFactory>, 
     public async Task Ffc_disable_with_active_channel_returns_ok()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         var response = await _client.PostJsonAsync("/api/calibration/ffc",
             new { enable = false });

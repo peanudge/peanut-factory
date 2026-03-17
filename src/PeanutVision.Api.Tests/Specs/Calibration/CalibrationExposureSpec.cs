@@ -44,7 +44,7 @@ public class CalibrationExposureSpec : IClassFixture<PeanutVisionApiFactory>, IA
     public async Task GetExposure_returns_exposure_and_gain()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         var response = await _client.GetAsync("/api/calibration/exposure");
 
@@ -58,7 +58,7 @@ public class CalibrationExposureSpec : IClassFixture<PeanutVisionApiFactory>, IA
     public async Task GetExposure_includes_range()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         var response = await _client.GetAsync("/api/calibration/exposure");
 
@@ -72,7 +72,7 @@ public class CalibrationExposureSpec : IClassFixture<PeanutVisionApiFactory>, IA
     public async Task SetExposure_updates_exposure_value()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         var response = await _client.PutJsonAsync("/api/calibration/exposure",
             new { exposureUs = 5000.0 });
@@ -86,7 +86,7 @@ public class CalibrationExposureSpec : IClassFixture<PeanutVisionApiFactory>, IA
     public async Task SetGain_updates_gain_value()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         var response = await _client.PutJsonAsync("/api/calibration/exposure",
             new { gainDb = 3.5 });
@@ -100,7 +100,7 @@ public class CalibrationExposureSpec : IClassFixture<PeanutVisionApiFactory>, IA
     public async Task SetExposure_and_gain_together()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         var response = await _client.PutJsonAsync("/api/calibration/exposure",
             new { exposureUs = 20000.0, gainDb = 1.5 });
