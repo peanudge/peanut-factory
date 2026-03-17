@@ -8,7 +8,7 @@ import AcquisitionControls from "../components/AcquisitionControls";
 import AcquisitionStats from "../components/AcquisitionStats";
 import EventLog from "../components/EventLog";
 import ImageViewer from "../components/ImageViewer";
-import type { AcquisitionStatus, CamFileInfo } from "../api/types";
+import type { AcquisitionMode, AcquisitionStatus, CamFileInfo } from "../api/types";
 import {
   getCameras,
   startAcquisition,
@@ -28,6 +28,7 @@ import {
 export default function AcquisitionTab() {
   const [cameras, setCameras] = useState<CamFileInfo[]>([]);
   const [selectedProfile, setSelectedProfile] = useState("");
+  const [mode, setMode] = useState<AcquisitionMode>("single");
   const [status, setStatus] = useState<AcquisitionStatus | null>(null);
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
   const [snackbar, setSnackbar] = useState<{
@@ -96,7 +97,7 @@ export default function AcquisitionTab() {
       });
     });
 
-  const handleSnapshot = () =>
+  const handleCapture = () =>
     execute(async () => {
       setCapturedBlob(await snapshot(selectedProfile));
       fetchStatus();
@@ -114,12 +115,14 @@ export default function AcquisitionTab() {
         cameras={cameras}
         selectedProfile={selectedProfile}
         onProfileChange={setSelectedProfile}
+        mode={mode}
+        onModeChange={setMode}
         status={status}
         busy={busy}
+        onCapture={handleCapture}
         onStart={handleStart}
         onStop={handleStop}
         onTrigger={handleTrigger}
-        onSnapshot={handleSnapshot}
         onRefresh={refresh}
         refreshThrottled={throttled}
         hasWarnings={hasWarnings}

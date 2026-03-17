@@ -8,10 +8,18 @@ interface Props {
 }
 
 export default function StatusChip({ active, label, hasWarnings, hasErrors }: Props) {
+  const color = hasErrors
+    ? "error"
+    : hasWarnings
+      ? "warning"
+      : active
+        ? "success"
+        : "default";
+
   return (
     <Chip
       label={label ?? (active ? "Active" : "Inactive")}
-      color={hasErrors ? "error" : hasWarnings ? "warning" : active ? "success" : "default"}
+      color={color}
       size="small"
       variant="outlined"
     />
