@@ -82,6 +82,13 @@ export async function snapshot(
   return res.blob();
 }
 
+export async function getLatestFrame(): Promise<Blob | null> {
+  const res = await fetch(`${API_BASE_URL}/acquisition/latest-frame`);
+  if (res.status === 204) return null;
+  if (!res.ok) await handleErrorResponse(res);
+  return res.blob();
+}
+
 // ── Calibration ──
 
 export function blackCalibration(): Promise<ApiMessage> {

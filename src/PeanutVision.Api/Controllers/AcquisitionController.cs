@@ -127,6 +127,21 @@ public class AcquisitionController : ControllerBase
         }
     }
 
+    [HttpGet("latest-frame")]
+    public ActionResult GetLatestFrame()
+    {
+        var frame = _acquisition.GetLatestFrame();
+        if (frame is null)
+            return NoContent();
+
+        var encoder = new PngEncoder();
+        var stream = new MemoryStream();
+        encoder.Encode(frame, stream);
+        stream.Position = 0;
+
+        return File(stream, "image/png", "latest.png");
+    }
+
     [HttpPost("snapshot")]
     public ActionResult Snapshot([FromBody] SnapshotRequest request)
     {

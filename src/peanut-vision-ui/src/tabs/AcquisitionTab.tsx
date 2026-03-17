@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 import ErrorAlert from "../components/ErrorAlert";
 import AcquisitionControls from "../components/AcquisitionControls";
 import AcquisitionStats from "../components/AcquisitionStats";
@@ -14,15 +16,24 @@ import {
   getAcquisitionStatus,
   triggerAndCapture,
   snapshot,
+  getLatestFrame,
 } from "../api/client";
 import { useAsyncOperation } from "../hooks/useAsyncOperation";
 import { usePolling } from "../hooks/usePolling";
+import {
+  POLL_INTERVAL_ACTIVE_MS,
+  POLL_INTERVAL_IDLE_MS,
+} from "../constants";
 
 export default function AcquisitionTab() {
   const [cameras, setCameras] = useState<CamFileInfo[]>([]);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [status, setStatus] = useState<AcquisitionStatus | null>(null);
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    message: string;
+    severity: "success" | "info" | "warning" | "error";
+  } | null>(null);
   const { busy, error, clearError, execute } = useAsyncOperation();
 
   const hasWarnings = (status?.statistics?.droppedFrameCount ?? 0) > 0
@@ -33,7 +44,10 @@ export default function AcquisitionTab() {
     getAcquisitionStatus().then(setStatus).catch(() => {});
   }, []);
 
-  const { refresh, throttled } = usePolling(fetchStatus);
+  const pollInterval = status?.isActive
+    ? POLL_INTERVAL_ACTIVE_MS
+    : POLL_INTERVAL_IDLE_MS;
+  const { refresh, throttled } = usePolling(fetchStatus, pollInterval);
 
   useEffect(() => {
     getCameras()
@@ -44,17 +58,53 @@ export default function AcquisitionTab() {
       .catch(() => {});
   }, []);
 
+  // Live preview: poll latest frame while acquisition is active and has frames
+  useEffect(() => {
+    if (!status?.isActive || !status?.hasFrame) return;
+    const t = setInterval(async () => {
+      try {
+        const blob = await getLatestFrame();
+        if (blob) setCapturedBlob(blob);
+      } catch {
+        /* ignore */
+      }
+    }, 1000);
+    return () => clearInterval(t);
+  }, [status?.isActive, status?.hasFrame]);
+
   const handleStart = () =>
-    execute(async () => { await startAcquisition(selectedProfile); });
+    execute(async () => {
+      await startAcquisition(selectedProfile);
+      fetchStatus();
+      setSnackbar({ message: "촬영이 시작되었습니다", severity: "success" });
+    });
 
   const handleStop = () =>
-    execute(async () => { await stopAcquisition(); });
+    execute(async () => {
+      await stopAcquisition();
+      fetchStatus();
+      setSnackbar({ message: "촬영이 중지되었습니다", severity: "info" });
+    });
 
   const handleTrigger = () =>
-    execute(async () => { setCapturedBlob(await triggerAndCapture()); });
+    execute(async () => {
+      setCapturedBlob(await triggerAndCapture());
+      fetchStatus();
+      setSnackbar({
+        message: "프레임이 촬영되었습니다",
+        severity: "success",
+      });
+    });
 
   const handleSnapshot = () =>
-    execute(async () => { setCapturedBlob(await snapshot(selectedProfile)); });
+    execute(async () => {
+      setCapturedBlob(await snapshot(selectedProfile));
+      fetchStatus();
+      setSnackbar({
+        message: "스냅샷이 촬영되었습니다",
+        severity: "success",
+      });
+    });
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -87,6 +137,22 @@ export default function AcquisitionTab() {
           <ImageViewer blob={capturedBlob} errorMessage={status?.lastError} />
         </Grid>
       </Grid>
+
+      <Snackbar
+        open={snackbar !== null}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbar(null)}
+          severity={snackbar?.severity ?? "info"}
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {snackbar?.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

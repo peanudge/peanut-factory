@@ -48,6 +48,11 @@ public sealed class AcquisitionManager : IAcquisitionService
         get { lock (_lock) return _lastFrame != null; }
     }
 
+    public ImageData? GetLatestFrame()
+    {
+        lock (_lock) return _lastFrame;
+    }
+
     public string? LastError
     {
         get { lock (_lock) return _lastError; }
