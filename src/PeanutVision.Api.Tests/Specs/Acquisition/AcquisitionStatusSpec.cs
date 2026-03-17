@@ -35,13 +35,13 @@ public class AcquisitionStatusSpec : IClassFixture<PeanutVisionApiFactory>, IAsy
     public async Task Status_when_active_shows_active_with_profile()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         var response = await _client.GetAsync("/api/acquisition/status");
 
         using var doc = await response.ReadJsonDocumentAsync();
         Assert.True(doc.RootElement.GetProperty("isActive").GetBoolean());
-        Assert.Equal("crevis-tc-a160k-freerun-rgb8", doc.RootElement.GetProperty("profileId").GetString());
+        Assert.Equal("crevis-tc-a160k-freerun-rgb8.cam", doc.RootElement.GetProperty("profileId").GetString());
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public class AcquisitionStatusSpec : IClassFixture<PeanutVisionApiFactory>, IAsy
     public async Task Status_when_active_includes_statistics_shape()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         var response = await _client.GetAsync("/api/acquisition/status");
 

@@ -22,12 +22,15 @@ namespace PeanutVision.MultiCamDriver.IntegrationTests;
 public class AcquisitionChainTests : IDisposable
 {
     private readonly IMultiCamHAL _hal;
+    private readonly ICamFileService _camFileService;
     private readonly bool _hardwareAvailable;
     private uint _channelHandle;
 
     public AcquisitionChainTests()
     {
         _hal = MultiCamHAL.Instance;
+        _camFileService = new CamFileService(
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "PeanutVision.Api", "CamFiles"));
 
         try
         {
@@ -238,7 +241,7 @@ public class AcquisitionChainTests : IDisposable
         Assert.Equal(MultiCamApi.MC_OK, status);
 
         // Step 3: Load camera file
-        var camPath = CamFileResource.GetCamFilePath("TC-A160K-SEM_freerun_RGB8.cam");
+        var camPath = _camFileService.GetByFileName("TC-A160K-SEM_freerun_RGB8.cam").FilePath;
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
 
         Assert.Equal(MultiCamApi.MC_OK, status);
@@ -279,7 +282,7 @@ public class AcquisitionChainTests : IDisposable
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_Connector, "M");
         Assert.Equal(MultiCamApi.MC_OK, status);
 
-        var camPath = CamFileResource.GetCamFilePath("TC-A160K-SEM_freerun_RGB8.cam");
+        var camPath = _camFileService.GetByFileName("TC-A160K-SEM_freerun_RGB8.cam").FilePath;
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
         Assert.Equal(MultiCamApi.MC_OK, status);
 
@@ -317,7 +320,7 @@ public class AcquisitionChainTests : IDisposable
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_Connector, "M");
         Assert.Equal(MultiCamApi.MC_OK, status);
 
-        var camPath = CamFileResource.GetCamFilePath("TC-A160K-SEM_freerun_RGB8.cam");
+        var camPath = _camFileService.GetByFileName("TC-A160K-SEM_freerun_RGB8.cam").FilePath;
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
         Assert.Equal(MultiCamApi.MC_OK, status);
 
@@ -348,7 +351,7 @@ public class AcquisitionChainTests : IDisposable
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_Connector, "M");
         Assert.Equal(MultiCamApi.MC_OK, status);
 
-        var camPath = CamFileResource.GetCamFilePath("TC-A160K-SEM_freerun_RGB8.cam");
+        var camPath = _camFileService.GetByFileName("TC-A160K-SEM_freerun_RGB8.cam").FilePath;
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
         Assert.Equal(MultiCamApi.MC_OK, status);
 
@@ -390,7 +393,7 @@ public class AcquisitionChainTests : IDisposable
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_Connector, "M");
         AssertOk(status, "SetParam(Connector)");
 
-        var camPath = CamFileResource.GetCamFilePath("TC-A160K-SEM_freerun_RGB8.cam");
+        var camPath = _camFileService.GetByFileName("TC-A160K-SEM_freerun_RGB8.cam").FilePath;
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
         AssertOk(status, "SetParam(CamFile)");
 
@@ -444,7 +447,7 @@ public class AcquisitionChainTests : IDisposable
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_Connector, "M");
         AssertOk(status, "SetParam(Connector)");
 
-        var camPath = CamFileResource.GetCamFilePath("TC-A160K-SEM_freerun_RGB8.cam");
+        var camPath = _camFileService.GetByFileName("TC-A160K-SEM_freerun_RGB8.cam").FilePath;
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
         AssertOk(status, "SetParam(CamFile)");
 
@@ -518,7 +521,7 @@ public class AcquisitionChainTests : IDisposable
         AssertOk(status, "SetParam(Connector)");
 
         // Step 3: Load camera configuration
-        var camPath = CamFileResource.GetCamFilePath("TC-A160K-SEM_freerun_RGB8.cam");
+        var camPath = _camFileService.GetByFileName("TC-A160K-SEM_freerun_RGB8.cam").FilePath;
         status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_CamFile, camPath);
         AssertOk(status, "SetParam(CamFile)");
 

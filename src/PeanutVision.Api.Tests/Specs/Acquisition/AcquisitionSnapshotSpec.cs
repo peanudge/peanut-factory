@@ -23,7 +23,7 @@ public class AcquisitionSnapshotSpec : IClassFixture<PeanutVisionApiFactory>, IA
     public async Task Snapshot_when_idle_returns_png_image()
     {
         var response = await _client.PostJsonAsync("/api/acquisition/snapshot",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("image/png", response.Content.Headers.ContentType?.MediaType);
@@ -33,7 +33,7 @@ public class AcquisitionSnapshotSpec : IClassFixture<PeanutVisionApiFactory>, IA
     public async Task Snapshot_response_contains_valid_png_bytes()
     {
         var response = await _client.PostJsonAsync("/api/acquisition/snapshot",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         var bytes = await response.Content.ReadAsByteArrayAsync();
 
@@ -49,7 +49,7 @@ public class AcquisitionSnapshotSpec : IClassFixture<PeanutVisionApiFactory>, IA
     public async Task Snapshot_response_has_content_disposition()
     {
         var response = await _client.PostJsonAsync("/api/acquisition/snapshot",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         var disposition = response.Content.Headers.ContentDisposition;
         Assert.NotNull(disposition);
@@ -60,10 +60,10 @@ public class AcquisitionSnapshotSpec : IClassFixture<PeanutVisionApiFactory>, IA
     public async Task Snapshot_when_active_returns_conflict()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         var response = await _client.PostJsonAsync("/api/acquisition/snapshot",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
@@ -81,9 +81,9 @@ public class AcquisitionSnapshotSpec : IClassFixture<PeanutVisionApiFactory>, IA
     public async Task Snapshot_can_be_called_sequentially()
     {
         var response1 = await _client.PostJsonAsync("/api/acquisition/snapshot",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
         var response2 = await _client.PostJsonAsync("/api/acquisition/snapshot",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         Assert.Equal(HttpStatusCode.OK, response1.StatusCode);
         Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
@@ -93,7 +93,7 @@ public class AcquisitionSnapshotSpec : IClassFixture<PeanutVisionApiFactory>, IA
     public async Task Snapshot_does_not_affect_acquisition_status()
     {
         await _client.PostJsonAsync("/api/acquisition/snapshot",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         var statusResponse = await _client.GetAsync("/api/acquisition/status");
         using var doc = await statusResponse.ReadJsonDocumentAsync();

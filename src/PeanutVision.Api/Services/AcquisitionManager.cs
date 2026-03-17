@@ -1,4 +1,5 @@
 using PeanutVision.MultiCamDriver;
+using PeanutVision.MultiCamDriver.Camera;
 using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.Api.Services;
@@ -6,6 +7,7 @@ namespace PeanutVision.Api.Services;
 public sealed class AcquisitionManager : IAcquisitionService
 {
     private readonly IGrabService _grabService;
+    private readonly ICamFileService _camFileService;
     private readonly object _lock = new();
     private readonly ChannelEventLog _eventLog = new();
 
@@ -20,9 +22,10 @@ public sealed class AcquisitionManager : IAcquisitionService
     // Test synchronization
     private TaskCompletionSource? _signalProcessedTcs;
 
-    public AcquisitionManager(IGrabService grabService)
+    public AcquisitionManager(IGrabService grabService, ICamFileService camFileService)
     {
         _grabService = grabService;
+        _camFileService = camFileService;
     }
 
     public bool IsActive
@@ -84,10 +87,10 @@ public sealed class AcquisitionManager : IAcquisitionService
             if (_channel != null)
                 throw new InvalidOperationException("Acquisition is already active. Stop it first.");
 
-            var profile = _grabService.CameraProfiles.GetProfile(profileId.Value);
+            var camFile = _camFileService.GetByFileName(profileId.Value);
             var options = triggerMode.HasValue
-                ? profile.ToChannelOptions(triggerMode.Value.Mode)
-                : profile.ToChannelOptions();
+                ? camFile.ToChannelOptions(triggerMode.Value.Mode)
+                : camFile.ToChannelOptions();
 
             _channel = _grabService.CreateChannel(options);
             _activeProfileId = profileId;
@@ -175,10 +178,10 @@ public sealed class AcquisitionManager : IAcquisitionService
                 throw new InvalidOperationException("Acquisition is already active. Stop it first.");
         }
 
-        var profile = _grabService.CameraProfiles.GetProfile(profileId.Value);
+        var camFile = _camFileService.GetByFileName(profileId.Value);
         var options = triggerMode.HasValue
-            ? profile.ToChannelOptions(triggerMode.Value.Mode, useCallback: false)
-            : profile.ToChannelOptions(useCallback: false);
+            ? camFile.ToChannelOptions(triggerMode.Value.Mode, useCallback: false)
+            : camFile.ToChannelOptions(useCallback: false);
 
         var channel = _grabService.CreateChannel(options);
         try

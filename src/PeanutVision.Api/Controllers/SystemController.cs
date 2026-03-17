@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using PeanutVision.MultiCamDriver;
+using PeanutVision.MultiCamDriver.Camera;
 
 namespace PeanutVision.Api.Controllers;
 
@@ -8,10 +9,12 @@ namespace PeanutVision.Api.Controllers;
 public class SystemController : ControllerBase
 {
     private readonly IGrabService _grabService;
+    private readonly ICamFileService _camFileService;
 
-    public SystemController(IGrabService grabService)
+    public SystemController(IGrabService grabService, ICamFileService camFileService)
     {
         _grabService = grabService;
+        _camFileService = camFileService;
     }
 
     [HttpGet("boards")]
@@ -34,55 +37,38 @@ public class SystemController : ControllerBase
         return _grabService.GetBoardStatus(index);
     }
 
-    [HttpGet("camfiles")]
-    public ActionResult<CamFilesDto> GetCamFiles()
-    {
-        var files = CamFileResource.GetAvailableCamFiles().ToList();
-        return new CamFilesDto
-        {
-            Directory = CamFileResource.GetDirectory(),
-            Files = files,
-        };
-    }
-
     [HttpGet("cameras")]
-    public ActionResult<List<CameraProfileDto>> GetCameras()
+    public ActionResult<List<CamFileInfoDto>> GetCameras()
     {
-        var profiles = _grabService.CameraProfiles.Profiles
-            .Select(p => new CameraProfileDto
+        var cameras = _camFileService.CamFiles
+            .Select(c => new CamFileInfoDto
             {
-                Id = p.Id,
-                DisplayName = p.DisplayName,
-                Manufacturer = p.Manufacturer,
-                Model = p.Model,
-                Connector = p.Connector,
-                TriggerMode = p.TriggerMode.ToString(),
-                PixelFormat = p.PixelFormat.Name,
-                ExpectedWidth = p.ExpectedWidth,
-                ExpectedHeight = p.ExpectedHeight,
-                Description = p.Description,
+                FileName = c.FileName,
+                Manufacturer = c.Manufacturer,
+                CameraModel = c.CameraModel,
+                Width = c.Width,
+                Height = c.Height,
+                Spectrum = c.Spectrum,
+                ColorFormat = c.ColorFormat,
+                TrigMode = c.TrigMode,
+                AcquisitionMode = c.AcquisitionMode,
+                TapConfiguration = c.TapConfiguration,
             })
             .ToList();
-        return profiles;
+        return cameras;
     }
 }
 
-public class CamFilesDto
+public class CamFileInfoDto
 {
-    public required string Directory { get; set; }
-    public required List<string> Files { get; set; }
-}
-
-public class CameraProfileDto
-{
-    public required string Id { get; set; }
-    public required string DisplayName { get; set; }
+    public required string FileName { get; set; }
     public required string Manufacturer { get; set; }
-    public required string Model { get; set; }
-    public required string Connector { get; set; }
-    public required string TriggerMode { get; set; }
-    public required string PixelFormat { get; set; }
-    public int ExpectedWidth { get; set; }
-    public int ExpectedHeight { get; set; }
-    public string? Description { get; set; }
+    public required string CameraModel { get; set; }
+    public int Width { get; set; }
+    public int Height { get; set; }
+    public required string Spectrum { get; set; }
+    public required string ColorFormat { get; set; }
+    public required string TrigMode { get; set; }
+    public required string AcquisitionMode { get; set; }
+    public required string TapConfiguration { get; set; }
 }

@@ -25,11 +25,11 @@ public class AcquisitionStartSpec : IClassFixture<PeanutVisionApiFactory>, IAsyn
     public async Task Start_with_valid_profile_returns_ok()
     {
         var response = await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var doc = await response.ReadJsonDocumentAsync();
-        Assert.Equal("crevis-tc-a160k-freerun-rgb8", doc.RootElement.GetProperty("profileId").GetString());
+        Assert.Equal("crevis-tc-a160k-freerun-rgb8.cam", doc.RootElement.GetProperty("profileId").GetString());
     }
 
     [Fact]
@@ -47,10 +47,10 @@ public class AcquisitionStartSpec : IClassFixture<PeanutVisionApiFactory>, IAsyn
     public async Task Start_when_already_active_returns_409()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         var response = await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
@@ -61,7 +61,7 @@ public class AcquisitionStartSpec : IClassFixture<PeanutVisionApiFactory>, IAsyn
         _factory.ResetMockState();
 
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         Assert.True(_factory.MockHal.CallLog.AcquisitionStarted);
     }
@@ -70,7 +70,7 @@ public class AcquisitionStartSpec : IClassFixture<PeanutVisionApiFactory>, IAsyn
     public async Task Start_with_custom_trigger_mode_returns_ok()
     {
         var response = await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8", triggerMode = "MC_TrigMode_SOFT" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam", triggerMode = "MC_TrigMode_SOFT" });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -79,7 +79,7 @@ public class AcquisitionStartSpec : IClassFixture<PeanutVisionApiFactory>, IAsyn
     public async Task Start_response_contains_message()
     {
         var response = await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         using var doc = await response.ReadJsonDocumentAsync();
         Assert.True(doc.RootElement.TryGetProperty("message", out var msg));

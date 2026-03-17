@@ -1,16 +1,13 @@
 using System.Runtime.InteropServices;
 using PeanutVision.Api.Services;
+using PeanutVision.Api.Tests.Infrastructure;
 using PeanutVision.MultiCamDriver;
-using PeanutVision.MultiCamDriver.Camera;
 using PeanutVision.MultiCamDriver.Hal;
 
 namespace PeanutVision.Api.Tests.Unit;
 
 public class CalibrationManagerTests : IDisposable
 {
-    private static readonly object _initLock = new();
-    private static bool _initialized;
-
     protected readonly MockMultiCamHAL _mockHal;
     protected readonly GrabService _grabService;
     protected readonly AcquisitionManager _acquisitionManager;
@@ -19,27 +16,6 @@ public class CalibrationManagerTests : IDisposable
 
     public CalibrationManagerTests()
     {
-        lock (_initLock)
-        {
-            if (!_initialized)
-            {
-                var camDir = CamFileResource.GetDirectory();
-                foreach (var name in new[]
-                {
-                    "crevis-tc-a160k-freerun-rgb8.cam",
-                    "crevis-tc-a160k-freerun-1tap-rgb8.cam",
-                    "crevis-tc-a160k-softtrig-rgb8.cam",
-                })
-                {
-                    var path = Path.Combine(camDir, name);
-                    if (!File.Exists(path)) File.WriteAllText(path, "");
-                    CameraRegistry.Default.Register(CameraProfile.FromCamFile(name));
-                }
-
-                _initialized = true;
-            }
-        }
-
         _mockHal = new MockMultiCamHAL();
 
         var bufferSize = _mockHal.Configuration.DefaultImageWidth
@@ -51,7 +27,7 @@ public class CalibrationManagerTests : IDisposable
 
         _grabService = new GrabService(_mockHal);
         _grabService.Initialize();
-        _acquisitionManager = new AcquisitionManager(_grabService);
+        _acquisitionManager = new AcquisitionManager(_grabService, TestCamFileHelper.GetOrCreate());
         _calibrationManager = new CalibrationManager(_acquisitionManager);
     }
 
@@ -112,7 +88,7 @@ public class CalibrationManagerTests : IDisposable
     {
         public Given_active_acquisition()
         {
-            _acquisitionManager.Start("crevis-tc-a160k-freerun-rgb8");
+            _acquisitionManager.Start("crevis-tc-a160k-freerun-rgb8.cam");
         }
 
         [Fact]
@@ -206,7 +182,7 @@ public class CalibrationManagerTests : IDisposable
     {
         public Given_active_then_stopped()
         {
-            _acquisitionManager.Start("crevis-tc-a160k-freerun-rgb8");
+            _acquisitionManager.Start("crevis-tc-a160k-freerun-rgb8.cam");
             _acquisitionManager.Stop();
         }
 

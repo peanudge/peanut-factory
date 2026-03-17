@@ -1,6 +1,8 @@
 #if NET6_0_OR_GREATER
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using PeanutVision.MultiCamDriver.Camera;
 
 namespace PeanutVision.MultiCamDriver;
 
@@ -65,6 +67,39 @@ public static class ServiceCollectionExtensions
             return service;
         });
 
+        return services;
+    }
+
+    /// <summary>
+    /// Adds the ICamFileService to the service collection as a singleton.
+    /// Scans the specified directory for .cam files and parses their metadata.
+    /// </summary>
+    public static IServiceCollection AddCamFileService(this IServiceCollection services, string directory)
+    {
+        services.TryAddSingleton<ICamFileService>(sp =>
+        {
+            var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("CamFileService");
+            var service = new CamFileService(directory);
+
+            logger.LogInformation("CamFile directory: {Directory}", service.Directory);
+
+            if (service.CamFiles.Count == 0)
+            {
+                logger.LogWarning("No .cam files found in {Directory}", service.Directory);
+            }
+            else
+            {
+                logger.LogInformation("Loaded {Count} cam file(s):", service.CamFiles.Count);
+                foreach (var cam in service.CamFiles)
+                {
+                    logger.LogInformation("  {FileName} — {Manufacturer} {Model}, {Width}x{Height}, {Spectrum}, {ColorFormat}, TrigMode={TrigMode}",
+                        cam.FileName, cam.Manufacturer, cam.CameraModel,
+                        cam.Width, cam.Height, cam.Spectrum, cam.ColorFormat, cam.TrigMode);
+                }
+            }
+
+            return service;
+        });
         return services;
     }
 

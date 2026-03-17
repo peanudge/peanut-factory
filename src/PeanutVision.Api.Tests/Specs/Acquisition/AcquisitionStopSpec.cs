@@ -35,7 +35,7 @@ public class AcquisitionStopSpec : IClassFixture<PeanutVisionApiFactory>, IAsync
     public async Task Stop_when_active_returns_ok_and_stops_acquisition()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         var response = await _client.PostAsync("/api/acquisition/stop", null);
 
@@ -53,7 +53,7 @@ public class AcquisitionStopSpec : IClassFixture<PeanutVisionApiFactory>, IAsync
         _factory.ResetMockState();
 
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
         await _client.PostAsync("/api/acquisition/stop", null);
 
         Assert.True(_factory.MockHal.CallLog.AcquisitionStopped);

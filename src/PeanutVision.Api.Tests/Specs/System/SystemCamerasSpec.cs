@@ -28,7 +28,7 @@ public class SystemCamerasSpec : IClassFixture<PeanutVisionApiFactory>, IAsyncLi
     }
 
     [Fact]
-    public async Task GetCameras_returns_profiles()
+    public async Task GetCameras_returns_cam_files()
     {
         var response = await _client.GetAsync("/api/system/cameras");
 
@@ -37,33 +37,34 @@ public class SystemCamerasSpec : IClassFixture<PeanutVisionApiFactory>, IAsyncLi
     }
 
     [Fact]
-    public async Task GetCameras_each_profile_has_required_fields()
+    public async Task GetCameras_each_entry_has_required_fields()
     {
         var response = await _client.GetAsync("/api/system/cameras");
 
         using var doc = await response.ReadJsonDocumentAsync();
-        foreach (var profile in doc.RootElement.EnumerateArray())
+        foreach (var entry in doc.RootElement.EnumerateArray())
         {
-            Assert.True(profile.TryGetProperty("id", out _));
-            Assert.True(profile.TryGetProperty("displayName", out _));
-            Assert.True(profile.TryGetProperty("manufacturer", out _));
-            Assert.True(profile.TryGetProperty("model", out _));
-            Assert.True(profile.TryGetProperty("connector", out _));
-            Assert.True(profile.TryGetProperty("triggerMode", out _));
-            Assert.True(profile.TryGetProperty("pixelFormat", out _));
+            Assert.True(entry.TryGetProperty("fileName", out _));
+            Assert.True(entry.TryGetProperty("manufacturer", out _));
+            Assert.True(entry.TryGetProperty("cameraModel", out _));
+            Assert.True(entry.TryGetProperty("width", out _));
+            Assert.True(entry.TryGetProperty("height", out _));
+            Assert.True(entry.TryGetProperty("spectrum", out _));
+            Assert.True(entry.TryGetProperty("colorFormat", out _));
+            Assert.True(entry.TryGetProperty("trigMode", out _));
         }
     }
 
     [Fact]
-    public async Task GetCameras_includes_freerun_rgb8_profile()
+    public async Task GetCameras_includes_freerun_rgb8()
     {
         var response = await _client.GetAsync("/api/system/cameras");
 
         using var doc = await response.ReadJsonDocumentAsync();
-        var ids = doc.RootElement.EnumerateArray()
-            .Select(e => e.GetProperty("id").GetString())
+        var fileNames = doc.RootElement.EnumerateArray()
+            .Select(e => e.GetProperty("fileName").GetString())
             .ToList();
 
-        Assert.Contains("crevis-tc-a160k-freerun-rgb8", ids);
+        Assert.Contains("crevis-tc-a160k-freerun-rgb8.cam", fileNames);
     }
 }

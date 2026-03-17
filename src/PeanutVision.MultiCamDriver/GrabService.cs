@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using PeanutVision.MultiCamDriver.Camera;
 using PeanutVision.MultiCamDriver.Hal;
 
 namespace PeanutVision.MultiCamDriver;
@@ -240,16 +239,6 @@ public sealed class GrabService : IGrabService
             };
         }
     }
-
-    /// <summary>
-    /// Gets the default camera profile from the registry.
-    /// </summary>
-    public CameraProfile? DefaultCameraProfile => CameraRegistry.Default.DefaultProfile;
-
-    /// <summary>
-    /// Gets the camera profile registry.
-    /// </summary>
-    public CameraRegistry CameraProfiles => CameraRegistry.Default;
 
     private void EnsureInitialized()
     {

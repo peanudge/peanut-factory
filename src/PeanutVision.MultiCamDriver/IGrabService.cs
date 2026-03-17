@@ -1,5 +1,3 @@
-using PeanutVision.MultiCamDriver.Camera;
-
 namespace PeanutVision.MultiCamDriver;
 
 /// <summary>
@@ -49,16 +47,6 @@ public interface IGrabService : IDisposable
     /// <param name="boardIndex">Board index (0-based)</param>
     /// <param name="connector">Connector to probe for camera status (e.g., "M" for Camera Link Full)</param>
     BoardStatus GetBoardStatus(int boardIndex, string connector);
-
-    /// <summary>
-    /// Gets the default camera profile (first available from registry).
-    /// </summary>
-    CameraProfile? DefaultCameraProfile { get; }
-
-    /// <summary>
-    /// Gets the camera profile registry.
-    /// </summary>
-    CameraRegistry CameraProfiles { get; }
 }
 
 /// <summary>

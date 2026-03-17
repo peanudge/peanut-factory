@@ -24,7 +24,7 @@ public class AcquisitionLifecycleSpec : IClassFixture<PeanutVisionApiFactory>, I
     {
         // Start
         var startResponse = await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
         Assert.Equal(HttpStatusCode.OK, startResponse.StatusCode);
 
         // Status while active
@@ -50,23 +50,23 @@ public class AcquisitionLifecycleSpec : IClassFixture<PeanutVisionApiFactory>, I
     public async Task Can_restart_after_stop()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
         await _client.PostAsync("/api/acquisition/stop", null);
 
         // Second start with different profile
         var response = await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-softtrig-rgb8" });
+            new { profileId = "crevis-tc-a160k-softtrig-rgb8.cam" });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var doc = await response.ReadJsonDocumentAsync();
-        Assert.Equal("crevis-tc-a160k-softtrig-rgb8", doc.RootElement.GetProperty("profileId").GetString());
+        Assert.Equal("crevis-tc-a160k-softtrig-rgb8.cam", doc.RootElement.GetProperty("profileId").GetString());
     }
 
     [Fact]
     public async Task Trigger_after_stop_returns_409()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
         await _client.PostAsync("/api/acquisition/stop", null);
 
         var response = await _client.PostAsync("/api/acquisition/trigger", null);

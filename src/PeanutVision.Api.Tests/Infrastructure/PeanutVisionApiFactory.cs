@@ -27,19 +27,9 @@ public class PeanutVisionApiFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
-            // Create dummy cam files and register profiles for tests
-            var camDir = CamFileResource.GetDirectory();
-            foreach (var name in new[]
-            {
-                "crevis-tc-a160k-freerun-rgb8.cam",
-                "crevis-tc-a160k-freerun-1tap-rgb8.cam",
-                "crevis-tc-a160k-softtrig-rgb8.cam",
-            })
-            {
-                var path = Path.Combine(camDir, name);
-                if (!File.Exists(path)) File.WriteAllText(path, "");
-                CameraRegistry.Default.Register(CameraProfile.FromCamFile(name));
-            }
+            // Replace ICamFileService with test cam files
+            services.RemoveAll<ICamFileService>();
+            services.AddSingleton(TestCamFileHelper.GetOrCreate());
 
             // Remove the production IGrabService registration
             services.RemoveAll<IGrabService>();
