@@ -62,6 +62,7 @@ export interface AcquisitionStatus {
   profileId?: string;
   hasFrame?: boolean;
   lastError?: string | null;
+  allowedActions?: string[];
   statistics?: AcquisitionStatistics;
   recentEvents?: ChannelEvent[];
 }

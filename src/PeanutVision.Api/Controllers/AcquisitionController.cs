@@ -69,6 +69,7 @@ public class AcquisitionController : ControllerBase
             profileId = _acquisition.ActiveProfileId?.Value,
             hasFrame = _acquisition.HasFrame,
             lastError = _acquisition.LastError,
+            allowedActions = _acquisition.GetAllowedActions(),
             statistics = stats.HasValue
                 ? new
                 {

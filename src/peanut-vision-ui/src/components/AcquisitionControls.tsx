@@ -42,6 +42,13 @@ export default function AcquisitionControls({
   onRefresh,
   refreshThrottled,
 }: Props) {
+  const allowed = (action: string) => status?.allowedActions?.includes(action) ?? false;
+
+  const startDisabled = busy || !allowed("start") || !selectedProfile;
+  const stopDisabled = busy || !allowed("stop");
+  const triggerDisabled = busy || !allowed("trigger");
+  const snapshotDisabled = busy || !allowed("snapshot") || !selectedProfile;
+
   return (
     <Box sx={{ display: "flex", gap: 2, alignItems: "flex-end", flexWrap: "wrap" }}>
       <FormControl size="small" sx={{ minWidth: 280 }}>
@@ -50,6 +57,7 @@ export default function AcquisitionControls({
           value={selectedProfile}
           label="Camera Profile"
           onChange={(e) => onProfileChange(e.target.value)}
+          disabled={status?.isActive}
         >
           {cameras.map((c) => (
             <MenuItem key={c.fileName} value={c.fileName}>
@@ -59,36 +67,54 @@ export default function AcquisitionControls({
         </Select>
       </FormControl>
 
-      <ButtonGroup variant="contained" disabled={busy}>
-        <Button
-          color="success"
-          startIcon={<PlayArrowIcon />}
-          onClick={onStart}
-          disabled={busy || !selectedProfile}
-        >
-          Start
-        </Button>
-        <Button
-          color="error"
-          startIcon={<StopIcon />}
-          onClick={onStop}
-        >
-          Stop
-        </Button>
-        <Button
-          startIcon={<AdjustIcon />}
-          onClick={onTrigger}
-        >
-          Trigger
-        </Button>
-        <Button
-          color="secondary"
-          startIcon={<PhotoCameraIcon />}
-          onClick={onSnapshot}
-          disabled={busy || !selectedProfile}
-        >
-          Snapshot
-        </Button>
+      <ButtonGroup variant="contained">
+        <Tooltip title={startDisabled ? "촬영 중에는 시작할 수 없습니다" : "연속 촬영 시작"}>
+          <span>
+            <Button
+              color="success"
+              startIcon={<PlayArrowIcon />}
+              onClick={onStart}
+              disabled={startDisabled}
+            >
+              Start
+            </Button>
+          </span>
+        </Tooltip>
+        <Tooltip title={stopDisabled ? "촬영이 진행 중이지 않습니다" : "촬영 중지"}>
+          <span>
+            <Button
+              color="error"
+              startIcon={<StopIcon />}
+              onClick={onStop}
+              disabled={stopDisabled}
+            >
+              Stop
+            </Button>
+          </span>
+        </Tooltip>
+        <Tooltip title={triggerDisabled ? "촬영을 먼저 시작하세요" : "프레임 촬영"}>
+          <span>
+            <Button
+              startIcon={<AdjustIcon />}
+              onClick={onTrigger}
+              disabled={triggerDisabled}
+            >
+              Trigger
+            </Button>
+          </span>
+        </Tooltip>
+        <Tooltip title={snapshotDisabled ? "촬영 중에는 스냅샷을 찍을 수 없습니다" : "단일 촬영"}>
+          <span>
+            <Button
+              color="secondary"
+              startIcon={<PhotoCameraIcon />}
+              onClick={onSnapshot}
+              disabled={snapshotDisabled}
+            >
+              Snapshot
+            </Button>
+          </span>
+        </Tooltip>
       </ButtonGroup>
 
       {status && (

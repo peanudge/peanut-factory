@@ -15,4 +15,5 @@ public interface IAcquisitionService : IDisposable
     Task<ImageData> TriggerAndWaitAsync(int timeoutMs = 5000);
     ImageData Snapshot(ProfileId profileId, TriggerMode? triggerMode = null);
     IReadOnlyList<ChannelEvent> GetRecentEvents(int max = 50);
+    IReadOnlySet<string> GetAllowedActions();
 }

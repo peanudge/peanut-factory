@@ -75,6 +75,25 @@ public sealed class AcquisitionManager : IAcquisitionService
         return _eventLog.GetRecent(max);
     }
 
+    public IReadOnlySet<string> GetAllowedActions()
+    {
+        lock (_lock)
+        {
+            var actions = new HashSet<string>();
+            if (_channel == null || !_channel.IsActive)
+            {
+                actions.Add("start");
+                actions.Add("snapshot");
+            }
+            else
+            {
+                actions.Add("stop");
+                actions.Add("trigger");
+            }
+            return actions;
+        }
+    }
+
     internal GrabChannel? Channel
     {
         get { lock (_lock) return _channel; }
