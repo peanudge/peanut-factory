@@ -54,10 +54,12 @@ public sealed class GrabChannel : IDisposable
     private int _surfaceCount;
     private int _clusterUnavailableCount;
 
-    // Internal copy thread (only active when UseCallback=true)
-    private Channel<uint>? _surfaceQueue;
-    private Task? _copyTask;
-    private CancellationTokenSource? _copyCts;
+    // Internal signal processing thread (only active when UseCallback=true)
+    // All signals from the native callback are enqueued here — no event is ever
+    // fired directly on the MultiCam thread, guaranteeing < 1ms callback time.
+    private Channel<CallbackSignal>? _signalQueue;
+    private Task? _processingTask;
+    private CancellationTokenSource? _processingCts;
     private int _copyDropCount;
 
     /// <summary>Number of times cluster unavailable signal was received (frame drops)</summary>
@@ -89,11 +91,13 @@ public sealed class GrabChannel : IDisposable
 
     /// <summary>
     /// Fired when an acquisition error occurs.
+    /// Called from the internal processing thread, never from the native callback.
     /// </summary>
     public event EventHandler<AcquisitionErrorEventArgs>? AcquisitionError;
 
     /// <summary>
     /// Fired when acquisition ends (MC_SIG_END_CHANNEL_ACTIVITY).
+    /// Called from the internal processing thread, never from the native callback.
     /// </summary>
     public event EventHandler? AcquisitionEnded;
 
@@ -170,7 +174,7 @@ public sealed class GrabChannel : IDisposable
             if (options.UseCallback)
             {
                 RegisterCallback();
-                InitializeCopyThread();
+                InitializeProcessingThread();
             }
 
             // Read back image parameters
@@ -225,6 +229,10 @@ public sealed class GrabChannel : IDisposable
         channel?.ProcessSignal(ref info);
     }
 
+    /// <summary>
+    /// Routes all signals to the background queue. Never fires events directly.
+    /// Called from the MultiCam native thread — must complete in &lt; 1ms.
+    /// </summary>
     internal void ProcessSignal(ref McSignalInfo info)
     {
         McSignal signal = (McSignal)info.Signal;
@@ -232,106 +240,127 @@ public sealed class GrabChannel : IDisposable
         switch (signal)
         {
             case McSignal.MC_SIG_SURFACE_PROCESSING:
-                ProcessSurfaceSignal(ref info);
-                break;
-
-            case McSignal.MC_SIG_ACQUISITION_FAILURE:
-                AcquisitionError?.Invoke(this, new AcquisitionErrorEventArgs(
-                    signal, info.Instance, info.SignalInfo, "Acquisition failure detected"));
+                EnqueueSurface(info.SignalInfo);
                 break;
 
             case McSignal.MC_SIG_UNRECOVERABLE_OVERRUN:
                 _isActive = false;
-                AcquisitionError?.Invoke(this, new AcquisitionErrorEventArgs(
+                EnqueueSignal(new CallbackSignal.Error(
                     signal, info.Instance, info.SignalInfo, "Unrecoverable error - acquisition stopped"));
                 break;
 
             case McSignal.MC_SIG_CLUSTER_UNAVAILABLE:
                 Interlocked.Increment(ref _clusterUnavailableCount);
-                AcquisitionError?.Invoke(this, new AcquisitionErrorEventArgs(
+                EnqueueSignal(new CallbackSignal.Error(
                     signal, info.Instance, info.SignalInfo,
                     "Surface cluster unavailable - all surfaces busy, frame dropped"));
                 break;
 
+            case McSignal.MC_SIG_ACQUISITION_FAILURE:
+                EnqueueSignal(new CallbackSignal.Error(
+                    signal, info.Instance, info.SignalInfo, "Acquisition failure detected"));
+                break;
+
             case McSignal.MC_SIG_END_CHANNEL_ACTIVITY:
                 _isActive = false;
-                AcquisitionEnded?.Invoke(this, EventArgs.Empty);
+                EnqueueSignal(CallbackSignal.EndActivity.Instance);
                 break;
         }
     }
 
-    private void InitializeCopyThread()
+    private void EnqueueSurface(uint surfaceHandle)
     {
-        _surfaceQueue = Channel.CreateBounded<uint>(
-            new BoundedChannelOptions(_surfaceCount)
-            {
-                SingleReader = true,
-                SingleWriter = true,
-            });
-        _copyCts = new CancellationTokenSource();
-        _copyTask = Task.Run(() => CopyLoopAsync(_copyCts.Token));
-    }
-
-    /// <summary>
-    /// Enqueues the surface handle for background copy. Must be &lt; 1ms.
-    /// </summary>
-    private void ProcessSurfaceSignal(ref McSignalInfo info)
-    {
-        uint surfaceHandle = info.SignalInfo;
-
-        if (_surfaceQueue != null && _surfaceQueue.Writer.TryWrite(surfaceHandle))
+        if (_signalQueue != null &&
+            _signalQueue.Writer.TryWrite(new CallbackSignal.SurfaceReady(surfaceHandle)))
         {
             return;
         }
 
-        // Queue full or not initialized — release surface immediately
         Interlocked.Increment(ref _copyDropCount);
         ReleaseSurface(surfaceHandle);
     }
 
-    /// <summary>
-    /// Background loop: copies surface data, releases surface, fires event.
-    /// </summary>
-    private async Task CopyLoopAsync(CancellationToken ct)
+    private void EnqueueSignal(CallbackSignal signal)
     {
-        if (_surfaceQueue == null) return;
+        _signalQueue?.Writer.TryWrite(signal);
+    }
+
+    private void InitializeProcessingThread()
+    {
+        _signalQueue = Channel.CreateBounded<CallbackSignal>(
+            new BoundedChannelOptions(_surfaceCount + 8) // extra room for error/end signals
+            {
+                SingleReader = true,
+                SingleWriter = true,
+            });
+        _processingCts = new CancellationTokenSource();
+        _processingTask = Task.Run(() => ProcessingLoopAsync(_processingCts.Token));
+    }
+
+    /// <summary>
+    /// Background loop: processes all signals from the native callback thread.
+    /// Surface signals: copy data → release surface → fire FrameAcquired.
+    /// Error/end signals: fire AcquisitionError or AcquisitionEnded.
+    /// </summary>
+    private async Task ProcessingLoopAsync(CancellationToken ct)
+    {
+        if (_signalQueue == null) return;
 
         try
         {
-            await foreach (var surfaceHandle in _surfaceQueue.Reader.ReadAllAsync(ct))
+            await foreach (var signal in _signalQueue.Reader.ReadAllAsync(ct))
             {
-                ImageData? image = null;
                 try
                 {
-                    var surface = GetSurfaceData(surfaceHandle);
-                    image = ImageData.FromSurface(surface);
+                    switch (signal)
+                    {
+                        case CallbackSignal.SurfaceReady surface:
+                            ProcessSurfaceReady(surface.SurfaceHandle);
+                            break;
+
+                        case CallbackSignal.Error error:
+                            AcquisitionError?.Invoke(this, new AcquisitionErrorEventArgs(
+                                error.Signal, error.Instance, error.SignalInfo, error.Message));
+                            break;
+
+                        case CallbackSignal.EndActivity:
+                            AcquisitionEnded?.Invoke(this, EventArgs.Empty);
+                            break;
+                    }
                 }
                 catch
                 {
-                    // Copy failed — still must release surface
-                }
-                finally
-                {
-                    ReleaseSurface(surfaceHandle);
-                }
-
-                if (image != null)
-                {
-                    try
-                    {
-                        FrameAcquired?.Invoke(this, new FrameAcquiredEventArgs(
-                            image, _channelHandle, McSignal.MC_SIG_SURFACE_PROCESSING));
-                    }
-                    catch
-                    {
-                        // Don't let subscriber exceptions kill the copy loop
-                    }
+                    // Don't let subscriber exceptions kill the processing loop
                 }
             }
         }
         catch (OperationCanceledException)
         {
             // Normal shutdown
+        }
+    }
+
+    private void ProcessSurfaceReady(uint surfaceHandle)
+    {
+        ImageData? image = null;
+        try
+        {
+            var surface = GetSurfaceData(surfaceHandle);
+            image = ImageData.FromSurface(surface);
+        }
+        catch
+        {
+            // Copy failed — still must release surface
+        }
+        finally
+        {
+            ReleaseSurface(surfaceHandle);
+        }
+
+        if (image != null)
+        {
+            FrameAcquired?.Invoke(this, new FrameAcquiredEventArgs(
+                image, _channelHandle, McSignal.MC_SIG_SURFACE_PROCESSING));
         }
     }
 
@@ -445,8 +474,8 @@ public sealed class GrabChannel : IDisposable
             _isActive = false;
         }
 
-        // Signal copy thread that no more surfaces will arrive
-        _surfaceQueue?.Writer.TryComplete();
+        // Signal processing thread that no more signals will arrive
+        _signalQueue?.Writer.TryComplete();
     }
 
     /// <summary>
@@ -787,8 +816,8 @@ public sealed class GrabChannel : IDisposable
             }
         }
 
-        // Shut down copy thread (outside lock to avoid deadlock)
-        ShutdownCopyThread();
+        // Shut down processing thread (outside lock to avoid deadlock)
+        ShutdownProcessingThread();
 
         lock (_lock)
         {
@@ -810,31 +839,48 @@ public sealed class GrabChannel : IDisposable
         }
     }
 
-    private void ShutdownCopyThread()
+    private void ShutdownProcessingThread()
     {
-        _surfaceQueue?.Writer.TryComplete();
-        _copyCts?.Cancel();
+        _signalQueue?.Writer.TryComplete();
+        _processingCts?.Cancel();
 
-        if (_copyTask != null)
+        if (_processingTask != null)
         {
-            try { _copyTask.Wait(TimeSpan.FromSeconds(2)); }
+            try { _processingTask.Wait(TimeSpan.FromSeconds(2)); }
             catch { /* Ignore timeout/cancellation */ }
         }
 
-        // Drain any remaining surfaces that weren't processed
-        if (_surfaceQueue != null)
+        // Drain any remaining signals — release surfaces, discard others
+        if (_signalQueue != null)
         {
-            while (_surfaceQueue.Reader.TryRead(out var surfaceHandle))
+            while (_signalQueue.Reader.TryRead(out var signal))
             {
-                ReleaseSurface(surfaceHandle);
+                if (signal is CallbackSignal.SurfaceReady surface)
+                    ReleaseSurface(surface.SurfaceHandle);
             }
         }
 
-        _copyCts?.Dispose();
-        _copyCts = null;
-        _surfaceQueue = null;
-        _copyTask = null;
+        _processingCts?.Dispose();
+        _processingCts = null;
+        _signalQueue = null;
+        _processingTask = null;
     }
 
     #endregion
+}
+
+/// <summary>
+/// Internal signal types routed through the background processing thread.
+/// All native callback signals are enqueued as one of these — no event is ever
+/// fired directly on the MultiCam callback thread.
+/// </summary>
+internal abstract record CallbackSignal
+{
+    public sealed record SurfaceReady(uint SurfaceHandle) : CallbackSignal;
+    public sealed record Error(McSignal Signal, uint Instance, uint SignalInfo, string Message) : CallbackSignal;
+
+    public sealed record EndActivity : CallbackSignal
+    {
+        public static readonly EndActivity Instance = new();
+    }
 }

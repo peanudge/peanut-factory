@@ -555,84 +555,77 @@ public class GrabChannelTests
     }
 
     [Fact]
-    public void AcquisitionError_FiredOnFailure()
+    public async Task AcquisitionError_FiredOnFailure()
     {
         var options = new GrabChannelOptions { UseCallback = true };
         using var channel = new GrabChannel(options, _mockHal);
-        bool errorFired = false;
-        McSignal? receivedSignal = null;
+        var tcs = new TaskCompletionSource<McSignal>();
 
         channel.AcquisitionError += (sender, args) =>
         {
-            errorFired = true;
-            receivedSignal = args.Signal;
+            tcs.TrySetResult(args.Signal);
         };
 
-        // Simulate acquisition failure
         _mockHal.SimulateAcquisitionError(channel.Handle, McSignal.MC_SIG_ACQUISITION_FAILURE);
 
-        Assert.True(errorFired);
-        Assert.Equal(McSignal.MC_SIG_ACQUISITION_FAILURE, receivedSignal);
+        var signal = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(McSignal.MC_SIG_ACQUISITION_FAILURE, signal);
     }
 
     [Fact]
-    public void AcquisitionEnded_FiredOnEndChannelActivity()
+    public async Task AcquisitionEnded_FiredOnEndChannelActivity()
     {
         var options = new GrabChannelOptions { UseCallback = true };
         using var channel = new GrabChannel(options, _mockHal);
         channel.StartAcquisition();
-        bool endFired = false;
+        var tcs = new TaskCompletionSource();
 
         channel.AcquisitionEnded += (sender, args) =>
         {
-            endFired = true;
+            tcs.TrySetResult();
         };
 
-        // Simulate end of activity
         _mockHal.SimulateAcquisitionError(channel.Handle, McSignal.MC_SIG_END_CHANNEL_ACTIVITY);
 
-        Assert.True(endFired);
+        await tcs.Task.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.False(channel.IsActive);
     }
 
     [Fact]
-    public void UnrecoverableError_StopsAcquisitionAndFiresEvent()
+    public async Task UnrecoverableError_StopsAcquisitionAndFiresEvent()
     {
         var options = new GrabChannelOptions { UseCallback = true };
         using var channel = new GrabChannel(options, _mockHal);
         channel.StartAcquisition();
-        bool errorFired = false;
+        var tcs = new TaskCompletionSource();
 
         channel.AcquisitionError += (sender, args) =>
         {
-            errorFired = true;
+            tcs.TrySetResult();
         };
 
-        // Simulate unrecoverable error
         _mockHal.SimulateAcquisitionError(channel.Handle, McSignal.MC_SIG_UNRECOVERABLE_OVERRUN);
 
-        Assert.True(errorFired);
+        await tcs.Task.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.False(channel.IsActive);
     }
 
     [Fact]
-    public void ClusterUnavailable_FiresAcquisitionError()
+    public async Task ClusterUnavailable_FiresAcquisitionError()
     {
         var options = new GrabChannelOptions { UseCallback = true };
         using var channel = new GrabChannel(options, _mockHal);
-        bool errorFired = false;
-        McSignal? receivedSignal = null;
+        var tcs = new TaskCompletionSource<McSignal>();
 
         channel.AcquisitionError += (sender, args) =>
         {
-            errorFired = true;
-            receivedSignal = args.Signal;
+            tcs.TrySetResult(args.Signal);
         };
 
         _mockHal.SimulateAcquisitionError(channel.Handle, McSignal.MC_SIG_CLUSTER_UNAVAILABLE);
 
-        Assert.True(errorFired);
-        Assert.Equal(McSignal.MC_SIG_CLUSTER_UNAVAILABLE, receivedSignal);
+        var signal = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(McSignal.MC_SIG_CLUSTER_UNAVAILABLE, signal);
     }
 
     [Fact]
