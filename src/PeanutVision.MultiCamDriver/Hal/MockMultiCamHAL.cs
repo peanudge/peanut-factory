@@ -481,7 +481,7 @@ public class MockMultiCamHAL : IMultiCamHAL
         return MultiCamApi.MC_OK;
     }
 
-    public int SetParamStr(uint instance, string paramName, string value)
+    public virtual int SetParamStr(uint instance, string paramName, string value)
     {
         CallLog.SetParamCalls++;
         CallLog.LastSetParams[paramName] = value;
