@@ -1,4 +1,5 @@
 using PeanutVision.Api.Services;
+using PeanutVision.FakeCamDriver;
 using PeanutVision.MultiCamDriver;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,7 +15,21 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddCamFileService(camFilePath);
-builder.Services.AddGrabService(autoInitialize: true);
+
+var useMock = builder.Configuration.GetValue<bool>("UseMockHardware");
+
+if (useMock)
+{
+    builder.Services.AddFakeGrabService(config =>
+    {
+        builder.Configuration.GetSection("FakeHal").Bind(config);
+    });
+}
+else
+{
+    builder.Services.AddGrabService(autoInitialize: true);
+}
+
 builder.Services.AddSingleton<AcquisitionManager>();
 builder.Services.AddSingleton<IAcquisitionService>(sp => sp.GetRequiredService<AcquisitionManager>());
 builder.Services.AddSingleton<ICalibrationService, CalibrationManager>();
@@ -30,6 +45,11 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+if (useMock)
+{
+    app.Logger.LogWarning("FakeCamDriver enabled — using test pattern generator (no hardware)");
+}
 
 app.UseCors();
 
