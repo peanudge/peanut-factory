@@ -84,3 +84,10 @@ export interface ApiMessage {
 export interface ApiError {
   error: string;
 }
+
+export interface CapturedImage {
+  id: string;
+  url: string;
+  blob: Blob;
+  capturedAt: Date;
+}
