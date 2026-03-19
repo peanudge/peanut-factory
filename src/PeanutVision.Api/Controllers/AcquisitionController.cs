@@ -35,7 +35,7 @@ public class AcquisitionController : ControllerBase
                 ? TriggerMode.Parse(request.TriggerMode)
                 : (TriggerMode?)null;
 
-            _acquisition.Start(profileId, triggerMode);
+            _acquisition.Start(profileId, triggerMode, request.FrameCount, request.IntervalMs);
             return Ok(new { message = "Acquisition started", profileId = profileId.Value });
         }
         catch (ArgumentException ex)
@@ -69,6 +69,7 @@ public class AcquisitionController : ControllerBase
             profileId = _acquisition.ActiveProfileId?.Value,
             hasFrame = _acquisition.HasFrame,
             lastError = _acquisition.LastError,
+            allowedActions = _acquisition.GetAllowedActions(),
             statistics = stats.HasValue
                 ? new
                 {
@@ -126,6 +127,21 @@ public class AcquisitionController : ControllerBase
         }
     }
 
+    [HttpGet("latest-frame")]
+    public ActionResult GetLatestFrame()
+    {
+        var frame = _acquisition.GetLatestFrame();
+        if (frame is null)
+            return NoContent();
+
+        var encoder = new PngEncoder();
+        var stream = new MemoryStream();
+        encoder.Encode(frame, stream);
+        stream.Position = 0;
+
+        return File(stream, "image/png", "latest.png");
+    }
+
     [HttpPost("snapshot")]
     public ActionResult Snapshot([FromBody] SnapshotRequest request)
     {
@@ -174,6 +190,8 @@ public class StartAcquisitionRequest
 {
     public required string ProfileId { get; set; }
     public string? TriggerMode { get; set; }
+    public int? FrameCount { get; set; }
+    public int? IntervalMs { get; set; }
 }
 
 public class SnapshotRequest

@@ -57,11 +57,16 @@ export interface ChannelEvent {
   message: string;
 }
 
+export type AcquisitionAction = "start" | "stop" | "trigger" | "snapshot";
+
+export type AcquisitionMode = "single" | "continuous";
+
 export interface AcquisitionStatus {
   isActive: boolean;
   profileId?: string;
   hasFrame?: boolean;
   lastError?: string | null;
+  allowedActions?: AcquisitionAction[];
   statistics?: AcquisitionStatistics;
   recentEvents?: ChannelEvent[];
 }

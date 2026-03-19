@@ -20,8 +20,8 @@ export default function AcquisitionStats({ stats }: Props) {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             <StatLine label="FPS" value={stats.averageFps.toFixed(1)} />
             <StatLine label="Frames" value={stats.frameCount} />
-            <StatLine label="Dropped" value={stats.droppedFrameCount} />
-            <StatLine label="Errors" value={stats.errorCount} />
+            <StatLine label="Dropped" value={stats.droppedFrameCount} color={stats.droppedFrameCount > 0 ? "error.main" : undefined} />
+            <StatLine label="Errors" value={stats.errorCount} color={stats.errorCount > 0 ? "error.main" : undefined} />
             <StatLine
               label="Avg Interval"
               value={`${stats.averageFrameIntervalMs.toFixed(1)} ms`}
@@ -30,8 +30,8 @@ export default function AcquisitionStats({ stats }: Props) {
               label="Min / Max"
               value={`${stats.minFrameIntervalMs.toFixed(1)} / ${stats.maxFrameIntervalMs.toFixed(1)} ms`}
             />
-            <StatLine label="Copy Drops" value={stats.copyDropCount} />
-            <StatLine label="Buffer Full" value={stats.clusterUnavailableCount} />
+            <StatLine label="Copy Drops" value={stats.copyDropCount} color={stats.copyDropCount > 0 ? "error.main" : undefined} />
+            <StatLine label="Buffer Full" value={stats.clusterUnavailableCount} color={stats.clusterUnavailableCount > 0 ? "error.main" : undefined} />
           </Box>
         ) : (
           <Typography variant="body2" color="text.secondary">
