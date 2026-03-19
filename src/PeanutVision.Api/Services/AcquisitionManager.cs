@@ -90,7 +90,7 @@ public sealed class AcquisitionManager : IAcquisitionService
                 return new HashSet<string>();
 
             var actions = new HashSet<string>();
-            if (_channel == null || !_channel.IsActive)
+            if (_channel == null)
             {
                 actions.Add("start");
                 actions.Add("snapshot");
@@ -98,7 +98,8 @@ public sealed class AcquisitionManager : IAcquisitionService
             else
             {
                 actions.Add("stop");
-                actions.Add("trigger");
+                if (_channel.IsActive)
+                    actions.Add("trigger");
             }
             return actions;
         }
@@ -138,6 +139,7 @@ public sealed class AcquisitionManager : IAcquisitionService
 
             _channel.FrameAcquired += OnFrameAcquired;
             _channel.AcquisitionError += OnAcquisitionError;
+            _channel.AcquisitionEnded += OnAcquisitionEnded;
 
             _statistics.Start();
             _channel.StartAcquisition(frameCount ?? -1);
@@ -182,6 +184,7 @@ public sealed class AcquisitionManager : IAcquisitionService
             _channel.StopAcquisition();
             _channel.FrameAcquired -= OnFrameAcquired;
             _channel.AcquisitionError -= OnAcquisitionError;
+            _channel.AcquisitionEnded -= OnAcquisitionEnded;
 
             channelToDispose = _channel;
             _channel = null;
@@ -288,6 +291,15 @@ public sealed class AcquisitionManager : IAcquisitionService
     private void OnAcquisitionError(object? sender, AcquisitionErrorEventArgs e)
     {
         ProcessError(e.Message, e.Signal);
+    }
+
+    /// <summary>
+    /// Called when the acquisition sequence ends (MC_SIG_END_CHANNEL_ACTIVITY).
+    /// Automatically cleans up so Start() can be called again without requiring an explicit Stop().
+    /// </summary>
+    private void OnAcquisitionEnded(object? sender, EventArgs e)
+    {
+        Stop();
     }
 
     /// <summary>
