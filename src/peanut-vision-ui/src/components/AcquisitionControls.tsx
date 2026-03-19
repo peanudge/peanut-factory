@@ -105,7 +105,20 @@ export default function AcquisitionControls({
         </Tooltip>
       ) : (
         <ButtonGroup variant="contained">
-          {!status?.isActive ? (
+          {allowed("stop") ? (
+            <Tooltip title={busy ? "처리 중..." : "촬영 중지"}>
+              <span>
+                <Button
+                  color="error"
+                  startIcon={<StopIcon />}
+                  onClick={onStop}
+                  disabled={busy}
+                >
+                  Stop
+                </Button>
+              </span>
+            </Tooltip>
+          ) : (
             <Tooltip
               title={
                 busy || !allowed("start") || !selectedProfile
@@ -124,29 +137,16 @@ export default function AcquisitionControls({
                 </Button>
               </span>
             </Tooltip>
-          ) : (
-            <Tooltip title={busy ? "처리 중..." : "촬영 중지"}>
-              <span>
-                <Button
-                  color="error"
-                  startIcon={<StopIcon />}
-                  onClick={onStop}
-                  disabled={busy || !allowed("stop")}
-                >
-                  Stop
-                </Button>
-              </span>
-            </Tooltip>
           )}
-          {status?.isActive && (
+          {allowed("trigger") && (
             <Tooltip
-              title={busy || !allowed("trigger") ? "처리 중..." : "프레임 촬영"}
+              title={busy ? "처리 중..." : "프레임 촬영"}
             >
               <span>
                 <Button
                   startIcon={<AdjustIcon />}
                   onClick={onTrigger}
-                  disabled={busy || !allowed("trigger")}
+                  disabled={busy}
                 >
                   Trigger
                 </Button>
