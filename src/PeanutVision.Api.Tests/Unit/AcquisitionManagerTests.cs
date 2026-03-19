@@ -240,7 +240,7 @@ public class AcquisitionManagerTests : IDisposable
             int width = _mockHal.Configuration.DefaultImageWidth;
             int height = _mockHal.Configuration.DefaultImageHeight;
 
-            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
+            _manager.Start("crevis-tc-a160k-softtrig-rgb8.cam");
             var image = await _manager.TriggerAndWaitAsync();
 
             Assert.Equal(width, image.Width);
@@ -250,7 +250,7 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public async Task Then_increments_hal_trigger_count()
         {
-            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
+            _manager.Start("crevis-tc-a160k-softtrig-rgb8.cam");
             _mockHal.CallLog.Reset();
 
             await _manager.TriggerAndWaitAsync();
@@ -266,7 +266,7 @@ public class AcquisitionManagerTests : IDisposable
         public async Task Then_throws_TimeoutException()
         {
             // AutoSimulateFrameOnTrigger is false by default, so no frame arrives
-            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
+            _manager.Start("crevis-tc-a160k-softtrig-rgb8.cam");
 
             await Assert.ThrowsAsync<TimeoutException>(
                 () => _manager.TriggerAndWaitAsync(timeoutMs: 100));

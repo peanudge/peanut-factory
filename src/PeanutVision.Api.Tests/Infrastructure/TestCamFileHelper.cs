@@ -30,10 +30,21 @@ public static class TestCamFileHelper
             _testDir = Path.Combine(Path.GetTempPath(), $"PeanutVision.CamFileTests.{Guid.NewGuid():N}");
             Directory.CreateDirectory(_testDir);
 
+            var camFileContents = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["crevis-tc-a160k-freerun-rgb8.cam"] = "TrigMode = IMMEDIATE\n",
+                ["crevis-tc-a160k-freerun-1tap-rgb8.cam"] = "TrigMode = IMMEDIATE\n",
+                ["crevis-tc-a160k-softtrig-rgb8.cam"] = "TrigMode = SOFT\n",
+            };
+
             foreach (var name in DefaultCamFileNames)
             {
                 var path = Path.Combine(_testDir, name);
-                if (!File.Exists(path)) File.WriteAllText(path, "");
+                if (!File.Exists(path))
+                {
+                    var content = camFileContents.TryGetValue(name, out var c) ? c : "";
+                    File.WriteAllText(path, content);
+                }
             }
 
             _instance = new CamFileService(_testDir);

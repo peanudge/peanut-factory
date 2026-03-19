@@ -211,6 +211,15 @@ public sealed class AcquisitionManager : IAcquisitionService
             if (_triggerTcs != null)
                 throw new InvalidOperationException("A trigger is already pending. Wait for it to complete.");
 
+            // Validate trigger mode — software trigger only works in SOFT or COMBINED mode
+            if (_channel.TriggerMode != McTrigMode.MC_TrigMode_SOFT &&
+                _channel.TriggerMode != McTrigMode.MC_TrigMode_COMBINED)
+            {
+                throw new InvalidOperationException(
+                    $"TriggerAndWaitAsync requires SOFT or COMBINED trigger mode, but channel is configured for {_channel.TriggerMode}. " +
+                    "Use Start() with the correct trigger mode, or use the frame event for IMMEDIATE/HARD trigger modes.");
+            }
+
             tcs = new TaskCompletionSource<ImageData>(TaskCreationOptions.RunContinuationsAsynchronously);
             _triggerTcs = tcs;
             _channel.SendSoftwareTrigger();
@@ -243,6 +252,11 @@ public sealed class AcquisitionManager : IAcquisitionService
             var options = triggerMode.HasValue
                 ? camFile.ToChannelOptions(triggerMode.Value.Mode, useCallback: false)
                 : camFile.ToChannelOptions(useCallback: false);
+
+            // Snapshot always uses SOFT trigger mode to prevent race conditions with IMMEDIATE mode.
+            // IMMEDIATE mode fires frames as soon as the channel goes ACTIVE — the software trigger
+            // in that case would be undefined behavior causing frame trigger violations.
+            options.TriggerMode = McTrigMode.MC_TrigMode_SOFT;
 
             var channel = _grabService.CreateChannel(options);
             try
