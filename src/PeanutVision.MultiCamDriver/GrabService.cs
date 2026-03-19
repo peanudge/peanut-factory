@@ -58,13 +58,28 @@ public sealed class GrabService : IGrabService
             if (_initialized)
                 return;
 
-            // Open driver with NULL (reserved parameter)
-            int status = _hal.OpenDriver(null);
-            if (status != MultiCamApi.MC_OK)
+            // Open driver with NULL (reserved parameter).
+            // MC_SERVICE_ERROR (-25) is transient and indicates the driver service is not yet ready.
+            // Per CLAUDE.md Development Rule #4: retry in a polling loop until success or timeout.
+            int status;
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+            const int retryIntervalMs = 500;
+            do
             {
-                throw new MultiCamException(status, "McOpenDriver",
-                    "Failed to initialize MultiCam driver. Ensure the driver is installed and hardware is connected.");
-            }
+                status = _hal.OpenDriver(null);
+                if (status == (int)McStatus.MC_SERVICE_ERROR)
+                {
+                    if (DateTime.UtcNow >= deadline)
+                        throw new MultiCamException(status, "McOpenDriver",
+                            "MultiCam driver service did not become available within 30 seconds. Ensure the MultiCam service is running.");
+                    Thread.Sleep(retryIntervalMs);
+                }
+                else if (status != MultiCamApi.MC_OK)
+                {
+                    throw new MultiCamException(status, "McOpenDriver",
+                        "Failed to initialize MultiCam driver. Ensure the driver is installed and hardware is connected.");
+                }
+            } while (status != MultiCamApi.MC_OK);
 
             _openCount = 1;
 
@@ -280,13 +295,12 @@ public sealed class GrabService : IGrabService
             }
             _channels.Clear();
 
-            // Close driver
+            // Close driver.
+            // Initialize() always sets _openCount = 1 and guards against multiple opens,
+            // so a single CloseDriver() call is sufficient.
             if (_openCount > 0)
             {
-                for (int i = 0; i < _openCount; i++)
-                {
-                    _hal.CloseDriver();
-                }
+                _hal.CloseDriver();
                 _openCount = 0;
             }
 
