@@ -27,6 +27,9 @@ public class GrabChannelOptions
 
     /// <summary>Trigger mode for acquisition</summary>
     public McTrigMode TriggerMode { get; set; } = McTrigMode.MC_TrigMode_IMMEDIATE;
+
+    /// <summary>Acquisition mode (SNAPSHOT, VIDEO, HFR). Must match the camera type — never use PAGE/WEB/LONGPAGE with TC-A160K area-scan cameras.</summary>
+    public McAcquisitionMode AcquisitionMode { get; set; } = McAcquisitionMode.MC_AcquisitionMode_SNAPSHOT;
 }
 
 /// <summary>
@@ -39,6 +42,7 @@ public sealed class GrabChannel : IDisposable
     private readonly IMultiCamHAL _hal;
     private uint _channelHandle;
     private bool _disposed;
+    private volatile bool _disposing;
     private bool _isActive;
 
     // Callback handling - prevent GC collection
@@ -53,6 +57,7 @@ public sealed class GrabChannel : IDisposable
     private int _bufferSize;
     private int _surfaceCount;
     private int _clusterUnavailableCount;
+    private McTrigMode _triggerMode;
 
     // Internal signal processing thread (only active when UseCallback=true)
     // All signals from the native callback are enqueued here — no event is ever
@@ -82,6 +87,9 @@ public sealed class GrabChannel : IDisposable
 
     /// <summary>Image height in pixels</summary>
     public int ImageHeight => _imageHeight;
+
+    /// <summary>Configured trigger mode for this channel</summary>
+    public McTrigMode TriggerMode => _triggerMode;
 
     /// <summary>
     /// Fired when a frame has been copied and is ready for processing.
@@ -162,6 +170,18 @@ public sealed class GrabChannel : IDisposable
             };
             status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_TrigMode, trigModeStr);
             ThrowOnError(status, $"SetParam(TrigMode={trigModeStr})");
+            _triggerMode = options.TriggerMode;
+
+            // Set acquisition mode explicitly — never rely on cam file defaults
+            string acqModeStr = options.AcquisitionMode switch
+            {
+                McAcquisitionMode.MC_AcquisitionMode_SNAPSHOT => MultiCamApi.MC_AcquisitionMode_SNAPSHOT_STR,
+                McAcquisitionMode.MC_AcquisitionMode_VIDEO => MultiCamApi.MC_AcquisitionMode_VIDEO_STR,
+                McAcquisitionMode.MC_AcquisitionMode_HFR => MultiCamApi.MC_AcquisitionMode_HFR_STR,
+                _ => throw new ArgumentException($"Unsupported acquisition mode for area-scan camera: {options.AcquisitionMode}")
+            };
+            status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_AcquisitionMode, acqModeStr);
+            ThrowOnError(status, $"SetParam(AcquisitionMode={acqModeStr})");
 
             // Enable surface processing signal
             SetSignalEnable(McSignal.MC_SIG_SURFACE_PROCESSING, true);
@@ -221,12 +241,17 @@ public sealed class GrabChannel : IDisposable
             GCHandle handle = GCHandle.FromIntPtr(info.Context);
             channel = handle.Target as GrabChannel;
         }
-        catch
+        catch (InvalidOperationException)
         {
-            return; // Invalid context, ignore
+            // GCHandle was freed during disposal — expected, not a bug
+            return;
         }
 
-        channel?.ProcessSignal(ref info);
+        // Check for disposal BEFORE processing — volatile read ensures visibility
+        if (channel == null || channel._disposing)
+            return;
+
+        channel.ProcessSignal(ref info);
     }
 
     /// <summary>
@@ -639,7 +664,7 @@ public sealed class GrabChannel : IDisposable
         {
             ThrowIfDisposed();
 
-            int status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_BlackCalibration, "ON");
+            int status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_BlackCalibration, MultiCamApi.MC_Calibration_Execute);
             ThrowOnError(status, "BlackCalibration");
         }
     }
@@ -654,7 +679,7 @@ public sealed class GrabChannel : IDisposable
         {
             ThrowIfDisposed();
 
-            int status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_WhiteCalibration, "ON");
+            int status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_WhiteCalibration, MultiCamApi.MC_Calibration_Execute);
             ThrowOnError(status, "WhiteCalibration");
         }
     }
@@ -668,7 +693,7 @@ public sealed class GrabChannel : IDisposable
         {
             ThrowIfDisposed();
 
-            string value = enable ? "ON" : "OFF";
+            string value = enable ? MultiCamApi.MC_FlatFieldCorrection_ON : MultiCamApi.MC_FlatFieldCorrection_OFF;
             int status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_FlatFieldCorrection, value);
             ThrowOnError(status, $"SetFlatFieldCorrection({value})");
         }
@@ -794,6 +819,10 @@ public sealed class GrabChannel : IDisposable
     {
         if (_disposed)
             return;
+
+        // Signal callbacks to stop processing — set before acquiring lock
+        // so any in-flight callback sees it immediately (volatile write)
+        _disposing = true;
 
         lock (_lock)
         {
