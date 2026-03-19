@@ -510,9 +510,6 @@ public sealed class GrabChannel : IDisposable
 
             _isActive = false;
         }
-
-        // Signal processing thread that no more signals will arrive
-        _signalQueue?.Writer.TryComplete();
     }
 
     /// <summary>

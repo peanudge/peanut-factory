@@ -20,6 +20,9 @@ public sealed class AcquisitionManager : IAcquisitionService
     private bool _disposed;
     private Timer? _triggerTimer;
     private bool _snapshotInProgress;
+    private bool _acquiring;
+    private ProfileId? _channelProfileId;
+    private TriggerMode? _channelTriggerMode;
 
     // Test synchronization
     private TaskCompletionSource? _signalProcessedTcs;
@@ -90,7 +93,7 @@ public sealed class AcquisitionManager : IAcquisitionService
                 return new HashSet<string>();
 
             var actions = new HashSet<string>();
-            if (_channel == null)
+            if (!_acquiring)
             {
                 actions.Add("start");
                 actions.Add("snapshot");
@@ -98,7 +101,7 @@ public sealed class AcquisitionManager : IAcquisitionService
             else
             {
                 actions.Add("stop");
-                if (_channel.IsActive)
+                if (_channel?.IsActive == true)
                     actions.Add("trigger");
             }
             return actions;
@@ -122,25 +125,45 @@ public sealed class AcquisitionManager : IAcquisitionService
             if (_snapshotInProgress)
                 throw new InvalidOperationException("A snapshot is in progress. Wait for it to complete.");
 
-            if (_channel != null)
+            if (_acquiring)
                 throw new InvalidOperationException("Acquisition is already active. Stop it first.");
 
-            var camFile = _camFileService.GetByFileName(profileId.Value);
-            var options = triggerMode.HasValue
-                ? camFile.ToChannelOptions(triggerMode.Value.Mode)
-                : camFile.ToChannelOptions();
+            // If channel exists but profile/triggerMode differs → dispose and recreate
+            if (_channel != null &&
+                (_channelProfileId != profileId || _channelTriggerMode != triggerMode))
+            {
+                _channel.FrameAcquired    -= OnFrameAcquired;
+                _channel.AcquisitionError -= OnAcquisitionError;
+                _channel.AcquisitionEnded -= OnAcquisitionEnded;
+                var old = _channel;
+                _channel = null;
+                _channelProfileId = null;
+                _channelTriggerMode = null;
+                old.Dispose();
+            }
 
-            _channel = _grabService.CreateChannel(options);
+            // Create channel if we don't have one
+            if (_channel == null)
+            {
+                var camFile = _camFileService.GetByFileName(profileId.Value);
+                var options = triggerMode.HasValue
+                    ? camFile.ToChannelOptions(triggerMode.Value.Mode)
+                    : camFile.ToChannelOptions();
+                _channel = _grabService.CreateChannel(options);
+                _channelProfileId = profileId;
+                _channelTriggerMode = triggerMode;
+            }
+
             _activeProfileId = profileId;
             _lastFrame = null;
             _lastError = null;
-
             _statistics = new AcquisitionStatistics();
 
-            _channel.FrameAcquired += OnFrameAcquired;
+            _channel.FrameAcquired    += OnFrameAcquired;
             _channel.AcquisitionError += OnAcquisitionError;
             _channel.AcquisitionEnded += OnAcquisitionEnded;
 
+            _acquiring = true;
             _statistics.Start();
             _channel.StartAcquisition(frameCount ?? -1);
 
@@ -167,12 +190,13 @@ public sealed class AcquisitionManager : IAcquisitionService
     public void Stop()
     {
         TaskCompletionSource<ImageData>? tcs;
-        GrabChannel? channelToDispose;
 
         lock (_lock)
         {
-            if (_channel == null)
+            if (!_acquiring)
                 return;
+
+            _acquiring = false;
 
             tcs = _triggerTcs;
             _triggerTcs = null;
@@ -181,14 +205,13 @@ public sealed class AcquisitionManager : IAcquisitionService
             _triggerTimer = null;
 
             _statistics?.Stop();
-            _channel.StopAcquisition();
-            _channel.FrameAcquired -= OnFrameAcquired;
+            _channel!.StopAcquisition();
+            _channel.FrameAcquired    -= OnFrameAcquired;
             _channel.AcquisitionError -= OnAcquisitionError;
             _channel.AcquisitionEnded -= OnAcquisitionEnded;
 
-            channelToDispose = _channel;
-            _channel = null;
             _activeProfileId = null;
+            // _channel and _channelProfileId intentionally kept — channel lives on for reuse
         }
 
         _eventLog.Add(new ChannelEvent(
@@ -196,7 +219,6 @@ public sealed class AcquisitionManager : IAcquisitionService
             "Acquisition stopped"));
 
         tcs?.TrySetCanceled();
-        channelToDispose?.Dispose();
     }
 
     public async Task<ImageData> TriggerAndWaitAsync(int timeoutMs = 5000)
@@ -239,7 +261,7 @@ public sealed class AcquisitionManager : IAcquisitionService
     {
         lock (_lock)
         {
-            if (_channel != null)
+            if (_acquiring)
                 throw new InvalidOperationException("Acquisition is already active. Stop it first.");
 
             _snapshotInProgress = true;
@@ -398,5 +420,7 @@ public sealed class AcquisitionManager : IAcquisitionService
         if (_disposed) return;
         _disposed = true;
         Stop();
+        _channel?.Dispose();
+        _channel = null;
     }
 }

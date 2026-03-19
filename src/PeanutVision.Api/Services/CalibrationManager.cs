@@ -11,7 +11,7 @@ public class CalibrationManager : ICalibrationService
         _acquisitionManager = acquisitionManager;
     }
 
-    public bool IsAvailable => _acquisitionManager.Channel != null;
+    public bool IsAvailable => _acquisitionManager.IsActive;
 
     public void PerformBlackCalibration()
     {
@@ -76,7 +76,8 @@ public class CalibrationManager : ICalibrationService
 
     private GrabChannel GetRequiredChannel()
     {
-        return _acquisitionManager.Channel
-            ?? throw new InvalidOperationException("No active acquisition channel.");
+        if (!_acquisitionManager.IsActive)
+            throw new InvalidOperationException("No active acquisition channel.");
+        return _acquisitionManager.Channel!;
     }
 }

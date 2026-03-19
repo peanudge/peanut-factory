@@ -647,12 +647,19 @@ public class MockMultiCamHAL : IMultiCamHAL
     }
 
     /// <summary>
-    /// Simulates an acquisition error.
+    /// Simulates an acquisition error or end-of-activity signal.
+    /// For MC_SIG_END_CHANNEL_ACTIVITY, the channel state is set to IDLE to match real hardware behavior.
     /// </summary>
     public void SimulateAcquisitionError(uint channelHandle, McSignal errorSignal)
     {
         if (!_instances.TryGetValue(channelHandle, out var inst) || !inst.CallbackRegistered)
             return;
+
+        // Real hardware sets ChannelState=IDLE when activity ends
+        if (errorSignal == McSignal.MC_SIG_END_CHANNEL_ACTIVITY)
+        {
+            inst.Parameters[MultiCamApi.PN_ChannelState] = MultiCamApi.MC_ChannelState_IDLE_STR;
+        }
 
         var signalInfo = new McSignalInfo
         {

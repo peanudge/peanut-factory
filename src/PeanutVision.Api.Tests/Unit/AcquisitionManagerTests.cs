@@ -212,9 +212,9 @@ public class AcquisitionManagerTests : IDisposable
         }
 
         [Fact]
-        public void Then_channel_is_null()
+        public void Then_channel_is_not_null_channel_kept_alive()
         {
-            Assert.Null(_manager.Channel);
+            Assert.NotNull(_manager.Channel);
         }
 
         [Fact]
@@ -572,6 +572,69 @@ public class AcquisitionManagerTests : IDisposable
             _mockHal.CallLog.Reset();
             Thread.Sleep(100);
             Assert.Equal(0, _mockHal.CallLog.SoftwareTriggerCount);
+        }
+    }
+
+    public class Given_channel_reuse_same_profile : AcquisitionManagerTests
+    {
+        [Fact]
+        public void Then_McCreate_called_once_across_two_start_stop_cycles()
+        {
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
+            _manager.Stop();
+            _mockHal.CallLog.Reset();
+
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
+
+            Assert.Equal(0, _mockHal.CallLog.CreateCalls);
+            Assert.Equal(0, _mockHal.CallLog.DeleteCalls);
+        }
+
+        [Fact]
+        public void Then_is_active_after_second_start()
+        {
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
+            _manager.Stop();
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
+
+            Assert.True(_manager.IsActive);
+        }
+
+        [Fact]
+        public void Then_finite_frameCount_auto_restart_reuses_channel()
+        {
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
+            var channel = _manager.Channel!;
+            _mockHal.CallLog.Reset();
+
+            // Simulate hardware signalling end of sequence
+            _mockHal.SimulateAcquisitionError(channel.Handle, McSignal.MC_SIG_END_CHANNEL_ACTIVITY);
+            // Wait for OnAcquisitionEnded to propagate through processing loop
+            Thread.Sleep(200);
+
+            Assert.False(_manager.IsActive);
+
+            // Restart — should reuse same channel handle
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
+
+            Assert.Equal(0, _mockHal.CallLog.CreateCalls);
+            Assert.True(_manager.IsActive);
+        }
+    }
+
+    public class Given_channel_recreated_on_profile_change : AcquisitionManagerTests
+    {
+        [Fact]
+        public void Then_McCreate_called_twice_and_old_channel_deleted()
+        {
+            _manager.Start("crevis-tc-a160k-freerun-rgb8.cam");
+            _manager.Stop();
+            _mockHal.CallLog.Reset();
+
+            _manager.Start("crevis-tc-a160k-softtrig-rgb8.cam");
+
+            Assert.Equal(1, _mockHal.CallLog.CreateCalls);
+            Assert.Equal(1, _mockHal.CallLog.DeleteCalls);
         }
     }
 }
