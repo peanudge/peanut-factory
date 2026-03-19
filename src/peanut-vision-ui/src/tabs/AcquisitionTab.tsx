@@ -8,8 +8,9 @@ import AcquisitionControls from "../components/AcquisitionControls";
 import AcquisitionStats from "../components/AcquisitionStats";
 import EventLog from "../components/EventLog";
 import ImageViewer from "../components/ImageViewer";
+import CapturedImageList from "../components/CapturedImageList";
 import ContinuousSettings from "../components/ContinuousSettings";
-import type { AcquisitionMode, AcquisitionStatus, CamFileInfo } from "../api/types";
+import type { AcquisitionMode, AcquisitionStatus, CamFileInfo, CapturedImage } from "../api/types";
 import {
   getCameras,
   startAcquisition,
@@ -24,7 +25,12 @@ import { usePolling } from "../hooks/usePolling";
 import {
   POLL_INTERVAL_ACTIVE_MS,
   POLL_INTERVAL_IDLE_MS,
+  MAX_CAPTURED_IMAGES,
 } from "../constants";
+
+function formatFilenameTimestamp(d: Date): string {
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}_${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}${String(d.getSeconds()).padStart(2, "0")}_${String(d.getMilliseconds()).padStart(3, "0")}`;
+}
 
 export default function AcquisitionTab() {
   const [cameras, setCameras] = useState<CamFileInfo[]>([]);
@@ -33,7 +39,8 @@ export default function AcquisitionTab() {
   const [frameCount, setFrameCount] = useState<number | null>(null);
   const [intervalMs, setIntervalMs] = useState<number | null>(null);
   const [status, setStatus] = useState<AcquisitionStatus | null>(null);
-  const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
+  const [images, setImages] = useState<CapturedImage[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
     message: string;
     severity: "success" | "info" | "warning" | "error";
@@ -62,19 +69,51 @@ export default function AcquisitionTab() {
       .catch(() => {});
   }, []);
 
+  const addImage = useCallback((blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    const newImage: CapturedImage = { id: crypto.randomUUID(), url, blob, capturedAt: new Date() };
+    setImages((prev) => {
+      const next = [newImage, ...prev];
+      if (next.length > MAX_CAPTURED_IMAGES) {
+        next.slice(MAX_CAPTURED_IMAGES).forEach((img) => URL.revokeObjectURL(img.url));
+        return next.slice(0, MAX_CAPTURED_IMAGES);
+      }
+      return next;
+    });
+    setSelectedId(newImage.id);
+  }, []);
+
+  const handleClearAll = useCallback(() => {
+    setImages((prev) => {
+      prev.forEach((img) => URL.revokeObjectURL(img.url));
+      return [];
+    });
+    setSelectedId(null);
+  }, []);
+
+  // Revoke all URLs on unmount
+  useEffect(() => {
+    return () => {
+      setImages((prev) => {
+        prev.forEach((img) => URL.revokeObjectURL(img.url));
+        return prev;
+      });
+    };
+  }, []);
+
   // Live preview: poll latest frame while acquisition is active and has frames
   useEffect(() => {
     if (!status?.isActive || !status?.hasFrame) return;
     const t = setInterval(async () => {
       try {
         const blob = await getLatestFrame();
-        if (blob) setCapturedBlob(blob);
+        if (blob) addImage(blob);
       } catch {
         /* ignore */
       }
     }, 1000);
     return () => clearInterval(t);
-  }, [status?.isActive, status?.hasFrame]);
+  }, [status?.isActive, status?.hasFrame, addImage]);
 
   const handleStart = () =>
     execute(async () => {
@@ -92,7 +131,7 @@ export default function AcquisitionTab() {
 
   const handleTrigger = () =>
     execute(async () => {
-      setCapturedBlob(await triggerAndCapture());
+      addImage(await triggerAndCapture());
       fetchStatus();
       setSnackbar({
         message: "프레임이 촬영되었습니다",
@@ -102,13 +141,15 @@ export default function AcquisitionTab() {
 
   const handleCapture = () =>
     execute(async () => {
-      setCapturedBlob(await snapshot(selectedProfile));
+      addImage(await snapshot(selectedProfile));
       fetchStatus();
       setSnackbar({
         message: "스냅샷이 촬영되었습니다",
         severity: "success",
       });
     });
+
+  const selectedImage = images.find((img) => img.id === selectedId) ?? null;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -150,7 +191,19 @@ export default function AcquisitionTab() {
           </Box>
         </Grid>
         <Grid size={{ xs: 12, md: 8 }}>
-          <ImageViewer blob={capturedBlob} errorMessage={status?.lastError} />
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
+            <ImageViewer
+              url={selectedImage?.url ?? null}
+              filename={selectedImage ? `capture-${formatFilenameTimestamp(selectedImage.capturedAt)}.png` : undefined}
+              errorMessage={status?.lastError}
+            />
+            <CapturedImageList
+              images={images}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onClear={handleClearAll}
+            />
+          </Box>
         </Grid>
       </Grid>
 

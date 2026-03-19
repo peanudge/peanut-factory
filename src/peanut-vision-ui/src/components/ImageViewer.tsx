@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
@@ -6,23 +5,12 @@ import Typography from "@mui/material/Typography";
 import DownloadIcon from "@mui/icons-material/Download";
 
 interface Props {
-  blob: Blob | null;
+  url: string | null;
+  filename?: string;
   errorMessage?: string | null;
 }
 
-export default function ImageViewer({ blob, errorMessage }: Props) {
-  const [url, setUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!blob) {
-      setUrl(null);
-      return;
-    }
-    const objectUrl = URL.createObjectURL(blob);
-    setUrl(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [blob]);
-
+export default function ImageViewer({ url, filename, errorMessage }: Props) {
   if (!url) {
     return (
       <Box
@@ -75,7 +63,7 @@ export default function ImageViewer({ blob, errorMessage }: Props) {
         size="small"
         startIcon={<DownloadIcon />}
         href={url}
-        download={`capture-${Date.now()}.png`}
+        download={filename ?? `capture-${Date.now()}.png`}
       >
         Download
       </Button>
