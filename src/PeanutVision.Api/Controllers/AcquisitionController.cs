@@ -12,17 +12,20 @@ public class AcquisitionController : ControllerBase
     private readonly IAcquisitionService _acquisition;
     private readonly IImageSaveSettingsService _saveSettings;
     private readonly FilenameGenerator _filenameGenerator;
+    private readonly FrameSaveTracker _frameSaveTracker;
     private readonly string _contentRootPath;
 
     public AcquisitionController(
         IAcquisitionService acquisition,
         IImageSaveSettingsService saveSettings,
         FilenameGenerator filenameGenerator,
+        FrameSaveTracker frameSaveTracker,
         IWebHostEnvironment environment)
     {
         _acquisition = acquisition;
         _saveSettings = saveSettings;
         _filenameGenerator = filenameGenerator;
+        _frameSaveTracker = frameSaveTracker;
         _contentRootPath = environment.ContentRootPath;
     }
 
@@ -153,6 +156,15 @@ public class AcquisitionController : ControllerBase
         var frame = _acquisition.GetLatestFrame();
         if (frame is null)
             return NoContent();
+
+        var settings = _saveSettings.GetSettings();
+        if (settings.AutoSave && _frameSaveTracker.ShouldSave(frame))
+        {
+            var filePath = _filenameGenerator.Generate(
+                settings, _contentRootPath, _acquisition.ActiveProfileId?.Value);
+            new ImageWriter().Save(frame, filePath);
+            Response.Headers["X-Image-Path"] = filePath;
+        }
 
         var encoder = new PngEncoder();
         var stream = new MemoryStream();

@@ -49,4 +49,24 @@ public class AcquisitionLatestFrameSpec : IClassFixture<PeanutVisionApiFactory>,
         Assert.Equal((byte)'N', bytes[2]);
         Assert.Equal((byte)'G', bytes[3]);
     }
+
+    [Fact]
+    public async Task LatestFrame_with_autosave_sets_image_path_header_on_first_poll()
+    {
+        await _client.PostJsonAsync("/api/acquisition/start",
+            new { profileId = "crevis-tc-a160k-softtrig-rgb8.cam" });
+        await _client.PostAsync("/api/acquisition/trigger", null);
+
+        // First poll — new frame, should auto-save
+        var first = await _client.GetAsync("/api/acquisition/latest-frame");
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.True(first.Headers.Contains("X-Image-Path"),
+            "First poll of a new frame should set X-Image-Path");
+
+        // Second poll — same frame reference, should NOT save again
+        var second = await _client.GetAsync("/api/acquisition/latest-frame");
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        Assert.False(second.Headers.Contains("X-Image-Path"),
+            "Second poll of the same frame must not set X-Image-Path (no duplicate save)");
+    }
 }

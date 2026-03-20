@@ -93,11 +93,12 @@ export async function snapshot(
   return { blob: await res.blob(), savedPath };
 }
 
-export async function getLatestFrame(): Promise<Blob | null> {
+export async function getLatestFrame(): Promise<CaptureResult | null> {
   const res = await fetch(`${API_BASE_URL}/acquisition/latest-frame`);
   if (res.status === 204) return null;
   if (!res.ok) await handleErrorResponse(res);
-  return res.blob();
+  const savedPath = res.headers.get("X-Image-Path") ?? undefined;
+  return { blob: await res.blob(), savedPath };
 }
 
 // ── Settings ──
