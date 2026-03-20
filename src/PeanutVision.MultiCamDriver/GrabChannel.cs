@@ -42,6 +42,7 @@ public sealed class GrabChannel : IDisposable
     private readonly IMultiCamHAL _hal;
     private uint _channelHandle;
     private bool _disposed;
+    private volatile bool _disposing;
     private bool _isActive;
 
     // Callback handling - prevent GC collection
@@ -56,11 +57,12 @@ public sealed class GrabChannel : IDisposable
     private int _bufferSize;
     private int _surfaceCount;
     private int _clusterUnavailableCount;
+    private McTrigMode _triggerMode;
 
     // Internal signal processing thread (only active when UseCallback=true)
     // All signals from the native callback are enqueued here — no event is ever
     // fired directly on the MultiCam thread, guaranteeing < 1ms callback time.
-    private Channel<CallbackSignal>? _signalQueue;
+    private volatile Channel<CallbackSignal>? _signalQueue;
     private Task? _processingTask;
     private CancellationTokenSource? _processingCts;
     private int _copyDropCount;
@@ -85,6 +87,17 @@ public sealed class GrabChannel : IDisposable
 
     /// <summary>Image height in pixels</summary>
     public int ImageHeight => _imageHeight;
+
+    /// <summary>Configured trigger mode for this channel</summary>
+    public McTrigMode TriggerMode => _triggerMode;
+
+    /// <summary>
+    /// Whether this channel's trigger mode supports software triggering via SendSoftwareTrigger().
+    /// True for SOFT and COMBINED modes; false for IMMEDIATE and HARD.
+    /// </summary>
+    public bool SupportsSoftwareTrigger =>
+        _triggerMode == McTrigMode.MC_TrigMode_SOFT ||
+        _triggerMode == McTrigMode.MC_TrigMode_COMBINED;
 
     /// <summary>
     /// Fired when a frame has been copied and is ready for processing.
@@ -165,6 +178,18 @@ public sealed class GrabChannel : IDisposable
             };
             status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_TrigMode, trigModeStr);
             ThrowOnError(status, $"SetParam(TrigMode={trigModeStr})");
+            _triggerMode = options.TriggerMode;
+
+            // Set acquisition mode explicitly — never rely on cam file defaults
+            string acqModeStr = options.AcquisitionMode switch
+            {
+                McAcquisitionMode.MC_AcquisitionMode_SNAPSHOT => MultiCamApi.MC_AcquisitionMode_SNAPSHOT_STR,
+                McAcquisitionMode.MC_AcquisitionMode_VIDEO => MultiCamApi.MC_AcquisitionMode_VIDEO_STR,
+                McAcquisitionMode.MC_AcquisitionMode_HFR => MultiCamApi.MC_AcquisitionMode_HFR_STR,
+                _ => throw new ArgumentException($"Unsupported acquisition mode for area-scan camera: {options.AcquisitionMode}")
+            };
+            status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_AcquisitionMode, acqModeStr);
+            ThrowOnError(status, $"SetParam(AcquisitionMode={acqModeStr})");
 
             // Set acquisition mode explicitly — never rely on cam file defaults
             string acqModeStr = options.AcquisitionMode switch
@@ -235,12 +260,17 @@ public sealed class GrabChannel : IDisposable
             GCHandle handle = GCHandle.FromIntPtr(info.Context);
             channel = handle.Target as GrabChannel;
         }
-        catch
+        catch (InvalidOperationException)
         {
-            return; // Invalid context, ignore
+            // GCHandle was freed during disposal — expected, not a bug
+            return;
         }
 
-        channel?.ProcessSignal(ref info);
+        // Check for disposal BEFORE processing — volatile read ensures visibility
+        if (channel == null || channel._disposing)
+            return;
+
+        channel.ProcessSignal(ref info);
     }
 
     /// <summary>
@@ -305,7 +335,7 @@ public sealed class GrabChannel : IDisposable
             new BoundedChannelOptions(_surfaceCount + 8) // extra room for error/end signals
             {
                 SingleReader = true,
-                SingleWriter = true,
+                SingleWriter = false, // native callback can deliver multiple signal types concurrently
             });
         _processingCts = new CancellationTokenSource();
         _processingTask = Task.Run(() => ProcessingLoopAsync(_processingCts.Token));
@@ -401,6 +431,10 @@ public sealed class GrabChannel : IDisposable
 
     private void ReleaseSurface(uint surfaceHandle)
     {
+        // Guard: if the channel has been deleted during Dispose, _channelHandle is 0 —
+        // skip the HAL call to avoid use-after-free on the native handle.
+        if (_channelHandle == 0) return;
+
         // Set SurfaceState back to FREE on the surface handle
         _hal.SetParamInt(surfaceHandle, MultiCamApi.PN_SurfaceState, (int)McSurfaceState.MC_SurfaceState_FREE);
     }
@@ -809,6 +843,10 @@ public sealed class GrabChannel : IDisposable
         if (_disposed)
             return;
 
+        // Signal callbacks to stop processing — set before acquiring lock
+        // so any in-flight callback sees it immediately (volatile write)
+        _disposing = true;
+
         lock (_lock)
         {
             if (_disposed)
@@ -830,18 +868,28 @@ public sealed class GrabChannel : IDisposable
             }
         }
 
-        // Shut down processing thread (outside lock to avoid deadlock)
+        // Atomically capture and zero the channel handle while still under the previous lock's
+        // visibility guarantee.  After this point, ReleaseSurface will see _channelHandle == 0
+        // and skip any HAL call, eliminating the TOCTOU use-after-free window.
+        uint capturedHandle;
+        lock (_lock)
+        {
+            capturedHandle = _channelHandle;
+            _channelHandle = 0; // zero BEFORE ShutdownProcessingThread drains the queue
+        }
+
+        // Shut down processing thread (outside lock to avoid deadlock).
+        // ReleaseSurface calls during drain are now guarded by the _channelHandle == 0 check.
         ShutdownProcessingThread();
+
+        // Delete the native channel using the captured handle.
+        if (capturedHandle != 0)
+        {
+            _hal.Delete(capturedHandle);
+        }
 
         lock (_lock)
         {
-            // Delete channel
-            if (_channelHandle != 0)
-            {
-                _hal.Delete(_channelHandle);
-                _channelHandle = 0;
-            }
-
             // Free GC handles
             if (_callbackHandle.IsAllocated)
                 _callbackHandle.Free();
