@@ -212,8 +212,7 @@ public sealed class AcquisitionManager : IAcquisitionService
                 throw new InvalidOperationException("A trigger is already pending. Wait for it to complete.");
 
             // Validate trigger mode — software trigger only works in SOFT or COMBINED mode
-            if (_channel.TriggerMode != McTrigMode.MC_TrigMode_SOFT &&
-                _channel.TriggerMode != McTrigMode.MC_TrigMode_COMBINED)
+            if (!_channel.SupportsSoftwareTrigger)
             {
                 throw new InvalidOperationException(
                     $"TriggerAndWaitAsync requires SOFT or COMBINED trigger mode, but channel is configured for {_channel.TriggerMode}. " +
@@ -253,10 +252,24 @@ public sealed class AcquisitionManager : IAcquisitionService
                 ? camFile.ToChannelOptions(triggerMode.Value.Mode, useCallback: false)
                 : camFile.ToChannelOptions(useCallback: false);
 
-            // Snapshot always uses SOFT trigger mode to prevent race conditions with IMMEDIATE mode.
-            // IMMEDIATE mode fires frames as soon as the channel goes ACTIVE — the software trigger
-            // in that case would be undefined behavior causing frame trigger violations.
-            options.TriggerMode = McTrigMode.MC_TrigMode_SOFT;
+            // Snapshot requires a software-triggerable mode.
+            // Throw explicitly rather than silently overriding the caller's intent.
+            if (triggerMode.HasValue &&
+                options.TriggerMode != McTrigMode.MC_TrigMode_SOFT &&
+                options.TriggerMode != McTrigMode.MC_TrigMode_COMBINED)
+            {
+                throw new ArgumentException(
+                    $"Snapshot requires SOFT or COMBINED trigger mode. " +
+                    $"The requested mode '{options.TriggerMode}' is not software-triggerable. " +
+                    "Use a cam file or trigger mode that supports software triggering.",
+                    nameof(triggerMode));
+            }
+
+            // If no explicit trigger mode was requested, force SOFT for reliable snapshot behavior.
+            if (!triggerMode.HasValue)
+            {
+                options.TriggerMode = McTrigMode.MC_TrigMode_SOFT;
+            }
 
             var channel = _grabService.CreateChannel(options);
             try

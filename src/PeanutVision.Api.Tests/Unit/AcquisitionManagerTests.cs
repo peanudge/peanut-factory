@@ -381,6 +381,38 @@ public class AcquisitionManagerTests : IDisposable
         }
     }
 
+    public class Snapshot_given_incompatible_trigger_mode : AcquisitionManagerTests
+    {
+        [Fact]
+        public void When_hard_trigger_mode_then_throws_ArgumentException()
+        {
+            Assert.Throws<ArgumentException>(() =>
+                _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam", TriggerMode.Hard));
+        }
+
+        [Fact]
+        public void When_immediate_trigger_mode_then_throws_ArgumentException()
+        {
+            Assert.Throws<ArgumentException>(() =>
+                _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam", TriggerMode.Immediate));
+        }
+
+        [Fact]
+        public void When_soft_trigger_mode_then_succeeds()
+        {
+            var image = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam", TriggerMode.Soft);
+            Assert.NotNull(image);
+        }
+
+        [Fact]
+        public void When_no_trigger_mode_and_freerun_cam_then_succeeds()
+        {
+            // No trigger mode passed — Snapshot silently forces SOFT; this should never throw
+            var image = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+            Assert.NotNull(image);
+        }
+    }
+
     public class Snapshot_given_active : AcquisitionManagerTests
     {
         public Snapshot_given_active()

@@ -79,7 +79,7 @@ public sealed class GrabService : IGrabService
                         "Failed to initialize MultiCam driver. Ensure the driver is installed and hardware is connected.");
                 }
 
-                // MC_SERVICE_ERROR: driver service not ready yet — will retry outside the lock
+                // MC_SERVICE_ERROR: driver service not ready yet -- will retry outside the lock
                 if (DateTime.UtcNow >= deadline)
                 {
                     throw new MultiCamException(status, "McOpenDriver",
@@ -102,7 +102,7 @@ public sealed class GrabService : IGrabService
         }
         catch (Exception)
         {
-            // Non-critical — board count defaults to 0
+            // Non-critical -- board count defaults to 0
             _boardCount = 0;
         }
     }
