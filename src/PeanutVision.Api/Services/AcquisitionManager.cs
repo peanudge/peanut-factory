@@ -100,7 +100,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
 
             return _channelState switch
             {
-                ChannelState.None   => new HashSet<ChannelAction> { ChannelAction.Create, ChannelAction.Snapshot },
+                ChannelState.None   => new HashSet<ChannelAction> { ChannelAction.Create, ChannelAction.Start, ChannelAction.Snapshot },
                 ChannelState.Idle   => new HashSet<ChannelAction> { ChannelAction.Start, ChannelAction.Release, ChannelAction.Snapshot },
                 ChannelState.Active => new HashSet<ChannelAction> { ChannelAction.Stop, ChannelAction.Trigger },
                 _                   => new HashSet<ChannelAction>(),
