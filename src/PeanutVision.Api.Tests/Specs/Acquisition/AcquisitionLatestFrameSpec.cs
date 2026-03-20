@@ -31,7 +31,7 @@ public class AcquisitionLatestFrameSpec : IClassFixture<PeanutVisionApiFactory>,
     public async Task LatestFrame_after_trigger_returns_png()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
+            new { profileId = "crevis-tc-a160k-softtrig-rgb8.cam" });
 
         // Trigger to produce a frame
         await _client.PostAsync("/api/acquisition/trigger", null);

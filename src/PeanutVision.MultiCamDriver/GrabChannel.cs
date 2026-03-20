@@ -191,17 +191,6 @@ public sealed class GrabChannel : IDisposable
             status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_AcquisitionMode, acqModeStr);
             ThrowOnError(status, $"SetParam(AcquisitionMode={acqModeStr})");
 
-            // Set acquisition mode explicitly — never rely on cam file defaults
-            string acqModeStr = options.AcquisitionMode switch
-            {
-                McAcquisitionMode.MC_AcquisitionMode_SNAPSHOT => MultiCamApi.MC_AcquisitionMode_SNAPSHOT_STR,
-                McAcquisitionMode.MC_AcquisitionMode_VIDEO => MultiCamApi.MC_AcquisitionMode_VIDEO_STR,
-                McAcquisitionMode.MC_AcquisitionMode_HFR => MultiCamApi.MC_AcquisitionMode_HFR_STR,
-                _ => throw new ArgumentException($"Unsupported acquisition mode for area-scan camera: {options.AcquisitionMode}")
-            };
-            status = _hal.SetParamStr(_channelHandle, MultiCamApi.PN_AcquisitionMode, acqModeStr);
-            ThrowOnError(status, $"SetParam(AcquisitionMode={acqModeStr})");
-
             // Enable surface processing signal
             SetSignalEnable(McSignal.MC_SIG_SURFACE_PROCESSING, true);
             SetSignalEnable(McSignal.MC_SIG_ACQUISITION_FAILURE, true);

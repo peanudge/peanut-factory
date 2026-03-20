@@ -33,7 +33,7 @@ public class AcquisitionTriggerSpec : IClassFixture<PeanutVisionApiFactory>, IAs
     public async Task Trigger_when_active_returns_png_image()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
+            new { profileId = "crevis-tc-a160k-softtrig-rgb8.cam" });
 
         var response = await _client.PostAsync("/api/acquisition/trigger", null);
 
@@ -45,7 +45,7 @@ public class AcquisitionTriggerSpec : IClassFixture<PeanutVisionApiFactory>, IAs
     public async Task Trigger_response_contains_valid_png_bytes()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
+            new { profileId = "crevis-tc-a160k-softtrig-rgb8.cam" });
 
         var response = await _client.PostAsync("/api/acquisition/trigger", null);
         var bytes = await response.Content.ReadAsByteArrayAsync();
@@ -59,7 +59,7 @@ public class AcquisitionTriggerSpec : IClassFixture<PeanutVisionApiFactory>, IAs
     public async Task Trigger_increments_hal_trigger_count()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
+            new { profileId = "crevis-tc-a160k-softtrig-rgb8.cam" });
         _factory.ResetMockState();
 
         // Triggers are sequential now (each awaits the frame)
@@ -82,7 +82,7 @@ public class AcquisitionTriggerSpec : IClassFixture<PeanutVisionApiFactory>, IAs
             using var client = customFactory.CreateClient();
 
             await client.PostJsonAsync("/api/acquisition/start",
-                new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
+                new { profileId = "crevis-tc-a160k-softtrig-rgb8.cam" });
 
             var response = await client.PostAsync("/api/acquisition/trigger", null);
 

@@ -310,7 +310,7 @@ public class MockMultiCamHalTests
     {
         _mockHal.Create(MultiCamApi.MC_CHANNEL, out uint handle);
 
-        _mockHal.SetParamStr(handle, MultiCamApi.PN_BlackCalibration, "ON");
+        _mockHal.SetParamStr(handle, MultiCamApi.PN_BlackCalibration, MultiCamApi.MC_Calibration_Execute);
 
         Assert.True(_mockHal.CallLog.BlackCalibrationPerformed);
     }
@@ -320,7 +320,7 @@ public class MockMultiCamHalTests
     {
         _mockHal.Create(MultiCamApi.MC_CHANNEL, out uint handle);
 
-        _mockHal.SetParamStr(handle, MultiCamApi.PN_WhiteCalibration, "ON");
+        _mockHal.SetParamStr(handle, MultiCamApi.PN_WhiteCalibration, MultiCamApi.MC_Calibration_Execute);
 
         Assert.True(_mockHal.CallLog.WhiteCalibrationPerformed);
     }
