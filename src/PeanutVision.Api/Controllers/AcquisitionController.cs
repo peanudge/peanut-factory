@@ -10,19 +10,20 @@ namespace PeanutVision.Api.Controllers;
 public class AcquisitionController : ControllerBase
 {
     private readonly IAcquisitionService _acquisition;
-    private readonly string? _imageOutputDirectory;
+    private readonly IImageSaveSettingsService _saveSettings;
+    private readonly FilenameGenerator _filenameGenerator;
+    private readonly string _contentRootPath;
 
-    public AcquisitionController(IAcquisitionService acquisition, IConfiguration configuration, IWebHostEnvironment environment)
+    public AcquisitionController(
+        IAcquisitionService acquisition,
+        IImageSaveSettingsService saveSettings,
+        FilenameGenerator filenameGenerator,
+        IWebHostEnvironment environment)
     {
         _acquisition = acquisition;
-
-        var outputDir = configuration["ImageOutputDirectory"];
-        if (!string.IsNullOrEmpty(outputDir))
-        {
-            _imageOutputDirectory = Path.IsPathRooted(outputDir)
-                ? outputDir
-                : Path.Combine(environment.ContentRootPath, outputDir);
-        }
+        _saveSettings = saveSettings;
+        _filenameGenerator = filenameGenerator;
+        _contentRootPath = environment.ContentRootPath;
     }
 
     [HttpPost("start")]
@@ -106,11 +107,11 @@ public class AcquisitionController : ControllerBase
         {
             var image = await _acquisition.TriggerAndWaitAsync(5000);
 
-            if (_imageOutputDirectory is not null)
+            var settings = _saveSettings.GetSettings();
+            if (settings.AutoSave)
             {
-                Directory.CreateDirectory(_imageOutputDirectory);
-                var fileName = $"trigger_{DateTime.Now:yyyyMMdd_HHmmss_fff}.png";
-                var filePath = Path.Combine(_imageOutputDirectory, fileName);
+                var filePath = _filenameGenerator.Generate(
+                    settings, _contentRootPath, _acquisition.ActiveProfileId?.Value);
                 new ImageWriter().Save(image, filePath);
                 Response.Headers["X-Image-Path"] = filePath;
             }
@@ -161,8 +162,19 @@ public class AcquisitionController : ControllerBase
 
             if (!string.IsNullOrWhiteSpace(request.OutputPath))
             {
-                var writer = new ImageWriter();
-                writer.Save(image, request.OutputPath);
+                new ImageWriter().Save(image, request.OutputPath);
+                Response.Headers["X-Image-Path"] = request.OutputPath;
+            }
+            else
+            {
+                var settings = _saveSettings.GetSettings();
+                if (settings.AutoSave)
+                {
+                    var filePath = _filenameGenerator.Generate(
+                        settings, _contentRootPath, request.ProfileId);
+                    new ImageWriter().Save(image, filePath);
+                    Response.Headers["X-Image-Path"] = filePath;
+                }
             }
 
             var encoder = new PngEncoder();
