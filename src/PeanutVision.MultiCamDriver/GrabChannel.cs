@@ -456,7 +456,9 @@ public sealed class GrabChannel : IDisposable
     }
 
     /// <summary>
-    /// Starts acquisition for a specific number of frames.
+    /// Starts acquisition with the specified frame count.
+    /// May be called on a freshly created channel or on a channel that was previously stopped
+    /// with <see cref="StopAcquisition"/> (channel reuse scenario).
     /// </summary>
     /// <param name="frameCount">Number of frames to acquire, or -1 for infinite</param>
     public void StartAcquisition(int frameCount)
@@ -467,6 +469,12 @@ public sealed class GrabChannel : IDisposable
 
             if (_isActive)
                 return;
+
+            // Re-initialize processing thread if it was shut down (reuse scenario)
+            if (_signalQueue == null && _nativeCallback != null)
+            {
+                InitializeProcessingThread();
+            }
 
             // Set sequence length
             int status = _hal.SetParamInt(_channelHandle, MultiCamApi.PN_SeqLength_Fr, frameCount);
@@ -492,7 +500,9 @@ public sealed class GrabChannel : IDisposable
     }
 
     /// <summary>
-    /// Stops acquisition gracefully.
+    /// Stops the current acquisition sequence but keeps the channel alive for reuse.
+    /// After this call, <see cref="StartAcquisition(int)"/> may be called again with the same channel.
+    /// To fully release resources, call <see cref="Dispose"/>.
     /// </summary>
     public void StopAcquisition()
     {
@@ -511,8 +521,9 @@ public sealed class GrabChannel : IDisposable
             _isActive = false;
         }
 
-        // Signal processing thread that no more signals will arrive
-        _signalQueue?.Writer.TryComplete();
+        // Shut down the processing thread so it can be re-initialized on the next StartAcquisition call.
+        // This must be done outside the lock to avoid deadlocking with the processing loop.
+        ShutdownProcessingThread();
     }
 
     /// <summary>

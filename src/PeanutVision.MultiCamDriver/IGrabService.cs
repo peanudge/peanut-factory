@@ -30,6 +30,12 @@ public interface IGrabService : IDisposable
     GrabChannel CreateChannel(GrabChannelOptions options);
 
     /// <summary>
+    /// Releases a channel previously created by <see cref="CreateChannel"/>.
+    /// Stops any active acquisition, disposes the channel, and removes it from tracking.
+    /// </summary>
+    void ReleaseChannel(GrabChannel channel);
+
+    /// <summary>
     /// Gets board information for the specified board index.
     /// </summary>
     BoardInfo GetBoardInfo(int boardIndex);

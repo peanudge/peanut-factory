@@ -196,6 +196,19 @@ public class GrabChannelTests
     }
 
     [Fact]
+    public void StopAcquisition_then_StartAcquisition_succeeds()
+    {
+        var options = new GrabChannelOptions();
+        using var channel = new GrabChannel(options, _mockHal);
+
+        channel.StartAcquisition();
+        channel.StopAcquisition();
+        channel.StartAcquisition();  // must not throw
+
+        Assert.True(channel.IsActive);
+    }
+
+    [Fact]
     public void SendSoftwareTrigger_SetsForceTrig()
     {
         var options = new GrabChannelOptions { TriggerMode = McTrigMode.MC_TrigMode_SOFT };

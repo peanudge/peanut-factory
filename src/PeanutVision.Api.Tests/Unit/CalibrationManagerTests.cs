@@ -88,7 +88,8 @@ public class CalibrationManagerTests : IDisposable
     {
         public Given_active_acquisition()
         {
-            _acquisitionManager.Start("crevis-tc-a160k-freerun-rgb8.cam");
+            _acquisitionManager.CreateChannel("crevis-tc-a160k-freerun-rgb8.cam");
+            _acquisitionManager.Start();
         }
 
         [Fact]
@@ -182,7 +183,8 @@ public class CalibrationManagerTests : IDisposable
     {
         public Given_active_then_stopped()
         {
-            _acquisitionManager.Start("crevis-tc-a160k-freerun-rgb8.cam");
+            _acquisitionManager.CreateChannel("crevis-tc-a160k-freerun-rgb8.cam");
+            _acquisitionManager.Start();
             _acquisitionManager.Stop();
         }
 
