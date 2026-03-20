@@ -3,6 +3,11 @@ import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import Typography from "@mui/material/Typography";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ErrorAlert from "../components/ErrorAlert";
 import AcquisitionControls from "../components/AcquisitionControls";
 import AcquisitionStats from "../components/AcquisitionStats";
@@ -11,7 +16,9 @@ import ImageViewer from "../components/ImageViewer";
 import CapturedImageList from "../components/CapturedImageList";
 import ContinuousSettings from "../components/ContinuousSettings";
 import ImageSaveSettingsPanel from "../components/ImageSaveSettingsPanel";
-import type { AcquisitionMode, AcquisitionStatus, CamFileInfo, CapturedImage } from "../api/types";
+import CalibrationActions from "../components/CalibrationActions";
+import ExposureControl from "../components/ExposureControl";
+import type { AcquisitionMode, AcquisitionStatus, CamFileInfo, CapturedImage, ExposureInfo } from "../api/types";
 import {
   getCameras,
   startAcquisition,
@@ -20,6 +27,12 @@ import {
   triggerAndCapture,
   snapshot,
   getLatestFrame,
+  blackCalibration,
+  whiteCalibration,
+  whiteBalance,
+  setFfc,
+  getExposure,
+  setExposure,
 } from "../api/client";
 import { useAsyncOperation } from "../hooks/useAsyncOperation";
 import { usePolling } from "../hooks/usePolling";
@@ -46,6 +59,10 @@ export default function AcquisitionTab() {
     message: string;
     severity: "success" | "info" | "warning" | "error";
   } | null>(null);
+  const [exposure, setExposureState] = useState<ExposureInfo | null>(null);
+  const [exposureValue, setExposureValue] = useState(1000);
+  const [gainValue, setGainValue] = useState(0);
+  const [ffcEnabled, setFfcEnabled] = useState(false);
   const { busy, error, clearError, execute } = useAsyncOperation();
 
   const hasWarnings = (status?.statistics?.droppedFrameCount ?? 0) > 0
@@ -152,6 +169,43 @@ export default function AcquisitionTab() {
       });
     });
 
+  const handleLoadExposure = () =>
+    execute(async () => {
+      const info = await getExposure();
+      setExposureState(info);
+      setExposureValue(info.exposureUs);
+      setGainValue(info.gainDb);
+      setSnackbar({ message: "Exposure settings loaded", severity: "success" });
+    });
+
+  const handleApplyExposure = () =>
+    execute(async () => {
+      const result = await setExposure(exposureValue, gainValue);
+      setSnackbar({ message: result.message, severity: "success" });
+    });
+
+  const handleBlack = () =>
+    execute(async () => {
+      setSnackbar({ message: (await blackCalibration()).message, severity: "success" });
+    });
+
+  const handleWhite = () =>
+    execute(async () => {
+      setSnackbar({ message: (await whiteCalibration()).message, severity: "success" });
+    });
+
+  const handleWhiteBalance = () =>
+    execute(async () => {
+      setSnackbar({ message: (await whiteBalance()).message, severity: "success" });
+    });
+
+  const handleFfcToggle = (_: unknown, checked: boolean) => {
+    setFfcEnabled(checked);
+    execute(async () => {
+      setSnackbar({ message: (await setFfc(checked)).message, severity: "success" });
+    });
+  };
+
   const selectedImage = images.find((img) => img.id === selectedId) ?? null;
 
   return (
@@ -187,6 +241,38 @@ export default function AcquisitionTab() {
       )}
 
       <ImageSaveSettingsPanel />
+
+      <Accordion disableGutters>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography variant="subtitle2">Camera Settings</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <CalibrationActions
+                busy={busy}
+                ffcEnabled={ffcEnabled}
+                onBlack={handleBlack}
+                onWhite={handleWhite}
+                onWhiteBalance={handleWhiteBalance}
+                onFfcToggle={handleFfcToggle}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <ExposureControl
+                exposure={exposure}
+                exposureValue={exposureValue}
+                gainValue={gainValue}
+                busy={busy}
+                onExposureChange={setExposureValue}
+                onGainChange={setGainValue}
+                onLoad={handleLoadExposure}
+                onApply={handleApplyExposure}
+              />
+            </Grid>
+          </Grid>
+        </AccordionDetails>
+      </Accordion>
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 4 }}>
