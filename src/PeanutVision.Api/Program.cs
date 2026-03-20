@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using PeanutVision.Api.Services;
 using PeanutVision.FakeCamDriver;
 using PeanutVision.MultiCamDriver;
@@ -11,7 +12,12 @@ var camFilePath = Path.IsPathRooted(camFileDir)
     ? camFileDir
     : Path.Combine(builder.Environment.ContentRootPath, camFileDir);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase));
+    });
 builder.Services.AddOpenApi();
 
 builder.Services.AddCamFileService(camFilePath);
@@ -32,6 +38,7 @@ else
 
 builder.Services.AddSingleton<AcquisitionManager>();
 builder.Services.AddSingleton<IAcquisitionService>(sp => sp.GetRequiredService<AcquisitionManager>());
+builder.Services.AddSingleton<IChannelCalibration>(sp => sp.GetRequiredService<AcquisitionManager>());
 builder.Services.AddSingleton<ICalibrationService, CalibrationManager>();
 
 builder.Services.AddCors(options =>

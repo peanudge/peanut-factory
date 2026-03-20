@@ -1,83 +1,26 @@
-using PeanutVision.MultiCamDriver;
-
 namespace PeanutVision.Api.Services;
 
 public class CalibrationManager : ICalibrationService
 {
-    private readonly AcquisitionManager _acquisitionManager;
+    private readonly IChannelCalibration _calibration;
 
-    public CalibrationManager(AcquisitionManager acquisitionManager)
+    public CalibrationManager(IChannelCalibration calibration)
     {
-        _acquisitionManager = acquisitionManager;
+        _calibration = calibration;
     }
 
-    public bool IsAvailable => _acquisitionManager.IsActive;
+    public bool IsAvailable => _calibration.IsCalibrationAvailable;
 
-    public void PerformBlackCalibration()
-    {
-        GetRequiredChannel().PerformBlackCalibration();
-    }
+    public void PerformBlackCalibration() => _calibration.PerformBlackCalibration();
 
-    public void PerformWhiteCalibration()
-    {
-        GetRequiredChannel().PerformWhiteCalibration();
-    }
+    public void PerformWhiteCalibration() => _calibration.PerformWhiteCalibration();
 
-    public void PerformWhiteBalanceOnce()
-    {
-        GetRequiredChannel().PerformWhiteBalanceOnce();
-    }
+    public void PerformWhiteBalanceOnce() => _calibration.PerformWhiteBalanceOnce();
 
-    public void SetFlatFieldCorrection(bool enable)
-    {
-        GetRequiredChannel().SetFlatFieldCorrection(enable);
-    }
+    public void SetFlatFieldCorrection(bool enable) => _calibration.SetFlatFieldCorrection(enable);
 
-    public ExposureInfo GetExposure()
-    {
-        var channel = GetRequiredChannel();
-        var range = channel.GetExposureRange();
+    public ExposureInfo GetExposure() => _calibration.GetExposure();
 
-        return new ExposureInfo
-        {
-            ExposureUs = channel.GetExposureUs(),
-            GainDb = channel.GetGainDb(),
-            ExposureRange = new ExposureRangeInfo
-            {
-                Min = range.Min,
-                Max = range.Max,
-            },
-        };
-    }
-
-    public ExposureInfo SetExposure(double? exposureUs, double? gainDb)
-    {
-        var channel = GetRequiredChannel();
-
-        if (exposureUs.HasValue)
-            channel.SetExposureUs(exposureUs.Value);
-
-        if (gainDb.HasValue)
-            channel.SetGainDb(gainDb.Value);
-
-        var range = channel.GetExposureRange();
-
-        return new ExposureInfo
-        {
-            ExposureUs = channel.GetExposureUs(),
-            GainDb = channel.GetGainDb(),
-            ExposureRange = new ExposureRangeInfo
-            {
-                Min = range.Min,
-                Max = range.Max,
-            },
-        };
-    }
-
-    private GrabChannel GetRequiredChannel()
-    {
-        if (!_acquisitionManager.IsActive)
-            throw new InvalidOperationException("No active acquisition channel.");
-        return _acquisitionManager.Channel!;
-    }
+    public ExposureInfo SetExposure(double? exposureUs, double? gainDb) =>
+        _calibration.SetExposure(exposureUs, gainDb);
 }

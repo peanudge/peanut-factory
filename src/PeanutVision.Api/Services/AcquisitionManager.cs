@@ -4,7 +4,7 @@ using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.Api.Services;
 
-public sealed class AcquisitionManager : IAcquisitionService
+public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibration
 {
     private readonly IGrabService _grabService;
     private readonly ICamFileService _camFileService;
@@ -15,17 +15,13 @@ public sealed class AcquisitionManager : IAcquisitionService
     private ImageData? _lastFrame;
     private string? _lastError;
     private AcquisitionStatistics? _statistics;
-    private ProfileId? _activeProfileId;
     private TaskCompletionSource<ImageData>? _triggerTcs;
     private bool _disposed;
     private Timer? _triggerTimer;
     private bool _snapshotInProgress;
-    private bool _acquiring;
+    private ChannelState _channelState = ChannelState.None;
     private ProfileId? _channelProfileId;
     private TriggerMode? _channelTriggerMode;
-
-    // Test synchronization
-    private TaskCompletionSource? _signalProcessedTcs;
 
     public AcquisitionManager(IGrabService grabService, ICamFileService camFileService)
     {
@@ -33,14 +29,24 @@ public sealed class AcquisitionManager : IAcquisitionService
         _camFileService = camFileService;
     }
 
+    public ChannelState ChannelState
+    {
+        get { lock (_lock) return _channelState; }
+    }
+
     public bool IsActive
     {
-        get { lock (_lock) return _channel?.IsActive == true; }
+        get { lock (_lock) return _channelState == ChannelState.Active; }
     }
 
     public ProfileId? ActiveProfileId
     {
-        get { lock (_lock) return _activeProfileId; }
+        get { lock (_lock) return _channelProfileId; }
+    }
+
+    public TriggerMode? ChannelTriggerMode
+    {
+        get { lock (_lock) return _channelTriggerMode; }
     }
 
     internal ImageData? LastFrame
@@ -85,26 +91,68 @@ public sealed class AcquisitionManager : IAcquisitionService
         return _eventLog.GetRecent(max);
     }
 
-    public IReadOnlySet<string> GetAllowedActions()
+    public IReadOnlySet<ChannelAction> GetAllowedActions()
     {
         lock (_lock)
         {
             if (_snapshotInProgress)
-                return new HashSet<string>();
+                return new HashSet<ChannelAction>();
 
-            var actions = new HashSet<string>();
-            if (!_acquiring)
+            return _channelState switch
             {
-                actions.Add("start");
-                actions.Add("snapshot");
-            }
-            else
-            {
-                actions.Add("stop");
-                if (_channel?.IsActive == true)
-                    actions.Add("trigger");
-            }
-            return actions;
+                ChannelState.None   => new HashSet<ChannelAction> { ChannelAction.Create, ChannelAction.Snapshot },
+                ChannelState.Idle   => new HashSet<ChannelAction> { ChannelAction.Start, ChannelAction.Release, ChannelAction.Snapshot },
+                ChannelState.Active => new HashSet<ChannelAction> { ChannelAction.Stop, ChannelAction.Trigger },
+                _                   => new HashSet<ChannelAction>(),
+            };
+        }
+    }
+
+    // IChannelCalibration implementation
+
+    public bool IsCalibrationAvailable => IsActive;
+
+    public void PerformBlackCalibration() => GetRequiredActiveChannel().PerformBlackCalibration();
+
+    public void PerformWhiteCalibration() => GetRequiredActiveChannel().PerformWhiteCalibration();
+
+    public void PerformWhiteBalanceOnce() => GetRequiredActiveChannel().PerformWhiteBalanceOnce();
+
+    public void SetFlatFieldCorrection(bool enable) => GetRequiredActiveChannel().SetFlatFieldCorrection(enable);
+
+    public ExposureInfo GetExposure()
+    {
+        var channel = GetRequiredActiveChannel();
+        var range = channel.GetExposureRange();
+        return new ExposureInfo
+        {
+            ExposureUs = channel.GetExposureUs(),
+            GainDb = channel.GetGainDb(),
+            ExposureRange = new ExposureRangeInfo { Min = range.Min, Max = range.Max },
+        };
+    }
+
+    public ExposureInfo SetExposure(double? exposureUs, double? gainDb)
+    {
+        var channel = GetRequiredActiveChannel();
+        if (exposureUs.HasValue) channel.SetExposureUs(exposureUs.Value);
+        if (gainDb.HasValue) channel.SetGainDb(gainDb.Value);
+        var range = channel.GetExposureRange();
+        return new ExposureInfo
+        {
+            ExposureUs = channel.GetExposureUs(),
+            GainDb = channel.GetGainDb(),
+            ExposureRange = new ExposureRangeInfo { Min = range.Min, Max = range.Max },
+        };
+    }
+
+    private GrabChannel GetRequiredActiveChannel()
+    {
+        lock (_lock)
+        {
+            if (_channelState != ChannelState.Active || _channel == null)
+                throw new InvalidOperationException("No active acquisition channel.");
+            return _channel;
         }
     }
 
@@ -113,7 +161,54 @@ public sealed class AcquisitionManager : IAcquisitionService
         get { lock (_lock) return _channel; }
     }
 
-    public void Start(ProfileId profileId, TriggerMode? triggerMode = null, int? frameCount = null, int? intervalMs = null)
+    public void CreateChannel(ProfileId profileId, TriggerMode? triggerMode = null)
+    {
+        lock (_lock)
+        {
+            if (_snapshotInProgress)
+                throw new InvalidOperationException("A snapshot is in progress. Wait for it to complete.");
+
+            if (_channelState != ChannelState.None)
+                throw new InvalidOperationException("A channel already exists. Release it first.");
+
+            var camFile = _camFileService.GetByFileName(profileId.Value);
+            var options = triggerMode.HasValue
+                ? camFile.ToChannelOptions(triggerMode.Value.Mode)
+                : camFile.ToChannelOptions();
+
+            _channel = _grabService.CreateChannel(options);
+            _channelProfileId = profileId;
+            _channelTriggerMode = triggerMode;
+            _channelState = ChannelState.Idle;
+        }
+    }
+
+    public void ReleaseChannel()
+    {
+        GrabChannel? channel;
+
+        lock (_lock)
+        {
+            if (_channelState == ChannelState.Active)
+                throw new InvalidOperationException("Cannot release an active channel. Stop acquisition first.");
+
+            if (_channelState == ChannelState.None)
+                return;
+
+            channel = _channel;
+            _channel = null;
+            _channelProfileId = null;
+            _channelTriggerMode = null;
+            _channelState = ChannelState.None;
+            _lastFrame = null;
+            _statistics = null;
+        }
+
+        if (channel != null)
+            _grabService.ReleaseChannel(channel);
+    }
+
+    public void Start(int? frameCount = null, int? intervalMs = null)
     {
         const int minIntervalMs = 50;
 
@@ -125,45 +220,21 @@ public sealed class AcquisitionManager : IAcquisitionService
             if (_snapshotInProgress)
                 throw new InvalidOperationException("A snapshot is in progress. Wait for it to complete.");
 
-            if (_acquiring)
+            if (_channelState == ChannelState.None)
+                throw new InvalidOperationException("No channel exists. Create a channel first.");
+
+            if (_channelState == ChannelState.Active)
                 throw new InvalidOperationException("Acquisition is already active. Stop it first.");
 
-            // If channel exists but profile/triggerMode differs → dispose and recreate
-            if (_channel != null &&
-                (_channelProfileId != profileId || _channelTriggerMode != triggerMode))
-            {
-                _channel.FrameAcquired    -= OnFrameAcquired;
-                _channel.AcquisitionError -= OnAcquisitionError;
-                _channel.AcquisitionEnded -= OnAcquisitionEnded;
-                var old = _channel;
-                _channel = null;
-                _channelProfileId = null;
-                _channelTriggerMode = null;
-                old.Dispose();
-            }
-
-            // Create channel if we don't have one
-            if (_channel == null)
-            {
-                var camFile = _camFileService.GetByFileName(profileId.Value);
-                var options = triggerMode.HasValue
-                    ? camFile.ToChannelOptions(triggerMode.Value.Mode)
-                    : camFile.ToChannelOptions();
-                _channel = _grabService.CreateChannel(options);
-                _channelProfileId = profileId;
-                _channelTriggerMode = triggerMode;
-            }
-
-            _activeProfileId = profileId;
             _lastFrame = null;
             _lastError = null;
             _statistics = new AcquisitionStatistics();
 
-            _channel.FrameAcquired    += OnFrameAcquired;
-            _channel.AcquisitionError += OnAcquisitionError;
-            _channel.AcquisitionEnded += OnAcquisitionEnded;
+            _channel!.FrameAcquired    += OnFrameAcquired;
+            _channel.AcquisitionError  += OnAcquisitionError;
+            _channel.AcquisitionEnded  += OnAcquisitionEnded;
 
-            _acquiring = true;
+            _channelState = ChannelState.Active;
             _statistics.Start();
             _channel.StartAcquisition(frameCount ?? -1);
 
@@ -181,7 +252,7 @@ public sealed class AcquisitionManager : IAcquisitionService
 
             _eventLog.Add(new ChannelEvent(
                 DateTime.UtcNow, ChannelEventType.AcquisitionStarted,
-                $"Acquisition started with profile '{profileId.Value}'" +
+                $"Acquisition started with profile '{_channelProfileId?.Value}'" +
                 (frameCount.HasValue ? $", frameCount={frameCount}" : "") +
                 (intervalMs.HasValue ? $", intervalMs={intervalMs}" : "")));
         }
@@ -193,10 +264,10 @@ public sealed class AcquisitionManager : IAcquisitionService
 
         lock (_lock)
         {
-            if (!_acquiring)
+            if (_channelState != ChannelState.Active)
                 return;
 
-            _acquiring = false;
+            _channelState = ChannelState.Idle;
 
             tcs = _triggerTcs;
             _triggerTcs = null;
@@ -209,9 +280,6 @@ public sealed class AcquisitionManager : IAcquisitionService
             _channel.FrameAcquired    -= OnFrameAcquired;
             _channel.AcquisitionError -= OnAcquisitionError;
             _channel.AcquisitionEnded -= OnAcquisitionEnded;
-
-            _activeProfileId = null;
-            // _channel and _channelProfileId intentionally kept — channel lives on for reuse
         }
 
         _eventLog.Add(new ChannelEvent(
@@ -261,7 +329,7 @@ public sealed class AcquisitionManager : IAcquisitionService
     {
         lock (_lock)
         {
-            if (_acquiring)
+            if (_channelState == ChannelState.Active)
                 throw new InvalidOperationException("Acquisition is already active. Stop it first.");
 
             _snapshotInProgress = true;
@@ -314,7 +382,7 @@ public sealed class AcquisitionManager : IAcquisitionService
             finally
             {
                 channel.StopAcquisition();
-                channel.Dispose();
+                _grabService.ReleaseChannel(channel);
             }
         }
         finally
@@ -340,6 +408,8 @@ public sealed class AcquisitionManager : IAcquisitionService
     private void OnAcquisitionError(object? sender, AcquisitionErrorEventArgs e)
     {
         ProcessError(e.Message, e.Signal);
+        if (e.Signal == McSignal.MC_SIG_UNRECOVERABLE_OVERRUN)
+            Stop();
     }
 
     /// <summary>
@@ -351,25 +421,9 @@ public sealed class AcquisitionManager : IAcquisitionService
         Stop();
     }
 
-    /// <summary>
-    /// Prepares a waiter for the next signal processing completion.
-    /// Call this BEFORE the action that triggers the signal, then await the returned task.
-    /// Internal for test use only.
-    /// </summary>
-    internal Task PrepareSignalWaiter()
-    {
-        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        lock (_lock)
-        {
-            _signalProcessedTcs = tcs;
-        }
-        return tcs.Task;
-    }
-
     private void ProcessFrame(ImageData image)
     {
         TaskCompletionSource<ImageData>? tcs;
-        TaskCompletionSource? processedTcs;
 
         lock (_lock)
         {
@@ -377,18 +431,14 @@ public sealed class AcquisitionManager : IAcquisitionService
             _statistics?.RecordFrame();
             tcs = _triggerTcs;
             _triggerTcs = null;
-            processedTcs = _signalProcessedTcs;
-            _signalProcessedTcs = null;
         }
 
         tcs?.TrySetResult(image);
-        processedTcs?.TrySetResult();
     }
 
     private void ProcessError(string message, McSignal signal)
     {
         TaskCompletionSource<ImageData>? tcs;
-        TaskCompletionSource? processedTcs;
 
         lock (_lock)
         {
@@ -400,8 +450,6 @@ public sealed class AcquisitionManager : IAcquisitionService
 
             tcs = _triggerTcs;
             _triggerTcs = null;
-            processedTcs = _signalProcessedTcs;
-            _signalProcessedTcs = null;
         }
 
         var eventType = signal switch
@@ -412,7 +460,6 @@ public sealed class AcquisitionManager : IAcquisitionService
         _eventLog.Add(new ChannelEvent(DateTime.UtcNow, eventType, message));
 
         tcs?.TrySetException(new InvalidOperationException($"Acquisition error: {message}"));
-        processedTcs?.TrySetResult();
     }
 
     public void Dispose()
@@ -420,7 +467,16 @@ public sealed class AcquisitionManager : IAcquisitionService
         if (_disposed) return;
         _disposed = true;
         Stop();
-        _channel?.Dispose();
-        _channel = null;
+        GrabChannel? channel;
+        lock (_lock)
+        {
+            channel = _channel;
+            _channel = null;
+            _channelState = ChannelState.None;
+            _channelProfileId = null;
+            _channelTriggerMode = null;
+        }
+        if (channel != null)
+            _grabService.ReleaseChannel(channel);
     }
 }

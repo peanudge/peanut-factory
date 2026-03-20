@@ -1,8 +1,8 @@
 namespace PeanutVision.Api.Services;
 
-public interface ICalibrationService
+public interface IChannelCalibration
 {
-    bool IsAvailable { get; }
+    bool IsCalibrationAvailable { get; }
     void PerformBlackCalibration();
     void PerformWhiteCalibration();
     void PerformWhiteBalanceOnce();

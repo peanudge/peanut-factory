@@ -6,13 +6,13 @@ using PeanutVision.MultiCamDriver.Imaging.Encoders;
 namespace PeanutVision.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-public class AcquisitionController : ControllerBase
+[Route("api/channel")]
+public class ChannelController : ControllerBase
 {
     private readonly IAcquisitionService _acquisition;
     private readonly string? _imageOutputDirectory;
 
-    public AcquisitionController(IAcquisitionService acquisition, IConfiguration configuration, IWebHostEnvironment environment)
+    public ChannelController(IAcquisitionService acquisition, IConfiguration configuration, IWebHostEnvironment environment)
     {
         _acquisition = acquisition;
 
@@ -25,8 +25,8 @@ public class AcquisitionController : ControllerBase
         }
     }
 
-    [HttpPost("start")]
-    public ActionResult Start([FromBody] StartAcquisitionRequest request)
+    [HttpPost]
+    public ActionResult CreateChannel([FromBody] CreateChannelRequest request)
     {
         try
         {
@@ -35,13 +35,8 @@ public class AcquisitionController : ControllerBase
                 ? TriggerMode.Parse(request.TriggerMode)
                 : (TriggerMode?)null;
 
-            // Auto-release any idle channel so callers don't need explicit channel management
-            if (_acquisition.ChannelState != ChannelState.None && _acquisition.ChannelState != ChannelState.Active)
-                _acquisition.ReleaseChannel();
-
             _acquisition.CreateChannel(profileId, triggerMode);
-            _acquisition.Start(request.FrameCount, request.IntervalMs);
-            return Ok(new { message = "Acquisition started", profileId = profileId.Value });
+            return Ok(new { message = "Channel created", profileId = profileId.Value });
         }
         catch (ArgumentException ex)
         {
@@ -57,21 +52,29 @@ public class AcquisitionController : ControllerBase
         }
     }
 
-    [HttpPost("stop")]
-    public ActionResult Stop()
+    [HttpDelete]
+    public ActionResult ReleaseChannel()
     {
-        _acquisition.Stop();
-        return Ok(new { message = "Acquisition stopped" });
+        try
+        {
+            _acquisition.ReleaseChannel();
+            return Ok(new { message = "Channel released" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
     }
 
-    [HttpGet("status")]
+    [HttpGet]
     public ActionResult GetStatus()
     {
         var stats = _acquisition.GetStatistics();
         return Ok(new
         {
-            isActive = _acquisition.IsActive,
+            state = _acquisition.ChannelState.ToString().ToLowerInvariant(),
             profileId = _acquisition.ActiveProfileId?.Value,
+            triggerMode = _acquisition.ChannelTriggerMode?.ToString(),
             hasFrame = _acquisition.HasFrame,
             lastError = _acquisition.LastError,
             allowedActions = _acquisition.GetAllowedActions(),
@@ -97,6 +100,34 @@ public class AcquisitionController : ControllerBase
                 message = e.Message,
             }),
         });
+    }
+
+    [HttpPost("start")]
+    public ActionResult StartAcquisition([FromBody] StartAcquisitionRequest? request)
+    {
+        try
+        {
+            _acquisition.Start(request?.FrameCount, request?.IntervalMs);
+            return Ok(new { message = "Acquisition started" });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("stop")]
+    public ActionResult StopAcquisition()
+    {
+        if (_acquisition.ChannelState != Services.ChannelState.Active)
+            return Conflict(new { error = "Acquisition is not active." });
+
+        _acquisition.Stop();
+        return Ok(new { message = "Acquisition stopped" });
     }
 
     [HttpPost("trigger")]
@@ -147,7 +178,7 @@ public class AcquisitionController : ControllerBase
         return File(stream, "image/png", "latest.png");
     }
 
-    [HttpPost("snapshot")]
+    [HttpPost("/api/snapshot")]
     public ActionResult Snapshot([FromBody] SnapshotRequest request)
     {
         try
@@ -191,17 +222,9 @@ public class AcquisitionController : ControllerBase
     }
 }
 
-public class StartAcquisitionRequest
+public class CreateChannelRequest
 {
     public required string ProfileId { get; set; }
     public string? TriggerMode { get; set; }
-    public int? FrameCount { get; set; }
-    public int? IntervalMs { get; set; }
 }
 
-public class SnapshotRequest
-{
-    public required string ProfileId { get; set; }
-    public string? TriggerMode { get; set; }
-    public string? OutputPath { get; set; }
-}

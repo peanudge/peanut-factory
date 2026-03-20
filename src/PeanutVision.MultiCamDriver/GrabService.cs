@@ -125,6 +125,16 @@ public sealed class GrabService : IGrabService
     }
 
     /// <summary>
+    /// Releases a channel previously created by <see cref="CreateChannel"/>.
+    /// </summary>
+    public void ReleaseChannel(GrabChannel channel)
+    {
+        ArgumentNullException.ThrowIfNull(channel);
+        _channels.TryRemove(channel.Handle, out _);
+        channel.Dispose();
+    }
+
+    /// <summary>
     /// Gets board information for the specified board index.
     /// </summary>
     public BoardInfo GetBoardInfo(int boardIndex)
