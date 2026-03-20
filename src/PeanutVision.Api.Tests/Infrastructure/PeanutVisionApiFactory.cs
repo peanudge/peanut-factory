@@ -1,8 +1,10 @@
 using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using PeanutVision.Api.Services;
 using PeanutVision.MultiCamDriver;
 using PeanutVision.MultiCamDriver.Camera;
 using PeanutVision.MultiCamDriver.Hal;
@@ -13,6 +15,7 @@ public class PeanutVisionApiFactory : WebApplicationFactory<Program>
 {
     public MockMultiCamHAL MockHal { get; } = new();
     private IntPtr _surfaceMemory;
+    private readonly string _testDbPath = Path.Combine(Path.GetTempPath(), $"pv-test-{Guid.NewGuid():N}.db");
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -41,6 +44,12 @@ public class PeanutVisionApiFactory : WebApplicationFactory<Program>
                 service.Initialize();
                 return service;
             });
+
+            // Replace DbContext with test-specific SQLite file
+            services.RemoveAll<DbContextOptions<AppDbContext>>();
+            services.RemoveAll<AppDbContext>();
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlite($"Data Source={_testDbPath}"));
         });
     }
 
@@ -57,5 +66,6 @@ public class PeanutVisionApiFactory : WebApplicationFactory<Program>
             Marshal.FreeHGlobal(_surfaceMemory);
             _surfaceMemory = IntPtr.Zero;
         }
+        try { File.Delete(_testDbPath); } catch { /* ignore */ }
     }
 }

@@ -95,6 +95,15 @@ export interface CapturedImage {
   savedPath?: string;
 }
 
+export interface Session {
+  id: string;
+  name: string;
+  createdAt: string;
+  endedAt: string | null;
+  notes: string | null;
+  isActive: boolean;
+}
+
 export type SaveImageFormat = "png" | "bmp" | "raw";
 export type SubfolderStrategy = "none" | "byDate" | "bySession" | "byProfile";
 
