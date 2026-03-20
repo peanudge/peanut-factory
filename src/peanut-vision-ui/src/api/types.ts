@@ -59,6 +59,8 @@ export interface ChannelEvent {
 
 export type AcquisitionAction = "start" | "stop" | "trigger" | "snapshot";
 
+export type ChannelState = "none" | "idle" | "active";
+
 export type AcquisitionMode = "single" | "continuous";
 
 export interface AcquisitionStatus {
@@ -90,4 +92,18 @@ export interface CapturedImage {
   url: string;
   blob: Blob;
   capturedAt: Date;
+  savedPath?: string;
+}
+
+export type SaveImageFormat = "png" | "bmp" | "raw";
+export type SubfolderStrategy = "none" | "byDate" | "bySession" | "byProfile";
+
+export interface ImageSaveSettings {
+  outputDirectory: string;
+  format: SaveImageFormat;
+  filenamePrefix: string;
+  timestampFormat: string;
+  includeSequenceNumber: boolean;
+  subfolderStrategy: SubfolderStrategy;
+  autoSave: boolean;
 }
