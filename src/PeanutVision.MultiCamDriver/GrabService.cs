@@ -15,7 +15,6 @@ public sealed class GrabService : IGrabService
     private readonly IMultiCamHAL _hal;
     private bool _initialized;
     private bool _disposed;
-    private int _openCount;
 
     private int _boardCount;
 
@@ -51,56 +50,60 @@ public sealed class GrabService : IGrabService
     /// </summary>
     public void Initialize()
     {
-        lock (_lock)
+        ThrowIfDisposed();
+
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        const int retryIntervalMs = 500;
+
+        while (true)
         {
-            ThrowIfDisposed();
-
-            if (_initialized)
-                return;
-
-            // Open driver with NULL (reserved parameter).
-            // MC_SERVICE_ERROR (-25) is transient and indicates the driver service is not yet ready.
-            // Per CLAUDE.md Development Rule #4: retry in a polling loop until success or timeout.
-            int status;
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-            const int retryIntervalMs = 500;
-            do
+            lock (_lock)
             {
-                status = _hal.OpenDriver(null);
-                if (status == (int)McStatus.MC_SERVICE_ERROR)
+                ThrowIfDisposed();
+
+                if (_initialized)
+                    return;
+
+                int status = _hal.OpenDriver(null);
+
+                if (status == MultiCamApi.MC_OK)
                 {
-                    if (DateTime.UtcNow >= deadline)
-                        throw new MultiCamException(status, "McOpenDriver",
-                            "MultiCam driver service did not become available within 30 seconds. Ensure the MultiCam service is running.");
-                    Thread.Sleep(retryIntervalMs);
+                    DetectBoards();
+                    _initialized = true;
+                    return;
                 }
-                else if (status != MultiCamApi.MC_OK)
+
+                if (status != (int)McStatus.MC_SERVICE_ERROR)
                 {
                     throw new MultiCamException(status, "McOpenDriver",
                         "Failed to initialize MultiCam driver. Ensure the driver is installed and hardware is connected.");
                 }
-            } while (status != MultiCamApi.MC_OK);
 
-            _openCount = 1;
-
-            // Assume single board at index 0 (MC_CONFIGURATION not reliable)
-            // Try to verify board exists by querying board info
-            try
-            {
-                uint boardHandle = MultiCamApi.MC_BOARD + (uint)MultiCamApi.DefaultBoardIndex;
-                status = _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardName, out string boardName);
-                if (status == MultiCamApi.MC_OK && !string.IsNullOrEmpty(boardName))
+                // MC_SERVICE_ERROR: driver service not ready yet -- will retry outside the lock
+                if (DateTime.UtcNow >= deadline)
                 {
-                    _boardCount = 1;
+                    throw new MultiCamException(status, "McOpenDriver",
+                        "MultiCam driver service did not become available within 30 seconds. Ensure the MultiCam service is running.");
                 }
             }
-            catch
-            {
-                // Non-critical - continue even if we can't read info
-                _boardCount = 0;
-            }
 
-            _initialized = true;
+            // Sleep OUTSIDE the lock so other threads are not starved
+            Thread.Sleep(retryIntervalMs);
+        }
+    }
+
+    private void DetectBoards()
+    {
+        try
+        {
+            uint boardHandle = MultiCamApi.MC_BOARD + (uint)MultiCamApi.DefaultBoardIndex;
+            int status = _hal.GetParamStr(boardHandle, MultiCamApi.PN_BoardName, out string boardName);
+            _boardCount = (status == MultiCamApi.MC_OK && !string.IsNullOrEmpty(boardName)) ? 1 : 0;
+        }
+        catch (Exception)
+        {
+            // Non-critical -- board count defaults to 0
+            _boardCount = 0;
         }
     }
 
@@ -295,13 +298,10 @@ public sealed class GrabService : IGrabService
             }
             _channels.Clear();
 
-            // Close driver.
-            // Initialize() always sets _openCount = 1 and guards against multiple opens,
-            // so a single CloseDriver() call is sufficient.
-            if (_openCount > 0)
+            // Close driver if it was successfully opened
+            if (_initialized)
             {
                 _hal.CloseDriver();
-                _openCount = 0;
             }
 
             _initialized = false;
