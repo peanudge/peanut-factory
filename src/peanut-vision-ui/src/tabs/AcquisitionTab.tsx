@@ -101,6 +101,15 @@ export default function AcquisitionTab() {
     setSelectedId(newImage.id);
   }, []);
 
+  const handleDeleteImage = useCallback((id: string) => {
+    setImages((prev) => {
+      const target = prev.find((img) => img.id === id);
+      if (target) URL.revokeObjectURL(target.url);
+      return prev.filter((img) => img.id !== id);
+    });
+    setSelectedId((prev) => (prev === id ? null : prev));
+  }, []);
+
   const handleClearAll = useCallback(() => {
     setImages((prev) => {
       prev.forEach((img) => URL.revokeObjectURL(img.url));
@@ -293,6 +302,7 @@ export default function AcquisitionTab() {
               images={images}
               selectedId={selectedId}
               onSelect={setSelectedId}
+              onDelete={handleDeleteImage}
               onClear={handleClearAll}
             />
           </Box>
