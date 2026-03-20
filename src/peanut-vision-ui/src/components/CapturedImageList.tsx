@@ -1,13 +1,16 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
+import CloseIcon from "@mui/icons-material/Close";
 import type { CapturedImage } from "../api/types";
 
 interface Props {
   images: CapturedImage[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onDelete: (id: string) => void;
   onClear: () => void;
 }
 
@@ -15,7 +18,7 @@ function formatTime(d: Date): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
 }
 
-export default function CapturedImageList({ images, selectedId, onSelect, onClear }: Props) {
+export default function CapturedImageList({ images, selectedId, onSelect, onDelete, onClear }: Props) {
   return (
     <Box sx={{ mt: 1 }}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
@@ -76,6 +79,7 @@ export default function CapturedImageList({ images, selectedId, onSelect, onClea
             >
               <Box
                 sx={{
+                  position: "relative",
                   width: 80,
                   height: 60,
                   border: "2px solid",
@@ -83,6 +87,7 @@ export default function CapturedImageList({ images, selectedId, onSelect, onClea
                   borderRadius: 1,
                   overflow: "hidden",
                   transition: "border-color 0.15s",
+                  "&:hover .delete-btn": { opacity: 1 },
                 }}
               >
                 <img
@@ -90,6 +95,27 @@ export default function CapturedImageList({ images, selectedId, onSelect, onClea
                   alt={`Capture at ${formatTime(img.capturedAt)}`}
                   style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                 />
+                <IconButton
+                  className="delete-btn"
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(img.id);
+                  }}
+                  sx={{
+                    position: "absolute",
+                    top: -2,
+                    right: -2,
+                    opacity: 0,
+                    transition: "opacity 0.15s",
+                    p: 0.25,
+                    bgcolor: "rgba(0,0,0,0.6)",
+                    color: "white",
+                    "&:hover": { bgcolor: "error.main" },
+                  }}
+                >
+                  <CloseIcon sx={{ fontSize: 14 }} />
+                </IconButton>
               </Box>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
                 {formatTime(img.capturedAt)}
