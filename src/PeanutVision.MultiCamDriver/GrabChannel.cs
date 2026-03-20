@@ -62,7 +62,7 @@ public sealed class GrabChannel : IDisposable
     // Internal signal processing thread (only active when UseCallback=true)
     // All signals from the native callback are enqueued here — no event is ever
     // fired directly on the MultiCam thread, guaranteeing < 1ms callback time.
-    private Channel<CallbackSignal>? _signalQueue;
+    private volatile Channel<CallbackSignal>? _signalQueue;
     private Task? _processingTask;
     private CancellationTokenSource? _processingCts;
     private int _copyDropCount;
@@ -90,6 +90,14 @@ public sealed class GrabChannel : IDisposable
 
     /// <summary>Configured trigger mode for this channel</summary>
     public McTrigMode TriggerMode => _triggerMode;
+
+    /// <summary>
+    /// Whether this channel's trigger mode supports software triggering via SendSoftwareTrigger().
+    /// True for SOFT and COMBINED modes; false for IMMEDIATE and HARD.
+    /// </summary>
+    public bool SupportsSoftwareTrigger =>
+        _triggerMode == McTrigMode.MC_TrigMode_SOFT ||
+        _triggerMode == McTrigMode.MC_TrigMode_COMBINED;
 
     /// <summary>
     /// Fired when a frame has been copied and is ready for processing.
@@ -316,7 +324,7 @@ public sealed class GrabChannel : IDisposable
             new BoundedChannelOptions(_surfaceCount + 8) // extra room for error/end signals
             {
                 SingleReader = true,
-                SingleWriter = true,
+                SingleWriter = false, // native callback can deliver multiple signal types concurrently
             });
         _processingCts = new CancellationTokenSource();
         _processingTask = Task.Run(() => ProcessingLoopAsync(_processingCts.Token));
@@ -412,6 +420,10 @@ public sealed class GrabChannel : IDisposable
 
     private void ReleaseSurface(uint surfaceHandle)
     {
+        // Guard: if the channel has been deleted during Dispose, _channelHandle is 0 —
+        // skip the HAL call to avoid use-after-free on the native handle.
+        if (_channelHandle == 0) return;
+
         // Set SurfaceState back to FREE on the surface handle
         _hal.SetParamInt(surfaceHandle, MultiCamApi.PN_SurfaceState, (int)McSurfaceState.MC_SurfaceState_FREE);
     }
@@ -845,18 +857,28 @@ public sealed class GrabChannel : IDisposable
             }
         }
 
-        // Shut down processing thread (outside lock to avoid deadlock)
+        // Atomically capture and zero the channel handle while still under the previous lock's
+        // visibility guarantee.  After this point, ReleaseSurface will see _channelHandle == 0
+        // and skip any HAL call, eliminating the TOCTOU use-after-free window.
+        uint capturedHandle;
+        lock (_lock)
+        {
+            capturedHandle = _channelHandle;
+            _channelHandle = 0; // zero BEFORE ShutdownProcessingThread drains the queue
+        }
+
+        // Shut down processing thread (outside lock to avoid deadlock).
+        // ReleaseSurface calls during drain are now guarded by the _channelHandle == 0 check.
         ShutdownProcessingThread();
+
+        // Delete the native channel using the captured handle.
+        if (capturedHandle != 0)
+        {
+            _hal.Delete(capturedHandle);
+        }
 
         lock (_lock)
         {
-            // Delete channel
-            if (_channelHandle != 0)
-            {
-                _hal.Delete(_channelHandle);
-                _channelHandle = 0;
-            }
-
             // Free GC handles
             if (_callbackHandle.IsAllocated)
                 _callbackHandle.Free();
