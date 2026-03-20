@@ -105,6 +105,13 @@ export interface Session {
   isActive: boolean;
 }
 
+export interface HistogramData {
+  red: number[];
+  green: number[];
+  blue: number[];
+  bins: number;
+}
+
 export type SaveImageFormat = "png" | "bmp" | "raw";
 export type SubfolderStrategy = "none" | "byDate" | "bySession" | "byProfile";
 

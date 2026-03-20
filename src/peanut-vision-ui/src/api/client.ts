@@ -8,6 +8,7 @@ import type {
   ApiMessage,
   ImageSaveSettings,
   Session,
+  HistogramData,
 } from "./types";
 
 export interface CaptureResult {
@@ -99,6 +100,13 @@ export async function getLatestFrame(): Promise<CaptureResult | null> {
   if (!res.ok) await handleErrorResponse(res);
   const savedPath = res.headers.get("X-Image-Path") ?? undefined;
   return { blob: await res.blob(), savedPath };
+}
+
+export async function getHistogram(): Promise<HistogramData | null> {
+  const res = await fetch(`${API_BASE_URL}/acquisition/latest-frame/histogram`);
+  if (res.status === 204) return null;
+  if (!res.ok) await handleErrorResponse(res);
+  return res.json();
 }
 
 // ── Settings ──

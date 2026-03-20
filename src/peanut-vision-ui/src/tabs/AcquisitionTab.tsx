@@ -17,6 +17,7 @@ import CapturedImageList from "../components/CapturedImageList";
 import ContinuousSettings from "../components/ContinuousSettings";
 import ImageSaveSettingsPanel from "../components/ImageSaveSettingsPanel";
 import SessionSelector from "../components/SessionSelector";
+import HistogramChart from "../components/HistogramChart";
 import CalibrationActions from "../components/CalibrationActions";
 import ExposureControl from "../components/ExposureControl";
 import type { AcquisitionMode, AcquisitionStatus, CamFileInfo, CapturedImage, ContinuousSubMode, ExposureInfo } from "../api/types";
@@ -310,6 +311,7 @@ export default function AcquisitionTab() {
               errorMessage={status?.lastError}
               savedPath={selectedImage?.savedPath}
             />
+            <HistogramChart />
             <CapturedImageList
               images={images}
               selectedId={selectedId}

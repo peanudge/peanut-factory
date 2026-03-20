@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using PeanutVision.Api.Services;
+using PeanutVision.MultiCamDriver;
 using PeanutVision.MultiCamDriver.Imaging;
 using PeanutVision.MultiCamDriver.Imaging.Encoders;
 
@@ -54,6 +55,10 @@ public class AcquisitionController : ControllerBase
         catch (KeyNotFoundException ex)
         {
             return NotFound(new { error = ex.Message });
+        }
+        catch (MultiCamException ex)
+        {
+            return StatusCode(502, new { error = ErrorMessageSanitizer.Sanitize(ex) });
         }
         catch (InvalidOperationException ex)
         {
@@ -140,6 +145,10 @@ public class AcquisitionController : ControllerBase
 
             return File(stream, "image/png", "trigger.png");
         }
+        catch (MultiCamException ex)
+        {
+            return StatusCode(502, new { error = ErrorMessageSanitizer.Sanitize(ex) });
+        }
         catch (InvalidOperationException ex)
         {
             return Conflict(new { error = ex.Message });
@@ -172,6 +181,23 @@ public class AcquisitionController : ControllerBase
         stream.Position = 0;
 
         return File(stream, "image/png", "latest.png");
+    }
+
+    [HttpGet("latest-frame/histogram")]
+    public ActionResult GetHistogram()
+    {
+        var frame = _acquisition.GetLatestFrame();
+        if (frame is null)
+            return NoContent();
+
+        var histogram = HistogramService.Compute(frame);
+        return Ok(new
+        {
+            red = histogram.Red,
+            green = histogram.Green,
+            blue = histogram.Blue,
+            bins = 256,
+        });
     }
 
     [HttpPost("snapshot")]
@@ -213,6 +239,10 @@ public class AcquisitionController : ControllerBase
         catch (ArgumentException ex)
         {
             return BadRequest(new { error = ex.Message });
+        }
+        catch (MultiCamException ex)
+        {
+            return StatusCode(502, new { error = ErrorMessageSanitizer.Sanitize(ex) });
         }
         catch (KeyNotFoundException ex)
         {
