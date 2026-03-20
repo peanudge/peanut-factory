@@ -15,7 +15,7 @@ import AdjustIcon from "@mui/icons-material/Adjust";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import StatusChip from "./StatusChip";
-import type { AcquisitionAction, AcquisitionMode, AcquisitionStatus, CamFileInfo } from "../api/types";
+import type { AcquisitionAction, AcquisitionMode, AcquisitionStatus, CamFileInfo, ContinuousSubMode } from "../api/types";
 
 interface Props {
   cameras: CamFileInfo[];
@@ -23,6 +23,7 @@ interface Props {
   onProfileChange: (id: string) => void;
   mode: AcquisitionMode;
   onModeChange: (mode: AcquisitionMode) => void;
+  continuousSubMode: ContinuousSubMode;
   status: AcquisitionStatus | null;
   busy: boolean;
   onCapture: () => void;
@@ -41,6 +42,7 @@ export default function AcquisitionControls({
   onProfileChange,
   mode,
   onModeChange,
+  continuousSubMode,
   status,
   busy,
   onCapture,
@@ -142,9 +144,9 @@ export default function AcquisitionControls({
               </span>
             </Tooltip>
           )}
-          {allowed("trigger") && (
+          {allowed("trigger") && continuousSubMode === "manual" && (
             <Tooltip
-              title={busy ? "처리 중..." : "프레임 촬영"}
+              title={busy ? "처리 중..." : "수동 촬영 (Manual capture)"}
             >
               <span>
                 <Button

@@ -19,7 +19,7 @@ import ImageSaveSettingsPanel from "../components/ImageSaveSettingsPanel";
 import SessionSelector from "../components/SessionSelector";
 import CalibrationActions from "../components/CalibrationActions";
 import ExposureControl from "../components/ExposureControl";
-import type { AcquisitionMode, AcquisitionStatus, CamFileInfo, CapturedImage, ExposureInfo } from "../api/types";
+import type { AcquisitionMode, AcquisitionStatus, CamFileInfo, CapturedImage, ContinuousSubMode, ExposureInfo } from "../api/types";
 import {
   getCameras,
   startAcquisition,
@@ -51,6 +51,7 @@ export default function AcquisitionTab() {
   const [cameras, setCameras] = useState<CamFileInfo[]>([]);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [mode, setMode] = useState<AcquisitionMode>("single");
+  const [continuousSubMode, setContinuousSubMode] = useState<ContinuousSubMode>("auto");
   const [frameCount, setFrameCount] = useState<number | null>(null);
   const [intervalMs, setIntervalMs] = useState<number | null>(null);
   const [status, setStatus] = useState<AcquisitionStatus | null>(null);
@@ -145,7 +146,12 @@ export default function AcquisitionTab() {
 
   const handleStart = () =>
     execute(async () => {
-      await startAcquisition(selectedProfile, undefined, frameCount, intervalMs);
+      await startAcquisition(
+        selectedProfile,
+        undefined,
+        frameCount,
+        continuousSubMode === "auto" ? intervalMs : null,
+      );
       fetchStatus();
       setSnackbar({ message: "촬영이 시작되었습니다", severity: "success" });
     });
@@ -230,6 +236,7 @@ export default function AcquisitionTab() {
         onProfileChange={setSelectedProfile}
         mode={mode}
         onModeChange={setMode}
+        continuousSubMode={continuousSubMode}
         status={status}
         busy={busy}
         onCapture={handleCapture}
@@ -244,6 +251,8 @@ export default function AcquisitionTab() {
 
       {mode === "continuous" && (
         <ContinuousSettings
+          subMode={continuousSubMode}
+          onSubModeChange={setContinuousSubMode}
           frameCount={frameCount}
           onFrameCountChange={setFrameCount}
           intervalMs={intervalMs}

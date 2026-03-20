@@ -3,8 +3,13 @@ import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import TextField from "@mui/material/TextField";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import type { ContinuousSubMode } from "../api/types";
 
 interface Props {
+  subMode: ContinuousSubMode;
+  onSubModeChange: (value: ContinuousSubMode) => void;
   frameCount: number | null;
   onFrameCountChange: (value: number | null) => void;
   intervalMs: number | null;
@@ -13,6 +18,8 @@ interface Props {
 }
 
 export default function ContinuousSettings({
+  subMode,
+  onSubModeChange,
   frameCount,
   onFrameCountChange,
   intervalMs,
@@ -28,6 +35,17 @@ export default function ContinuousSettings({
 
   return (
     <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
+      <ToggleButtonGroup
+        value={subMode}
+        exclusive
+        onChange={(_, v) => v && onSubModeChange(v)}
+        size="small"
+        disabled={disabled}
+      >
+        <ToggleButton value="auto">Auto</ToggleButton>
+        <ToggleButton value="manual">Manual</ToggleButton>
+      </ToggleButtonGroup>
+
       <TextField
         label="Frame Count"
         type="number"
@@ -52,20 +70,23 @@ export default function ContinuousSettings({
         }
         label="Infinite"
       />
-      <TextField
-        label="Interval (ms)"
-        type="number"
-        size="small"
-        value={intervalMs ?? ""}
-        onChange={(e) => {
-          const v = parseInt(e.target.value, 10);
-          onIntervalMsChange(isNaN(v) || v < 0 ? null : v);
-        }}
-        disabled={disabled}
-        helperText="최소 50ms"
-        slotProps={{ htmlInput: { min: 50 } }}
-        sx={{ width: 130 }}
-      />
+
+      {subMode === "auto" && (
+        <TextField
+          label="Interval (ms)"
+          type="number"
+          size="small"
+          value={intervalMs ?? ""}
+          onChange={(e) => {
+            const v = parseInt(e.target.value, 10);
+            onIntervalMsChange(isNaN(v) || v < 0 ? null : v);
+          }}
+          disabled={disabled}
+          helperText="최소 50ms"
+          slotProps={{ htmlInput: { min: 50 } }}
+          sx={{ width: 130 }}
+        />
+      )}
     </Box>
   );
 }

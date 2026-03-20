@@ -62,6 +62,7 @@ export type AcquisitionAction = "start" | "stop" | "trigger" | "snapshot";
 export type ChannelState = "none" | "idle" | "active";
 
 export type AcquisitionMode = "single" | "continuous";
+export type ContinuousSubMode = "auto" | "manual";
 
 export interface AcquisitionStatus {
   isActive: boolean;
