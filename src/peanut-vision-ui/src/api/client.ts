@@ -7,6 +7,7 @@ import type {
   ExposureInfo,
   ApiMessage,
   ImageSaveSettings,
+  Session,
 } from "./types";
 
 export interface CaptureResult {
@@ -112,6 +113,39 @@ export function updateImageSaveSettings(
     method: "PUT",
     body: JSON.stringify(settings),
   });
+}
+
+// ── Sessions ──
+
+export function getSessions(limit = 50): Promise<Session[]> {
+  return request(`/sessions?limit=${limit}`);
+}
+
+export function getActiveSession(): Promise<Session | null> {
+  return fetch(`${API_BASE_URL}/sessions/active`)
+    .then((res) => {
+      if (res.status === 204) return null;
+      if (!res.ok) return res.json().then((b) => { throw new Error(b.error ?? `HTTP ${res.status}`); });
+      return res.json();
+    });
+}
+
+export function createSession(name: string, notes?: string): Promise<Session> {
+  return request("/sessions", {
+    method: "POST",
+    body: JSON.stringify({ name, notes }),
+  });
+}
+
+export function endSession(id: string): Promise<Session> {
+  return request(`/sessions/${id}/end`, { method: "POST" });
+}
+
+export function deleteSession(id: string): Promise<void> {
+  return fetch(`${API_BASE_URL}/sessions/${id}`, { method: "DELETE" })
+    .then((res) => {
+      if (!res.ok) return res.json().then((b) => { throw new Error(b.error ?? `HTTP ${res.status}`); });
+    });
 }
 
 // ── Calibration ──

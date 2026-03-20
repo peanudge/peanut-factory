@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 using PeanutVision.Api.Services;
 using PeanutVision.FakeCamDriver;
 using PeanutVision.MultiCamDriver;
@@ -40,6 +41,11 @@ var saveSettingsPath = Path.Combine(builder.Environment.ContentRootPath, "image-
 builder.Services.AddSingleton<IImageSaveSettingsService>(new ImageSaveSettingsService(saveSettingsPath));
 builder.Services.AddSingleton<FilenameGenerator>();
 
+var dbPath = Path.Combine(builder.Environment.ContentRootPath, "peanut-vision.db");
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite($"Data Source={dbPath}"));
+builder.Services.AddScoped<ISessionRepository, SessionRepository>();
+
 builder.Services.AddSingleton<AcquisitionManager>();
 builder.Services.AddSingleton<IAcquisitionService>(sp => sp.GetRequiredService<AcquisitionManager>());
 builder.Services.AddSingleton<IChannelCalibration>(sp => sp.GetRequiredService<AcquisitionManager>());
@@ -60,6 +66,13 @@ var app = builder.Build();
 if (useMock)
 {
     app.Logger.LogWarning("FakeCamDriver enabled — using test pattern generator (no hardware)");
+}
+
+// Ensure SQLite database and schema are created
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
 }
 
 app.UseCors();

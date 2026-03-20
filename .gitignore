@@ -490,5 +490,8 @@ setup/sdk_pdfs/
 # Runtime output
 CapturedImages/
 
+# SQLite databases
+*.db
+
 # Claude
 .mcp.json

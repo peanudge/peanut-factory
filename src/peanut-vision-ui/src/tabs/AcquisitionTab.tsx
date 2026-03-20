@@ -16,6 +16,7 @@ import ImageViewer from "../components/ImageViewer";
 import CapturedImageList from "../components/CapturedImageList";
 import ContinuousSettings from "../components/ContinuousSettings";
 import ImageSaveSettingsPanel from "../components/ImageSaveSettingsPanel";
+import SessionSelector from "../components/SessionSelector";
 import CalibrationActions from "../components/CalibrationActions";
 import ExposureControl from "../components/ExposureControl";
 import type { AcquisitionMode, AcquisitionStatus, CamFileInfo, CapturedImage, ExposureInfo } from "../api/types";
@@ -211,6 +212,8 @@ export default function AcquisitionTab() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       <ErrorAlert error={error} onClose={clearError} />
+
+      <SessionSelector />
 
       <AcquisitionControls
         cameras={cameras}
