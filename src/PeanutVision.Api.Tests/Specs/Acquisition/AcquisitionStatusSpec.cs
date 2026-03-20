@@ -18,7 +18,7 @@ public class AcquisitionStatusSpec : IClassFixture<PeanutVisionApiFactory>, IAsy
     public async Task DisposeAsync()
     {
         await _client.PostAsync("/api/acquisition/stop", null);
-        await _client.DeleteAsync("/api/channel");
+        await _client.DeleteAsync("/api/acquisition");
     }
 
     [Fact]

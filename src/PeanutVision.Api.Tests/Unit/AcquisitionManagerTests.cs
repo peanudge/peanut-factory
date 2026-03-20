@@ -104,12 +104,11 @@ public class AcquisitionManagerTests : IDisposable
         }
 
         [Fact]
-        public void Then_allowed_actions_contains_create_and_snapshot()
+        public void Then_allowed_actions_contains_start_and_snapshot()
         {
             var actions = _manager.GetAllowedActions();
-            Assert.Contains(ChannelAction.Create, actions);
+            Assert.Contains(ChannelAction.Start, actions);
             Assert.Contains(ChannelAction.Snapshot, actions);
-            Assert.DoesNotContain(ChannelAction.Start, actions);
         }
     }
 
@@ -152,13 +151,11 @@ public class AcquisitionManagerTests : IDisposable
         }
 
         [Fact]
-        public void Then_allowed_actions_contains_start_release_snapshot()
+        public void Then_allowed_actions_contains_start_and_snapshot()
         {
             var actions = _manager.GetAllowedActions();
             Assert.Contains(ChannelAction.Start, actions);
-            Assert.Contains(ChannelAction.Release, actions);
             Assert.Contains(ChannelAction.Snapshot, actions);
-            Assert.DoesNotContain(ChannelAction.Create, actions);
             Assert.DoesNotContain(ChannelAction.Stop, actions);
         }
     }
@@ -249,7 +246,6 @@ public class AcquisitionManagerTests : IDisposable
             Assert.Contains(ChannelAction.Trigger, actions);
             Assert.DoesNotContain(ChannelAction.Start, actions);
             Assert.DoesNotContain(ChannelAction.Snapshot, actions);
-            Assert.DoesNotContain(ChannelAction.Create, actions);
         }
     }
 
@@ -689,7 +685,7 @@ public class AcquisitionManagerTests : IDisposable
             _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
 
             var actions = _manager.GetAllowedActions();
-            Assert.Contains(ChannelAction.Create, actions);
+            Assert.Contains(ChannelAction.Start, actions);
             Assert.Contains(ChannelAction.Snapshot, actions);
         }
     }

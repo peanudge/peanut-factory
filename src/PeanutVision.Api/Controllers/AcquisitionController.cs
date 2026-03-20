@@ -64,6 +64,20 @@ public class AcquisitionController : ControllerBase
         return Ok(new { message = "Acquisition stopped" });
     }
 
+    [HttpDelete]
+    public ActionResult ReleaseChannel()
+    {
+        try
+        {
+            _acquisition.ReleaseChannel();
+            return Ok(new { message = "Channel released" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+    }
+
     [HttpGet("status")]
     public ActionResult GetStatus()
     {
