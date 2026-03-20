@@ -23,13 +23,15 @@ public sealed record CamFileInfo(
     public GrabChannelOptions ToChannelOptions(int driverIndex = 0, string connector = "M",
         int surfaceCount = 4, bool useCallback = true)
     {
+        var trigMode = ParseTrigMode(TrigMode);
         return new GrabChannelOptions
         {
             DriverIndex = driverIndex,
             Connector = connector,
             CamFilePath = FilePath,
             SurfaceCount = surfaceCount,
-            TriggerMode = ParseTrigMode(TrigMode),
+            TriggerMode = trigMode,
+            AcquisitionMode = DeriveAcquisitionMode(trigMode),
             UseCallback = useCallback
         };
     }
@@ -54,6 +56,23 @@ public sealed record CamFileInfo(
             "HARD" => McTrigMode.MC_TrigMode_HARD,
             "COMBINED" => McTrigMode.MC_TrigMode_COMBINED,
             _ => McTrigMode.MC_TrigMode_IMMEDIATE
+        };
+    }
+
+    /// <summary>
+    /// Derives the appropriate acquisition mode for area-scan cameras based on trigger mode.
+    /// SOFT/HARD/COMBINED triggers use SNAPSHOT; IMMEDIATE (freerun) uses VIDEO.
+    /// PAGE/WEB/LONGPAGE are never valid for TC-A160K area-scan cameras.
+    /// </summary>
+    private static McAcquisitionMode DeriveAcquisitionMode(McTrigMode trigMode)
+    {
+        return trigMode switch
+        {
+            McTrigMode.MC_TrigMode_SOFT => McAcquisitionMode.MC_AcquisitionMode_SNAPSHOT,
+            McTrigMode.MC_TrigMode_HARD => McAcquisitionMode.MC_AcquisitionMode_SNAPSHOT,
+            McTrigMode.MC_TrigMode_COMBINED => McAcquisitionMode.MC_AcquisitionMode_SNAPSHOT,
+            McTrigMode.MC_TrigMode_IMMEDIATE => McAcquisitionMode.MC_AcquisitionMode_VIDEO,
+            _ => McAcquisitionMode.MC_AcquisitionMode_SNAPSHOT
         };
     }
 }

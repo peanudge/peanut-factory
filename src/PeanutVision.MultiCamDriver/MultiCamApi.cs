@@ -137,7 +137,7 @@ public struct McSignalInfo
 	public uint Instance;
 	/// <summary>Signal identifier (McSignal value)</summary>
 	public int Signal;
-	/// <summary>Additional signal-specific information (e.g., surface index for SURFACE_PROCESSING)</summary>
+	/// <summary>Additional signal-specific information (e.g., surface handle for SURFACE_PROCESSING — not a zero-based index)</summary>
 	public uint SignalInfo;
 	/// <summary>Signal context information</summary>
 	public uint SignalContext;
@@ -221,6 +221,16 @@ public static partial class MultiCamApi
 
 	// ForceTrig string values
 	public const string MC_ForceTrig_STR = "TRIG";
+
+	// Acquisition mode string values
+	public const string MC_AcquisitionMode_SNAPSHOT_STR = "SNAPSHOT";
+	public const string MC_AcquisitionMode_VIDEO_STR = "VIDEO";
+	public const string MC_AcquisitionMode_HFR_STR = "HFR";
+
+	// Calibration command values
+	public const string MC_Calibration_Execute = "Execute";
+	public const string MC_FlatFieldCorrection_ON = "ON";
+	public const string MC_FlatFieldCorrection_OFF = "OFF";
 
 	#endregion
 
