@@ -9,7 +9,6 @@ import Container from "@mui/material/Container";
 import CameraIcon from "@mui/icons-material/CameraAlt";
 import SystemTab from "./tabs/SystemTab";
 import AcquisitionTab from "./tabs/AcquisitionTab";
-import CalibrationTab from "./tabs/CalibrationTab";
 
 export default function App() {
   const [tab, setTab] = useState(0);
@@ -32,14 +31,12 @@ export default function App() {
         >
           <Tab label="System" />
           <Tab label="Acquisition" />
-          <Tab label="Calibration" />
         </Tabs>
       </AppBar>
 
       <Container maxWidth="lg" sx={{ py: 3, flexGrow: 1 }}>
         {tab === 0 && <SystemTab />}
         {tab === 1 && <AcquisitionTab />}
-        {tab === 2 && <CalibrationTab />}
       </Container>
     </Box>
   );
