@@ -15,7 +15,7 @@ import AdjustIcon from "@mui/icons-material/Adjust";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import StatusChip from "./StatusChip";
-import type { AcquisitionAction, AcquisitionMode, AcquisitionStatus, CamFileInfo, ContinuousSubMode } from "../api/types";
+import type { AcquisitionAction, AcquisitionMode, AcquisitionStatus, CamFileInfo, ContinuousSubMode, TriggerModeOption } from "../api/types";
 
 interface Props {
   cameras: CamFileInfo[];
@@ -24,6 +24,8 @@ interface Props {
   mode: AcquisitionMode;
   onModeChange: (mode: AcquisitionMode) => void;
   continuousSubMode: ContinuousSubMode;
+  triggerMode: TriggerModeOption;
+  onTriggerModeChange: (mode: TriggerModeOption) => void;
   status: AcquisitionStatus | null;
   busy: boolean;
   onCapture: () => void;
@@ -43,6 +45,8 @@ export default function AcquisitionControls({
   mode,
   onModeChange,
   continuousSubMode,
+  triggerMode,
+  onTriggerModeChange,
   status,
   busy,
   onCapture,
@@ -85,6 +89,20 @@ export default function AcquisitionControls({
         <ToggleButton value="single">Single</ToggleButton>
         <ToggleButton value="continuous">Continuous</ToggleButton>
       </ToggleButtonGroup>
+
+      <FormControl size="small" sx={{ minWidth: 120 }}>
+        <InputLabel>Trigger</InputLabel>
+        <Select
+          value={triggerMode}
+          label="Trigger"
+          onChange={(e) => onTriggerModeChange(e.target.value as TriggerModeOption)}
+          disabled={status?.isActive}
+        >
+          <MenuItem value="soft">Soft</MenuItem>
+          <MenuItem value="hard">Hard</MenuItem>
+          <MenuItem value="combined">Combined</MenuItem>
+        </Select>
+      </FormControl>
 
       {mode === "single" ? (
         <Tooltip

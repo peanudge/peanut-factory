@@ -47,6 +47,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
 builder.Services.AddScoped<ISessionRepository, SessionRepository>();
 
+var presetsPath = Path.Combine(builder.Environment.ContentRootPath, "acquisition-presets.json");
+builder.Services.AddSingleton<IAcquisitionPresetService>(new AcquisitionPresetService(presetsPath));
+
 builder.Services.AddSingleton<AcquisitionManager>();
 builder.Services.AddSingleton<IAcquisitionService>(sp => sp.GetRequiredService<AcquisitionManager>());
 builder.Services.AddSingleton<IChannelCalibration>(sp => sp.GetRequiredService<AcquisitionManager>());
