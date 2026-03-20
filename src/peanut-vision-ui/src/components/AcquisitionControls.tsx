@@ -121,8 +121,12 @@ export default function AcquisitionControls({
           ) : (
             <Tooltip
               title={
-                busy || !allowed("start") || !selectedProfile
+                !selectedProfile
                   ? "프로파일을 선택하세요"
+                  : busy
+                  ? "처리 중..."
+                  : !allowed("start")
+                  ? "시작할 수 없습니다"
                   : "연속 촬영 시작"
               }
             >
