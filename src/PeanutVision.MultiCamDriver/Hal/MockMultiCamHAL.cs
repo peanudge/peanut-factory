@@ -515,12 +515,12 @@ public class MockMultiCamHAL : IMultiCamHAL
             }
         }
 
-        if (paramName == MultiCamApi.PN_BlackCalibration && value == "ON")
+        if (paramName == MultiCamApi.PN_BlackCalibration && value == MultiCamApi.MC_Calibration_Execute)
         {
             CallLog.BlackCalibrationPerformed = true;
         }
 
-        if (paramName == MultiCamApi.PN_WhiteCalibration && value == "ON")
+        if (paramName == MultiCamApi.PN_WhiteCalibration && value == MultiCamApi.MC_Calibration_Execute)
         {
             CallLog.WhiteCalibrationPerformed = true;
         }
