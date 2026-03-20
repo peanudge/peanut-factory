@@ -40,6 +40,7 @@ else
 var saveSettingsPath = Path.Combine(builder.Environment.ContentRootPath, "image-save-settings.json");
 builder.Services.AddSingleton<IImageSaveSettingsService>(new ImageSaveSettingsService(saveSettingsPath));
 builder.Services.AddSingleton<FilenameGenerator>();
+builder.Services.AddSingleton<FrameSaveTracker>();
 
 var dbPath = Path.Combine(builder.Environment.ContentRootPath, "peanut-vision.db");
 builder.Services.AddDbContext<AppDbContext>(options =>

@@ -134,8 +134,8 @@ export default function AcquisitionTab() {
     if (!status?.isActive || !status?.hasFrame) return;
     const t = setInterval(async () => {
       try {
-        const blob = await getLatestFrame();
-        if (blob) addImage(blob);
+        const result = await getLatestFrame();
+        if (result) addImage(result.blob, result.savedPath);
       } catch {
         /* ignore */
       }
