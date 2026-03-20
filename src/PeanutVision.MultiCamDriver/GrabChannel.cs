@@ -99,7 +99,6 @@ public sealed class GrabChannel : IDisposable
         _triggerMode == McTrigMode.MC_TrigMode_SOFT ||
         _triggerMode == McTrigMode.MC_TrigMode_COMBINED;
 
-
     /// <summary>
     /// Fired when a frame has been copied and is ready for processing.
     /// Called from the internal copy thread — the surface is already released.
