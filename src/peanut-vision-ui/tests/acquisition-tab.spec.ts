@@ -101,11 +101,12 @@ test("allowedActions disables buttons correctly", async ({ page }) => {
     timeout: 10_000,
   });
 
-  // Switch to continuous mode and start
+  // Switch to continuous mode, then select Manual sub-mode so Trigger is shown
   await page.getByRole("button", { name: /^continuous$/i }).click();
+  await page.getByRole("button", { name: /^manual$/i }).click();
   await page.getByRole("button", { name: /^start$/i }).click();
 
-  // After start: Stop and Trigger should be visible
+  // After start in Manual mode: Stop and Trigger should both be visible
   await expect(page.getByRole("button", { name: /^stop$/i })).toBeVisible({
     timeout: 10_000,
   });
@@ -113,4 +114,65 @@ test("allowedActions disables buttons correctly", async ({ page }) => {
   await page.screenshot({
     path: "test-results/06-allowed-actions-active.png",
   });
+});
+
+test("ContinuousSettings: Auto/Manual toggle renders both options", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: /^continuous$/i }).click();
+
+  // Both toggle buttons must be present in ContinuousSettings
+  await expect(page.getByRole("button", { name: /^auto$/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^manual$/i })).toBeVisible();
+  await page.screenshot({ path: "test-results/07-submode-toggle.png" });
+});
+
+test("ContinuousSettings: Interval field hidden in Manual sub-mode", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: /^continuous$/i }).click();
+
+  // Default is Auto — Interval field should be visible
+  await expect(page.locator("label", { hasText: "Interval (ms)" })).toBeVisible();
+
+  // Switch to Manual — Interval field must disappear
+  await page.getByRole("button", { name: /^manual$/i }).click();
+  await expect(
+    page.locator("label", { hasText: "Interval (ms)" })
+  ).not.toBeVisible();
+  await page.screenshot({ path: "test-results/08-manual-no-interval.png" });
+});
+
+test("ContinuousSettings: Trigger hidden in Auto, visible in Manual while active", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: /^continuous$/i }).click();
+
+  // Start in Auto sub-mode (default)
+  await expect(page.getByRole("button", { name: /^start$/i })).toBeEnabled({
+    timeout: 10_000,
+  });
+  await page.getByRole("button", { name: /^start$/i }).click();
+  await expect(page.getByRole("button", { name: /^stop$/i })).toBeVisible({
+    timeout: 10_000,
+  });
+
+  // Trigger button must NOT appear in Auto mode
+  await expect(
+    page.getByRole("button", { name: /trigger/i })
+  ).not.toBeVisible();
+  await page.screenshot({ path: "test-results/09-auto-no-trigger.png" });
+
+  // Stop, switch to Manual, restart — Trigger must appear
+  await page.getByRole("button", { name: /^stop$/i }).click();
+  await expect(page.getByRole("button", { name: /^start$/i })).toBeVisible({
+    timeout: 10_000,
+  });
+  await page.getByRole("button", { name: /^manual$/i }).click();
+  await page.getByRole("button", { name: /^start$/i }).click();
+  await expect(page.getByRole("button", { name: /^stop$/i })).toBeVisible({
+    timeout: 10_000,
+  });
+  await expect(page.getByRole("button", { name: /trigger/i })).toBeVisible();
+  await page.screenshot({ path: "test-results/10-manual-trigger-visible.png" });
 });
