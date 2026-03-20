@@ -6,7 +6,13 @@ import type {
   AcquisitionStatus,
   ExposureInfo,
   ApiMessage,
+  ImageSaveSettings,
 } from "./types";
+
+export interface CaptureResult {
+  blob: Blob;
+  savedPath?: string;
+}
 
 async function handleErrorResponse(res: Response): Promise<never> {
   const body = await res.json().catch(() => ({}));
@@ -63,25 +69,27 @@ export function getAcquisitionStatus(): Promise<AcquisitionStatus> {
   return request("/acquisition/status");
 }
 
-export async function triggerAndCapture(): Promise<Blob> {
+export async function triggerAndCapture(): Promise<CaptureResult> {
   const res = await fetch(`${API_BASE_URL}/acquisition/trigger`, {
     method: "POST",
   });
   if (!res.ok) await handleErrorResponse(res);
-  return res.blob();
+  const savedPath = res.headers.get("X-Image-Path") ?? undefined;
+  return { blob: await res.blob(), savedPath };
 }
 
 export async function snapshot(
   profileId: string,
   triggerMode?: string,
-): Promise<Blob> {
+): Promise<CaptureResult> {
   const res = await fetch(`${API_BASE_URL}/acquisition/snapshot`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ profileId, triggerMode }),
   });
   if (!res.ok) await handleErrorResponse(res);
-  return res.blob();
+  const savedPath = res.headers.get("X-Image-Path") ?? undefined;
+  return { blob: await res.blob(), savedPath };
 }
 
 export async function getLatestFrame(): Promise<Blob | null> {
@@ -89,6 +97,21 @@ export async function getLatestFrame(): Promise<Blob | null> {
   if (res.status === 204) return null;
   if (!res.ok) await handleErrorResponse(res);
   return res.blob();
+}
+
+// ── Settings ──
+
+export function getImageSaveSettings(): Promise<ImageSaveSettings> {
+  return request("/settings/image-save");
+}
+
+export function updateImageSaveSettings(
+  settings: ImageSaveSettings,
+): Promise<ImageSaveSettings> {
+  return request("/settings/image-save", {
+    method: "PUT",
+    body: JSON.stringify(settings),
+  });
 }
 
 // ── Calibration ──

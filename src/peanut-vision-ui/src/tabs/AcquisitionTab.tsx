@@ -10,6 +10,7 @@ import EventLog from "../components/EventLog";
 import ImageViewer from "../components/ImageViewer";
 import CapturedImageList from "../components/CapturedImageList";
 import ContinuousSettings from "../components/ContinuousSettings";
+import ImageSaveSettingsPanel from "../components/ImageSaveSettingsPanel";
 import type { AcquisitionMode, AcquisitionStatus, CamFileInfo, CapturedImage } from "../api/types";
 import {
   getCameras,
@@ -69,9 +70,9 @@ export default function AcquisitionTab() {
       .catch(() => {});
   }, []);
 
-  const addImage = useCallback((blob: Blob) => {
+  const addImage = useCallback((blob: Blob, savedPath?: string) => {
     const url = URL.createObjectURL(blob);
-    const newImage: CapturedImage = { id: crypto.randomUUID(), url, blob, capturedAt: new Date() };
+    const newImage: CapturedImage = { id: crypto.randomUUID(), url, blob, capturedAt: new Date(), savedPath };
     setImages((prev) => {
       const next = [newImage, ...prev];
       if (next.length > MAX_CAPTURED_IMAGES) {
@@ -131,7 +132,8 @@ export default function AcquisitionTab() {
 
   const handleTrigger = () =>
     execute(async () => {
-      addImage(await triggerAndCapture());
+      const { blob, savedPath } = await triggerAndCapture();
+      addImage(blob, savedPath);
       fetchStatus();
       setSnackbar({
         message: "프레임이 촬영되었습니다",
@@ -141,7 +143,8 @@ export default function AcquisitionTab() {
 
   const handleCapture = () =>
     execute(async () => {
-      addImage(await snapshot(selectedProfile));
+      const { blob, savedPath } = await snapshot(selectedProfile);
+      addImage(blob, savedPath);
       fetchStatus();
       setSnackbar({
         message: "스냅샷이 촬영되었습니다",
@@ -183,6 +186,8 @@ export default function AcquisitionTab() {
         />
       )}
 
+      <ImageSaveSettingsPanel />
+
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 4 }}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -196,6 +201,7 @@ export default function AcquisitionTab() {
               url={selectedImage?.url ?? null}
               filename={selectedImage ? `capture-${formatFilenameTimestamp(selectedImage.capturedAt)}.png` : undefined}
               errorMessage={status?.lastError}
+              savedPath={selectedImage?.savedPath}
             />
             <CapturedImageList
               images={images}
