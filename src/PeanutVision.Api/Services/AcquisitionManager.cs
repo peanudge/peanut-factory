@@ -23,6 +23,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
     private ProfileId? _channelProfileId;
     private TriggerMode? _channelTriggerMode;
     private double _desiredExposureUs = 10000.0;
+    private int? _targetFrameCount;
 
     public AcquisitionManager(IGrabService grabService, ICamFileService camFileService)
     {
@@ -248,6 +249,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
             _channel.AcquisitionError  += OnAcquisitionError;
             _channel.AcquisitionEnded  += OnAcquisitionEnded;
 
+            _targetFrameCount = frameCount;
             _channelState = ChannelState.Active;
             _statistics.Start();
             _channel.StartAcquisition(frameCount ?? -1);
@@ -283,6 +285,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
                 return;
 
             _channelState = ChannelState.Idle;
+            _targetFrameCount = null;
 
             tcs = _triggerTcs;
             _triggerTcs = null;
@@ -415,6 +418,17 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
     private void OnFrameAcquired(object? sender, FrameAcquiredEventArgs e)
     {
         ProcessFrame(e.Image);
+
+        int? target;
+        long frameCount;
+        lock (_lock)
+        {
+            target = _targetFrameCount;
+            frameCount = _statistics?.FrameCount ?? 0;
+        }
+
+        if (target.HasValue && frameCount >= target.Value)
+            Task.Run(Stop);
     }
 
     /// <summary>
