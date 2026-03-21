@@ -302,12 +302,12 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
       {/* LEFT SIDEBAR */}
       <Box
         sx={{
-          width: 300,
+          width: 340,
           flexShrink: 0,
           borderRight: "1px solid",
           borderColor: "divider",
           overflowY: "auto",
-          p: 2,
+          p: 3,
           display: "flex",
           flexDirection: "column",
           gap: 2,
