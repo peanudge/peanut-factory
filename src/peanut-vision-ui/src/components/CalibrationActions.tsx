@@ -8,6 +8,7 @@ import Typography from "@mui/material/Typography";
 
 interface Props {
   busy: boolean;
+  isCalibrationAvailable: boolean;
   ffcEnabled: boolean;
   onBlack: () => void;
   onWhite: () => void;
@@ -17,6 +18,7 @@ interface Props {
 
 export default function CalibrationActions({
   busy,
+  isCalibrationAvailable,
   ffcEnabled,
   onBlack,
   onWhite,
@@ -31,7 +33,7 @@ export default function CalibrationActions({
         </Typography>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mt: 1 }}>
           <Box>
-            <Button variant="outlined" fullWidth disabled={busy} onClick={onBlack}>
+            <Button variant="outlined" fullWidth disabled={busy || !isCalibrationAvailable} onClick={onBlack}>
               Black Calibration
             </Button>
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5, px: 0.5 }}>
@@ -40,7 +42,7 @@ export default function CalibrationActions({
           </Box>
 
           <Box>
-            <Button variant="outlined" fullWidth disabled={busy} onClick={onWhite}>
+            <Button variant="outlined" fullWidth disabled={busy || !isCalibrationAvailable} onClick={onWhite}>
               White Calibration
             </Button>
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5, px: 0.5 }}>
@@ -49,7 +51,7 @@ export default function CalibrationActions({
           </Box>
 
           <Box>
-            <Button variant="outlined" fullWidth disabled={busy} onClick={onWhiteBalance}>
+            <Button variant="outlined" fullWidth disabled={busy || !isCalibrationAvailable} onClick={onWhiteBalance}>
               White Balance (Once)
             </Button>
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5, px: 0.5 }}>
@@ -62,7 +64,7 @@ export default function CalibrationActions({
               <Switch
                 checked={ffcEnabled}
                 onChange={onFfcToggle}
-                disabled={busy}
+                disabled={busy || !isCalibrationAvailable}
               />
             }
             label="Flat Field Correction (FFC)"

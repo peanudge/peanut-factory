@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -6,34 +7,35 @@ import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
-import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import type { BoardInfo, BoardStatus } from "../api/types";
+import type { BoardInfo } from "../api/types";
 import { getBoardStatus } from "../api/client";
-import { useAsyncOperation } from "../hooks/useAsyncOperation";
+import { queryKeys } from "../api/queryKeys";
+import { useToast } from "../contexts/ToastContext";
 
 export default function BoardRow({ board }: { board: BoardInfo }) {
   const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState<BoardStatus | null>(null);
-  const { busy, error, execute } = useAsyncOperation();
+  const { toast } = useToast();
 
-  const handleToggle = () => {
-    if (!open && !status) {
-      execute(async () => {
-        setStatus(await getBoardStatus(board.index));
-      });
-    }
-    setOpen(!open);
-  };
+  const { data: status, isFetching, error } = useQuery({
+    queryKey: queryKeys.boardStatus(board.index),
+    queryFn: () => getBoardStatus(board.index),
+    enabled: open,
+    staleTime: Infinity,
+  });
+
+  useEffect(() => {
+    if (error) toast(error instanceof Error ? error.message : "Failed to load board status", "error");
+  }, [error, toast]);
 
   return (
     <>
       <TableRow
         hover
         sx={{ cursor: "pointer", "& > *": { borderBottom: "unset" } }}
-        onClick={handleToggle}
+        onClick={() => setOpen(!open)}
       >
         <TableCell padding="checkbox">
           <IconButton size="small">
@@ -50,8 +52,7 @@ export default function BoardRow({ board }: { board: BoardInfo }) {
         <TableCell sx={{ py: 0 }} colSpan={6}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ m: 2 }}>
-              {busy && <CircularProgress size={20} />}
-              {error && <Alert severity="error">{error}</Alert>}
+              {isFetching && <CircularProgress size={20} />}
               {status && (
                 <Table size="small">
                   <TableBody>

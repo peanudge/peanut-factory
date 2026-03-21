@@ -45,46 +45,21 @@ public class SessionController : ControllerBase
     [HttpPost("{id:guid}/end")]
     public async Task<ActionResult<Session>> End(Guid id)
     {
-        try
-        {
-            var session = await _repository.EndSessionAsync(id);
-            return Ok(session);
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound(new { error = $"Session {id} not found" });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { error = ex.Message });
-        }
+        var session = await _repository.EndSessionAsync(id);
+        return Ok(session);
     }
 
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<Session>> Update(Guid id, [FromBody] UpdateSessionRequest request)
     {
-        try
-        {
-            var session = await _repository.UpdateAsync(id, request.Name, request.Notes);
-            return Ok(session);
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound(new { error = $"Session {id} not found" });
-        }
+        var session = await _repository.UpdateAsync(id, request.Name, request.Notes);
+        return Ok(session);
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> Delete(Guid id)
     {
-        try
-        {
-            await _repository.DeleteAsync(id);
-            return NoContent();
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound(new { error = $"Session {id} not found" });
-        }
+        await _repository.DeleteAsync(id);
+        return NoContent();
     }
 }

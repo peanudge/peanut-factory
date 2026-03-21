@@ -17,31 +17,37 @@ public class CalibrationExposureSpec : IClassFixture<PeanutVisionApiFactory>, IA
     public async Task DisposeAsync()
     {
         await _client.PostAsync("/api/acquisition/stop", null);
+        await _client.DeleteAsync("/api/acquisition");
     }
 
     // --- No active channel ---
 
     [Fact]
-    public async Task GetExposure_without_active_channel_returns_409()
+    public async Task GetExposure_without_active_channel_returns_desired_defaults()
     {
         var response = await _client.GetAsync("/api/calibration/exposure");
 
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var doc = await response.ReadJsonDocumentAsync();
+        Assert.True(doc.RootElement.TryGetProperty("exposureUs", out var exposureEl));
+        Assert.True(exposureEl.GetDouble() > 0);
     }
 
     [Fact]
-    public async Task SetExposure_without_active_channel_returns_409()
+    public async Task SetExposure_without_active_channel_stores_desired_value()
     {
         var response = await _client.PutJsonAsync("/api/calibration/exposure",
             new { exposureUs = 5000.0 });
 
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var doc = await response.ReadJsonDocumentAsync();
+        Assert.Equal(5000.0, doc.RootElement.GetProperty("exposureUs").GetDouble());
     }
 
     // --- With active channel ---
 
     [Fact]
-    public async Task GetExposure_returns_exposure_and_gain()
+    public async Task GetExposure_returns_exposure_and_range_when_active()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
             new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
@@ -51,7 +57,7 @@ public class CalibrationExposureSpec : IClassFixture<PeanutVisionApiFactory>, IA
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var doc = await response.ReadJsonDocumentAsync();
         Assert.True(doc.RootElement.TryGetProperty("exposureUs", out _));
-        Assert.True(doc.RootElement.TryGetProperty("gainDb", out _));
+        Assert.False(doc.RootElement.TryGetProperty("gainDb", out _));
     }
 
     [Fact]
@@ -83,31 +89,45 @@ public class CalibrationExposureSpec : IClassFixture<PeanutVisionApiFactory>, IA
     }
 
     [Fact]
-    public async Task SetGain_updates_gain_value()
+    public async Task SetExposure_persists_across_get()
     {
-        await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
+        await _client.PutJsonAsync("/api/calibration/exposure", new { exposureUs = 8000.0 });
 
-        var response = await _client.PutJsonAsync("/api/calibration/exposure",
-            new { gainDb = 3.5 });
+        var response = await _client.GetAsync("/api/calibration/exposure");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var doc = await response.ReadJsonDocumentAsync();
-        Assert.Equal(3.5, doc.RootElement.GetProperty("gainDb").GetDouble());
+        Assert.Equal(8000.0, doc.RootElement.GetProperty("exposureUs").GetDouble());
+    }
+
+    // --- With idle channel ---
+
+    [Fact]
+    public async Task GetExposure_with_idle_channel_returns_ok()
+    {
+        await _client.PostJsonAsync("/api/acquisition/start",
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
+        await _client.PostAsync("/api/acquisition/stop", null);
+
+        var response = await _client.GetAsync("/api/calibration/exposure");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var doc = await response.ReadJsonDocumentAsync();
+        Assert.True(doc.RootElement.TryGetProperty("exposureUs", out _));
     }
 
     [Fact]
-    public async Task SetExposure_and_gain_together()
+    public async Task SetExposure_with_idle_channel_returns_ok()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
             new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
+        await _client.PostAsync("/api/acquisition/stop", null);
 
         var response = await _client.PutJsonAsync("/api/calibration/exposure",
-            new { exposureUs = 20000.0, gainDb = 1.5 });
+            new { exposureUs = 8000.0 });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var doc = await response.ReadJsonDocumentAsync();
-        Assert.Equal(20000.0, doc.RootElement.GetProperty("exposureUs").GetDouble());
-        Assert.Equal(1.5, doc.RootElement.GetProperty("gainDb").GetDouble());
+        Assert.Equal(8000.0, doc.RootElement.GetProperty("exposureUs").GetDouble());
     }
 }

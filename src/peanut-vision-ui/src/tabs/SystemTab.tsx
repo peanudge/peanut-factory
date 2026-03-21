@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -11,19 +12,25 @@ import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 import StatusChip from "../components/StatusChip";
 import BoardRow from "../components/BoardRow";
-import type { BoardInfo, CamFileInfo } from "../api/types";
 import { getBoards, getCameras } from "../api/client";
-import { useApiData } from "../hooks/useApiData";
+import { queryKeys } from "../api/queryKeys";
 
 export default function SystemTab() {
-  const { data, loading, error } = useApiData(
-    () => Promise.all([getBoards(), getCameras()]),
-  );
+  const { data: boards, isLoading: boardsLoading, error: boardsError } = useQuery({
+    queryKey: queryKeys.boards,
+    queryFn: getBoards,
+  });
+
+  const { data: cameras, isLoading: camsLoading, error: camsError } = useQuery({
+    queryKey: queryKeys.cameras,
+    queryFn: getCameras,
+  });
+
+  const loading = boardsLoading || camsLoading;
+  const error = boardsError ?? camsError;
 
   if (loading) return <CircularProgress sx={{ m: 4 }} />;
-  if (error) return <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>;
-
-  const [boards, cameras] = data as [BoardInfo[], CamFileInfo[]];
+  if (error) return <Alert severity="error" sx={{ m: 2 }}>{error instanceof Error ? error.message : "Failed to load"}</Alert>;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -45,7 +52,7 @@ export default function SystemTab() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {boards.length === 0 ? (
+              {!boards?.length ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center">
                     No boards detected
@@ -78,7 +85,7 @@ export default function SystemTab() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {cameras.length === 0 ? (
+              {!cameras?.length ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center">
                     No camera files found

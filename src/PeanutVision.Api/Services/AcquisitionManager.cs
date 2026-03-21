@@ -22,6 +22,8 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
     private ChannelState _channelState = ChannelState.None;
     private ProfileId? _channelProfileId;
     private TriggerMode? _channelTriggerMode;
+    private double _desiredExposureUs = 10000.0;
+    private int? _targetFrameCount;
 
     public AcquisitionManager(IGrabService grabService, ICamFileService camFileService)
     {
@@ -110,48 +112,62 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
 
     // IChannelCalibration implementation
 
-    public bool IsCalibrationAvailable => IsActive;
+    public bool IsCalibrationAvailable =>
+        ChannelState == ChannelState.Idle || ChannelState == ChannelState.Active;
 
-    public void PerformBlackCalibration() => GetRequiredActiveChannel().PerformBlackCalibration();
+    public void PerformBlackCalibration() => GetRequiredChannel().PerformBlackCalibration();
 
-    public void PerformWhiteCalibration() => GetRequiredActiveChannel().PerformWhiteCalibration();
+    public void PerformWhiteCalibration() => GetRequiredChannel().PerformWhiteCalibration();
 
-    public void PerformWhiteBalanceOnce() => GetRequiredActiveChannel().PerformWhiteBalanceOnce();
+    public void PerformWhiteBalanceOnce() => GetRequiredChannel().PerformWhiteBalanceOnce();
 
-    public void SetFlatFieldCorrection(bool enable) => GetRequiredActiveChannel().SetFlatFieldCorrection(enable);
+    public void SetFlatFieldCorrection(bool enable) => GetRequiredChannel().SetFlatFieldCorrection(enable);
 
     public ExposureInfo GetExposure()
     {
-        var channel = GetRequiredActiveChannel();
-        var range = channel.GetExposureRange();
-        return new ExposureInfo
+        lock (_lock)
         {
-            ExposureUs = channel.GetExposureUs(),
-            GainDb = channel.GetGainDb(),
-            ExposureRange = new ExposureRangeInfo { Min = range.Min, Max = range.Max },
-        };
+            if (_channelState == ChannelState.Active && _channel != null)
+            {
+                _desiredExposureUs = _channel.GetExposureUs();
+                var range = _channel.GetExposureRange();
+                return new ExposureInfo
+                {
+                    ExposureUs = _desiredExposureUs,
+                    ExposureRange = new ExposureRangeInfo { Min = range.Min, Max = range.Max },
+                };
+            }
+            return new ExposureInfo { ExposureUs = _desiredExposureUs };
+        }
     }
 
-    public ExposureInfo SetExposure(double? exposureUs, double? gainDb)
-    {
-        var channel = GetRequiredActiveChannel();
-        if (exposureUs.HasValue) channel.SetExposureUs(exposureUs.Value);
-        if (gainDb.HasValue) channel.SetGainDb(gainDb.Value);
-        var range = channel.GetExposureRange();
-        return new ExposureInfo
-        {
-            ExposureUs = channel.GetExposureUs(),
-            GainDb = channel.GetGainDb(),
-            ExposureRange = new ExposureRangeInfo { Min = range.Min, Max = range.Max },
-        };
-    }
-
-    private GrabChannel GetRequiredActiveChannel()
+    public ExposureInfo SetExposure(double? exposureUs)
     {
         lock (_lock)
         {
-            if (_channelState != ChannelState.Active || _channel == null)
-                throw new InvalidOperationException("No active acquisition channel.");
+            if (exposureUs.HasValue)
+                _desiredExposureUs = exposureUs.Value;
+
+            if (_channelState == ChannelState.Active && _channel != null)
+            {
+                _channel.SetExposureUs(_desiredExposureUs);
+                var range = _channel.GetExposureRange();
+                return new ExposureInfo
+                {
+                    ExposureUs = _channel.GetExposureUs(),
+                    ExposureRange = new ExposureRangeInfo { Min = range.Min, Max = range.Max },
+                };
+            }
+            return new ExposureInfo { ExposureUs = _desiredExposureUs };
+        }
+    }
+
+    private GrabChannel GetRequiredChannel()
+    {
+        lock (_lock)
+        {
+            if ((_channelState != ChannelState.Idle && _channelState != ChannelState.Active) || _channel == null)
+                throw new InvalidOperationException("No channel exists. Create a channel first.");
             return _channel;
         }
     }
@@ -234,9 +250,11 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
             _channel.AcquisitionError  += OnAcquisitionError;
             _channel.AcquisitionEnded  += OnAcquisitionEnded;
 
+            _targetFrameCount = frameCount;
             _channelState = ChannelState.Active;
             _statistics.Start();
             _channel.StartAcquisition(frameCount ?? -1);
+            try { _channel.SetExposureUs(_desiredExposureUs); } catch { /* best-effort */ }
 
             if (intervalMs.HasValue && intervalMs.Value > 0)
             {
@@ -268,6 +286,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
                 return;
 
             _channelState = ChannelState.Idle;
+            _targetFrameCount = null;
 
             tcs = _triggerTcs;
             _triggerTcs = null;
@@ -400,6 +419,17 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
     private void OnFrameAcquired(object? sender, FrameAcquiredEventArgs e)
     {
         ProcessFrame(e.Image);
+
+        int? target;
+        long frameCount;
+        lock (_lock)
+        {
+            target = _targetFrameCount;
+            frameCount = _statistics?.FrameCount ?? 0;
+        }
+
+        if (target.HasValue && frameCount >= target.Value)
+            Task.Run(Stop);
     }
 
     /// <summary>

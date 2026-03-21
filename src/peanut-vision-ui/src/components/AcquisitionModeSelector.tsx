@@ -24,7 +24,7 @@ export default function AcquisitionModeSelector({
   disabled,
 }: Props) {
   return (
-    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+    <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
       <ToggleButtonGroup
         value={mode}
         exclusive

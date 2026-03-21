@@ -66,6 +66,7 @@ export type ContinuousSubMode = "auto" | "manual";
 
 export interface AcquisitionStatus {
   isActive: boolean;
+  channelState?: ChannelState;
   profileId?: string;
   hasFrame?: boolean;
   lastError?: string | null;
@@ -77,7 +78,6 @@ export interface AcquisitionStatus {
 export interface ExposureInfo {
   exposureUs: number;
   exposureRange?: { min: number; max: number };
-  gainDb: number;
 }
 
 export interface ApiMessage {
@@ -88,12 +88,10 @@ export interface ApiError {
   error: string;
 }
 
-export interface CapturedImage {
+export interface CapturedEvent {
   id: string;
-  url: string;
-  blob: Blob;
+  filePath: string;
   capturedAt: Date;
-  savedPath?: string;
 }
 
 export interface Session {

@@ -1,14 +1,10 @@
 import { useState } from "react";
 import Box from "@mui/material/Box";
-import Snackbar from "@mui/material/Snackbar";
-import Alert from "@mui/material/Alert";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
-import ErrorAlert from "../components/ErrorAlert";
 import AcquisitionControls from "../components/AcquisitionControls";
 import EventLog from "../components/EventLog";
-import CapturedImageList from "../components/CapturedImageList";
-import DetailImageViewDialog from "../components/DetailImageViewDialog";
+import CaptureLog from "../components/CaptureLog";
 import ContinuousSettings from "../components/ContinuousSettings";
 import ImageSaveSettingsPanel from "../components/ImageSaveSettingsPanel";
 import SessionSelector from "../components/SessionSelector";
@@ -17,21 +13,19 @@ import CalibrationActions from "../components/CalibrationActions";
 import ExposureControl from "../components/ExposureControl";
 import ImageViewer from "../components/ImageViewer";
 import CollapsiblePanel from "../components/CollapsiblePanel";
-import { useImageBuffer } from "../hooks/useImageBuffer";
+import { useCaptureLog } from "../hooks/useCaptureLog";
 import { useAcquisitionActions } from "../hooks/useAcquisitionActions";
 import { useResizablePanel } from "../hooks/useResizablePanel";
-import { formatFilenameTimestamp } from "../utils/formatTimestamp";
-import { MAX_CAPTURED_IMAGES } from "../constants";
+import { getFilename } from "../utils/formatTimestamp";
 
 interface Props {
   onSessionChange?: (name: string | null) => void;
 }
 
 export default function AcquisitionTab({ onSessionChange }: Props = {}) {
-  const { capturedFrames, selectedFrameId, addFrame, deleteFrame, clearAllFrames, selectFrame } =
-    useImageBuffer(MAX_CAPTURED_IMAGES);
+  const { events, selectedEventId, addEvent, deleteEvent, clearAll, selectEvent } = useCaptureLog();
 
-  const acq = useAcquisitionActions({ onFrameCaptured: addFrame });
+  const acq = useAcquisitionActions({ onEventCaptured: addEvent });
 
   const { panelRef: sidebarRef, onResizerMouseDown: onSidebarResizerMouseDown } = useResizablePanel({
     defaultWidth: 340,
@@ -47,14 +41,12 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
   });
 
   const [sidebarTab, setSidebarTab] = useState(0);
-  const [dialogImageId, setDialogImageId] = useState<string | null>(null);
-  const dialogImage = capturedFrames.find((f) => f.id === dialogImageId) ?? null;
-  const selectedFrame = capturedFrames.find((f) => f.id === selectedFrameId) ?? null;
+
+  const selectedEvent = events.find((e) => e.id === selectedEventId) ?? null;
+  const viewerUrl = acq.previewUrl;
 
   return (
     <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden", height: "100%" }}>
-      <ErrorAlert error={acq.error} onClose={acq.clearError} />
-
       {/* LEFT SIDEBAR */}
       <Box
         ref={sidebarRef}
@@ -64,6 +56,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
           borderRight: "1px solid",
           borderColor: "divider",
           overflowY: "auto",
+          overflowX: "hidden",
           p: 3,
           display: "flex",
           flexDirection: "column",
@@ -137,15 +130,16 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
           <ExposureControl
             exposure={acq.exposure}
             exposureValue={acq.exposureValue}
-            gainValue={acq.gainValue}
+            isActive={acq.acquisitionStatus?.isActive ?? false}
             busy={acq.busy}
+            isCalibrationAvailable={acq.isCalibrationAvailable}
             onExposureChange={acq.setExposureValue}
-            onGainChange={acq.setGainValue}
             onLoad={acq.handleLoadExposure}
             onApply={acq.handleApplyExposure}
           />
           <CalibrationActions
             busy={acq.busy}
+            isCalibrationAvailable={acq.isCalibrationAvailable}
             ffcEnabled={acq.ffcEnabled}
             onBlack={acq.handleBlack}
             onWhite={acq.handleWhite}
@@ -178,26 +172,10 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
       <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <Box sx={{ flexGrow: 1, minHeight: 0, p: 1.5, display: "flex", flexDirection: "column" }}>
           <ImageViewer
-            url={selectedFrame?.url ?? null}
-            filename={
-              selectedFrame
-                ? `capture_${formatFilenameTimestamp(selectedFrame.capturedAt)}.png`
-                : undefined
-            }
+            url={viewerUrl}
+            filename={selectedEvent ? getFilename(selectedEvent.filePath) : undefined}
             errorMessage={acq.acquisitionStatus?.lastError}
-            savedPath={selectedFrame?.savedPath}
-          />
-        </Box>
-        <Box sx={{ flexShrink: 0, p: 1.5, pt: 0 }}>
-          <CapturedImageList
-            images={capturedFrames}
-            selectedId={selectedFrameId}
-            onSelect={(id) => {
-              selectFrame(id);
-              setDialogImageId(id);
-            }}
-            onDelete={deleteFrame}
-            onClear={clearAllFrames}
+            savedPath={selectedEvent?.filePath}
           />
         </Box>
       </Box>
@@ -226,32 +204,19 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
           overflow: "hidden",
         }}
       >
+        <CollapsiblePanel label="Captures" count={events.length} defaultOpen={true}>
+          <CaptureLog
+            events={events}
+            selectedId={selectedEventId}
+            onSelect={selectEvent}
+            onDelete={deleteEvent}
+            onClear={clearAll}
+          />
+        </CollapsiblePanel>
         <CollapsiblePanel label="Event Log" defaultOpen={false}>
           <EventLog events={acq.acquisitionStatus?.recentEvents} />
         </CollapsiblePanel>
       </Box>
-
-      <DetailImageViewDialog
-        image={dialogImage}
-        errorMessage={acq.acquisitionStatus?.lastError}
-        onClose={() => setDialogImageId(null)}
-      />
-
-      <Snackbar
-        open={acq.snackbar !== null}
-        autoHideDuration={3000}
-        onClose={() => acq.setSnackbar(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() => acq.setSnackbar(null)}
-          severity={acq.snackbar?.severity ?? "info"}
-          variant="filled"
-          sx={{ width: "100%" }}
-        >
-          {acq.snackbar?.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }

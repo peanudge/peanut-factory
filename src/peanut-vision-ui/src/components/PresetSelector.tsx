@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -16,6 +17,8 @@ import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import DeleteIcon from "@mui/icons-material/Delete";
 import type { AcquisitionPreset, TriggerModeOption } from "../api/types";
 import { getPresets, savePreset, deletePreset } from "../api/client";
+import { queryKeys } from "../api/queryKeys";
+import { useToast } from "../contexts/ToastContext";
 
 interface Props {
   profileId: string;
@@ -34,41 +37,44 @@ export default function PresetSelector({
   onLoadPreset,
   disabled,
 }: Props) {
-  const [presets, setPresets] = useState<AcquisitionPreset[]>([]);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [loadOpen, setLoadOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [presetName, setPresetName] = useState("");
-  const [busy, setBusy] = useState(false);
 
-  const refresh = useCallback(async () => {
-    try {
-      setPresets(await getPresets());
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  const { data: presets = [] } = useQuery({
+    queryKey: queryKeys.presets,
+    queryFn: getPresets,
+  });
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.presets });
 
-  const handleSave = async () => {
-    if (!presetName.trim()) return;
-    setBusy(true);
-    try {
-      await savePreset({
-        name: presetName.trim(),
-        profileId,
-        triggerMode,
-        frameCount,
-        intervalMs,
-      });
+  const handleError = (e: unknown) =>
+    toast(e instanceof Error ? e.message : "프리셋 작업에 실패했습니다", "error");
+
+  const saveMutation = useMutation({
+    mutationFn: (preset: AcquisitionPreset) => savePreset(preset),
+    onSuccess: () => {
       setPresetName("");
       setSaveOpen(false);
-      await refresh();
-    } finally {
-      setBusy(false);
-    }
+      invalidate();
+    },
+    onError: handleError,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (name: string) => deletePreset(name),
+    onSuccess: invalidate,
+    onError: handleError,
+  });
+
+  const busy = saveMutation.isPending || deleteMutation.isPending;
+
+  const handleSave = () => {
+    if (!presetName.trim()) return;
+    saveMutation.mutate({ name: presetName.trim(), profileId, triggerMode, frameCount, intervalMs });
   };
 
   const handleLoad = (preset: AcquisitionPreset) => {
@@ -76,18 +82,8 @@ export default function PresetSelector({
     setLoadOpen(false);
   };
 
-  const handleDelete = async (name: string) => {
-    setBusy(true);
-    try {
-      await deletePreset(name);
-      await refresh();
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
-    <Box sx={{ display: "flex", gap: 0.5 }}>
+    <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
       <Button
         size="small"
         startIcon={<SaveIcon />}
@@ -99,7 +95,7 @@ export default function PresetSelector({
       <Button
         size="small"
         startIcon={<FolderOpenIcon />}
-        onClick={() => { refresh(); setLoadOpen(true); }}
+        onClick={() => setLoadOpen(true)}
         disabled={disabled}
       >
         Load Preset
@@ -151,7 +147,7 @@ export default function PresetSelector({
                   <IconButton
                     edge="end"
                     size="small"
-                    onClick={(e) => { e.stopPropagation(); handleDelete(p.name); }}
+                    onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(p.name); }}
                     disabled={busy}
                   >
                     <DeleteIcon fontSize="small" />

@@ -47,16 +47,12 @@ export default function App() {
         </Tabs>
       </AppBar>
 
-      {tab === 0 && (
-        <Container maxWidth="lg" sx={{ py: 3, flexGrow: 1 }}>
-          <SystemTab />
-        </Container>
-      )}
-      {tab === 1 && (
-        <Box sx={{ flexGrow: 1, overflow: "hidden", display: "flex" }}>
-          <AcquisitionTab onSessionChange={setSessionName} />
-        </Box>
-      )}
+      <Container maxWidth="lg" sx={{ py: 3, flexGrow: 1, display: tab === 0 ? undefined : "none" }}>
+        <SystemTab />
+      </Container>
+      <Box sx={{ flexGrow: 1, overflow: "hidden", display: tab === 1 ? "flex" : "none" }}>
+        <AcquisitionTab onSessionChange={setSessionName} />
+      </Box>
     </Box>
   );
 }
