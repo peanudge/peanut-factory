@@ -1,9 +1,21 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CapturedEvent } from "../api/types";
 
 export function useCaptureLog() {
   const [events, setEvents] = useState<CapturedEvent[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const prevHeadIdRef = useRef<string | null>(null);
+
+  // Auto-select the newest event only when the user has nothing selected or is already
+  // following the live head. Preserves manual selections when new frames arrive.
+  useEffect(() => {
+    const headId = events[0]?.id ?? null;
+    if (!headId || headId === prevHeadIdRef.current) return;
+    setSelectedEventId((sel) =>
+      sel === null || sel === prevHeadIdRef.current ? headId : sel
+    );
+    prevHeadIdRef.current = headId;
+  }, [events]);
 
   const addEvent = useCallback((filePath: string) => {
     const newEvent: CapturedEvent = {
@@ -11,13 +23,7 @@ export function useCaptureLog() {
       filePath,
       capturedAt: new Date(),
     };
-    setEvents((prev) => {
-      // Auto-select only when no event is selected or the newest event is currently selected
-      setSelectedEventId((prevSelected) =>
-        prevSelected === null || prevSelected === prev[0]?.id ? newEvent.id : prevSelected
-      );
-      return [newEvent, ...prev];
-    });
+    setEvents((prev) => [newEvent, ...prev]);
   }, []);
 
   const deleteEvent = useCallback((id: string) => {
