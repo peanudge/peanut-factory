@@ -114,10 +114,17 @@ export interface HistogramData {
 
 export type TriggerModeOption = "soft" | "hard" | "combined";
 
+export type ColorFormat =
+  | "Y8" | "Y10" | "Y12" | "Y16"
+  | "BAYER8" | "BAYER10" | "BAYER12"
+  | "RGB24" | "RGB8" | "RGB32" | "RGBa8"
+  | "RGB24PL" | "RGB30PL" | "RGB36PL" | "RGB48PL"
+  | (string & Record<never, never>); // allow unknown formats from server
+
 export interface AcquisitionPreset {
   name: string;
   profileId: string;
-  triggerMode?: string | null;
+  triggerMode?: TriggerModeOption | null;
   frameCount?: number | null;
   intervalMs?: number | null;
 }
