@@ -1,10 +1,7 @@
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
-import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import DownloadIcon from "@mui/icons-material/Download";
-import SaveIcon from "@mui/icons-material/Save";
+import ImageActionBar from "./ImageActionBar";
 
 interface Props {
   url: string | null;
@@ -21,21 +18,20 @@ export default function ImageViewer({ url, filename, errorMessage, savedPath }: 
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          height: 300,
+          height: "100%",
+          minHeight: 200,
           border: "1px dashed",
           borderColor: "divider",
           borderRadius: 1,
         }}
       >
-        <Typography color="text.secondary">
-          No captured frame
-        </Typography>
+        <Typography color="text.secondary">No captured frame</Typography>
       </Box>
     );
   }
 
   return (
-    <Box>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 1 }}>
       <Box
         sx={{
           position: "relative",
@@ -43,13 +39,18 @@ export default function ImageViewer({ url, filename, errorMessage, savedPath }: 
           borderColor: "divider",
           borderRadius: 1,
           overflow: "hidden",
-          mb: 1,
+          flexGrow: 1,
+          minHeight: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          bgcolor: "background.default",
         }}
       >
         <img
           src={url}
           alt="Captured frame"
-          style={{ width: "100%", display: "block" }}
+          style={{ maxWidth: "100%", maxHeight: "100%", display: "block", objectFit: "contain" }}
         />
         {errorMessage && (
           <Box sx={{ position: "absolute", top: 8, left: 8 }}>
@@ -62,30 +63,8 @@ export default function ImageViewer({ url, filename, errorMessage, savedPath }: 
           </Box>
         )}
       </Box>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-        <Button
-          size="small"
-          startIcon={<DownloadIcon />}
-          href={url}
-          download={filename ?? `capture-${Date.now()}.png`}
-        >
-          Download
-        </Button>
-        {savedPath && (
-          <Tooltip title={savedPath}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, minWidth: 0 }}>
-              <SaveIcon sx={{ fontSize: 14, color: "success.main", flexShrink: 0 }} />
-              <Typography
-                variant="caption"
-                color="success.main"
-                noWrap
-                sx={{ maxWidth: 300 }}
-              >
-                {savedPath}
-              </Typography>
-            </Box>
-          </Tooltip>
-        )}
+      <Box sx={{ flexShrink: 0 }}>
+        <ImageActionBar url={url} filename={filename} savedPath={savedPath} />
       </Box>
     </Box>
   );

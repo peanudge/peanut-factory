@@ -35,14 +35,14 @@ export default function ExposureControl({
   return (
     <Card variant="outlined">
       <CardContent>
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
           <Typography variant="subtitle2">Exposure &amp; Gain</Typography>
           <Button size="small" variant="text" onClick={onLoad} disabled={busy}>
             Load Current
           </Button>
         </Box>
 
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           <Box>
             <Typography variant="body2" gutterBottom>
               Exposure ({exposureValue.toFixed(0)} &micro;s)

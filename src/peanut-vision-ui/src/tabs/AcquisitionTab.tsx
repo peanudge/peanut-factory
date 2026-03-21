@@ -1,42 +1,31 @@
-import { useCallback, useRef } from "react";
+import { useState } from "react";
 import Box from "@mui/material/Box";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
-import Accordion from "@mui/material/Accordion";
-import AccordionSummary from "@mui/material/AccordionSummary";
-import AccordionDetails from "@mui/material/AccordionDetails";
-import Typography from "@mui/material/Typography";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
 import ErrorAlert from "../components/ErrorAlert";
 import AcquisitionControls from "../components/AcquisitionControls";
-import AcquisitionStats from "../components/AcquisitionStats";
 import EventLog from "../components/EventLog";
-import ImageViewer from "../components/ImageViewer";
 import CapturedImageList from "../components/CapturedImageList";
+import DetailImageViewDialog from "../components/DetailImageViewDialog";
 import ContinuousSettings from "../components/ContinuousSettings";
 import ImageSaveSettingsPanel from "../components/ImageSaveSettingsPanel";
 import SessionSelector from "../components/SessionSelector";
-import HistogramChart from "../components/HistogramChart";
 import PresetSelector from "../components/PresetSelector";
 import CalibrationActions from "../components/CalibrationActions";
 import ExposureControl from "../components/ExposureControl";
-import SidebarSection from "../components/SidebarSection";
+import ImageViewer from "../components/ImageViewer";
 import CollapsiblePanel from "../components/CollapsiblePanel";
 import { useImageBuffer } from "../hooks/useImageBuffer";
 import { useAcquisitionActions } from "../hooks/useAcquisitionActions";
+import { useResizablePanel } from "../hooks/useResizablePanel";
+import { formatFilenameTimestamp } from "../utils/formatTimestamp";
 import { MAX_CAPTURED_IMAGES } from "../constants";
-
-function formatFilenameTimestamp(d: Date): string {
-  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}_${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}${String(d.getSeconds()).padStart(2, "0")}_${String(d.getMilliseconds()).padStart(3, "0")}`;
-}
 
 interface Props {
   onSessionChange?: (name: string | null) => void;
 }
-
-const RIGHT_PANEL_MIN = 200;
-const RIGHT_PANEL_MAX = 560;
-const RIGHT_PANEL_DEFAULT = 280;
 
 export default function AcquisitionTab({ onSessionChange }: Props = {}) {
   const { capturedFrames, selectedFrameId, addFrame, deleteFrame, clearAllFrames, selectFrame } =
@@ -44,42 +33,22 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
 
   const acq = useAcquisitionActions({ onFrameCaptured: addFrame });
 
-  // Right panel resize — width stored in a ref and applied via DOM ref
-  // to avoid re-renders during dragging
-  const rightPanelRef = useRef<HTMLDivElement>(null);
-  const rightPanelWidth = useRef(RIGHT_PANEL_DEFAULT);
-  const isDragging = useRef(false);
-  const dragStartX = useRef(0);
-  const dragStartWidth = useRef(0);
+  const { panelRef: sidebarRef, onResizerMouseDown: onSidebarResizerMouseDown } = useResizablePanel({
+    defaultWidth: 340,
+    min: 260,
+    max: 480,
+    direction: "left",
+  });
 
-  const onResizerMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    isDragging.current = true;
-    dragStartX.current = e.clientX;
-    dragStartWidth.current = rightPanelWidth.current;
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
+  const { panelRef: rightPanelRef, onResizerMouseDown: onRightResizerMouseDown } = useResizablePanel({
+    defaultWidth: 280,
+    min: 200,
+    max: 560,
+  });
 
-    const onMouseMove = (ev: MouseEvent) => {
-      if (!isDragging.current) return;
-      const delta = dragStartX.current - ev.clientX;
-      const next = Math.min(RIGHT_PANEL_MAX, Math.max(RIGHT_PANEL_MIN, dragStartWidth.current + delta));
-      rightPanelWidth.current = next;
-      if (rightPanelRef.current) rightPanelRef.current.style.width = `${next}px`;
-    };
-
-    const onMouseUp = () => {
-      isDragging.current = false;
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    };
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-  }, []);
-
+  const [sidebarTab, setSidebarTab] = useState(0);
+  const [dialogImageId, setDialogImageId] = useState<string | null>(null);
+  const dialogImage = capturedFrames.find((f) => f.id === dialogImageId) ?? null;
   const selectedFrame = capturedFrames.find((f) => f.id === selectedFrameId) ?? null;
 
   return (
@@ -88,6 +57,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
 
       {/* LEFT SIDEBAR */}
       <Box
+        ref={sidebarRef}
         sx={{
           width: 340,
           flexShrink: 0,
@@ -97,10 +67,30 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
           p: 3,
           display: "flex",
           flexDirection: "column",
-          gap: 2,
         }}
       >
-        <SidebarSection label="Acquisition">
+        {/* Sticky tab header — bleeds past p:3 with mx:-3 */}
+        <Box
+          sx={{
+            position: "sticky",
+            top: 0,
+            zIndex: 1,
+            bgcolor: "background.paper",
+            mx: -3,
+            borderBottom: "1px solid",
+            borderColor: "divider",
+            mb: 2,
+          }}
+        >
+          <Tabs value={sidebarTab} onChange={(_, v) => setSidebarTab(v)} variant="fullWidth">
+            <Tab label="Capture" />
+            <Tab label="Camera" />
+            <Tab label="Settings" />
+          </Tabs>
+        </Box>
+
+        {/* Tab 0: Capture */}
+        <Box sx={{ display: sidebarTab === 0 ? "flex" : "none", flexDirection: "column", gap: 2 }}>
           <PresetSelector
             profileId={acq.selectedProfile}
             triggerMode={acq.triggerMode}
@@ -140,9 +130,10 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
               disabled={acq.acquisitionStatus?.isActive}
             />
           )}
-        </SidebarSection>
+        </Box>
 
-        <SidebarSection label="Exposure">
+        {/* Tab 1: Camera */}
+        <Box sx={{ display: sidebarTab === 1 ? "flex" : "none", flexDirection: "column", gap: 2 }}>
           <ExposureControl
             exposure={acq.exposure}
             exposureValue={acq.exposureValue}
@@ -153,9 +144,6 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
             onLoad={acq.handleLoadExposure}
             onApply={acq.handleApplyExposure}
           />
-        </SidebarSection>
-
-        <SidebarSection label="Calibration">
           <CalibrationActions
             busy={acq.busy}
             ffcEnabled={acq.ffcEnabled}
@@ -164,47 +152,59 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
             onWhiteBalance={acq.handleWhiteBalance}
             onFfcToggle={acq.handleFfcToggle}
           />
-        </SidebarSection>
+        </Box>
 
-        <Accordion disableGutters elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle2">Save Settings</Typography>
-          </AccordionSummary>
-          <AccordionDetails sx={{ p: 1 }}>
-            <ImageSaveSettingsPanel />
-          </AccordionDetails>
-        </Accordion>
-
-        <SidebarSection label="Session">
+        {/* Tab 2: Settings */}
+        <Box sx={{ display: sidebarTab === 2 ? "flex" : "none", flexDirection: "column", gap: 2 }}>
+          <ImageSaveSettingsPanel />
           <SessionSelector onSessionChange={onSessionChange} />
-        </SidebarSection>
-      </Box>
-
-      {/* MAIN CANVAS */}
-      <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <Box sx={{ flexGrow: 1, p: 2, display: "flex", flexDirection: "column", gap: 2, overflow: "hidden" }}>
-          <Box sx={{ flexGrow: 1, minHeight: 0 }}>
-            <ImageViewer
-              url={selectedFrame?.url ?? null}
-              filename={selectedFrame ? `capture-${formatFilenameTimestamp(selectedFrame.capturedAt)}.png` : undefined}
-              errorMessage={acq.acquisitionStatus?.lastError}
-              savedPath={selectedFrame?.savedPath}
-            />
-          </Box>
-          <Box sx={{ display: "flex", gap: 2, flexShrink: 0 }}>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <HistogramChart />
-            </Box>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <AcquisitionStats stats={acq.acquisitionStatus?.statistics} />
-            </Box>
-          </Box>
         </Box>
       </Box>
 
-      {/* DRAG HANDLE */}
+      {/* LEFT SIDEBAR DRAG HANDLE */}
       <Box
-        onMouseDown={onResizerMouseDown}
+        onMouseDown={onSidebarResizerMouseDown}
+        sx={{
+          width: 4,
+          flexShrink: 0,
+          cursor: "col-resize",
+          bgcolor: "divider",
+          transition: "background-color 0.15s",
+          "&:hover": { bgcolor: "primary.main" },
+        }}
+      />
+
+      {/* MAIN CANVAS */}
+      <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <Box sx={{ flexGrow: 1, minHeight: 0, p: 1.5, display: "flex", flexDirection: "column" }}>
+          <ImageViewer
+            url={selectedFrame?.url ?? null}
+            filename={
+              selectedFrame
+                ? `capture_${formatFilenameTimestamp(selectedFrame.capturedAt)}.png`
+                : undefined
+            }
+            errorMessage={acq.acquisitionStatus?.lastError}
+            savedPath={selectedFrame?.savedPath}
+          />
+        </Box>
+        <Box sx={{ flexShrink: 0, p: 1.5, pt: 0 }}>
+          <CapturedImageList
+            images={capturedFrames}
+            selectedId={selectedFrameId}
+            onSelect={(id) => {
+              selectFrame(id);
+              setDialogImageId(id);
+            }}
+            onDelete={deleteFrame}
+            onClear={clearAllFrames}
+          />
+        </Box>
+      </Box>
+
+      {/* RIGHT PANEL DRAG HANDLE */}
+      <Box
+        onMouseDown={onRightResizerMouseDown}
         sx={{
           width: 4,
           flexShrink: 0,
@@ -219,27 +219,23 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
       <Box
         ref={rightPanelRef}
         sx={{
-          width: RIGHT_PANEL_DEFAULT,
+          width: 280,
           flexShrink: 0,
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
         }}
       >
-        <CollapsiblePanel label="Captures" count={capturedFrames.length} defaultOpen>
-          <CapturedImageList
-            images={capturedFrames}
-            selectedId={selectedFrameId}
-            onSelect={selectFrame}
-            onDelete={deleteFrame}
-            onClear={clearAllFrames}
-          />
-        </CollapsiblePanel>
-
         <CollapsiblePanel label="Event Log" defaultOpen={false}>
           <EventLog events={acq.acquisitionStatus?.recentEvents} />
         </CollapsiblePanel>
       </Box>
+
+      <DetailImageViewDialog
+        image={dialogImage}
+        errorMessage={acq.acquisitionStatus?.lastError}
+        onClose={() => setDialogImageId(null)}
+      />
 
       <Snackbar
         open={acq.snackbar !== null}
