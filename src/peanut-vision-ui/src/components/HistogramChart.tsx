@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
@@ -6,6 +6,8 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import type { HistogramData } from "../api/types";
 import { getHistogram } from "../api/client";
+import { queryKeys } from "../api/queryKeys";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ChartPoint {
   bin: number;
@@ -31,20 +33,16 @@ function toChartData(data: HistogramData): ChartPoint[] {
 }
 
 export default function HistogramChart() {
-  const [data, setData] = useState<ChartPoint[] | null>(null);
+  const queryClient = useQueryClient();
 
-  const refresh = useCallback(async () => {
-    try {
-      const hist = await getHistogram();
-      if (hist) setData(toChartData(hist));
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  const { data: histData } = useQuery({
+    queryKey: queryKeys.histogram,
+    queryFn: getHistogram,
+    select: (d) => d ? toChartData(d) : null,
+  });
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  const refresh = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.histogram });
 
   return (
     <Box sx={{ mt: 1 }}>
@@ -57,9 +55,9 @@ export default function HistogramChart() {
         </IconButton>
       </Box>
 
-      {data ? (
+      {histData ? (
         <ResponsiveContainer width="100%" height={120}>
-          <AreaChart data={data} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+          <AreaChart data={histData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
             <XAxis dataKey="bin" hide />
             <YAxis hide />
             <Tooltip

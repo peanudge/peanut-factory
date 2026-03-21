@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -10,30 +11,26 @@ import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import type { BoardInfo, BoardStatus } from "../api/types";
+import type { BoardInfo } from "../api/types";
 import { getBoardStatus } from "../api/client";
-import { useAsyncOperation } from "../hooks/useAsyncOperation";
+import { queryKeys } from "../api/queryKeys";
 
 export default function BoardRow({ board }: { board: BoardInfo }) {
   const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState<BoardStatus | null>(null);
-  const { busy, error, execute } = useAsyncOperation();
 
-  const handleToggle = () => {
-    if (!open && !status) {
-      execute(async () => {
-        setStatus(await getBoardStatus(board.index));
-      });
-    }
-    setOpen(!open);
-  };
+  const { data: status, isFetching, error } = useQuery({
+    queryKey: queryKeys.boardStatus(board.index),
+    queryFn: () => getBoardStatus(board.index),
+    enabled: open,
+    staleTime: Infinity, // fetch once per expand, not on every refocus
+  });
 
   return (
     <>
       <TableRow
         hover
         sx={{ cursor: "pointer", "& > *": { borderBottom: "unset" } }}
-        onClick={handleToggle}
+        onClick={() => setOpen(!open)}
       >
         <TableCell padding="checkbox">
           <IconButton size="small">
@@ -50,8 +47,12 @@ export default function BoardRow({ board }: { board: BoardInfo }) {
         <TableCell sx={{ py: 0 }} colSpan={6}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ m: 2 }}>
-              {busy && <CircularProgress size={20} />}
-              {error && <Alert severity="error">{error}</Alert>}
+              {isFetching && <CircularProgress size={20} />}
+              {error && (
+                <Alert severity="error">
+                  {error instanceof Error ? error.message : "Failed to load board status"}
+                </Alert>
+              )}
               {status && (
                 <Table size="small">
                   <TableBody>

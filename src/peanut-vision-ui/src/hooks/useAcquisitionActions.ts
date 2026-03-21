@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
   AcquisitionMode,
   AcquisitionPreset,
   AcquisitionStatus,
-  CamFileInfo,
   ContinuousSubMode,
   ExposureInfo,
   TriggerModeOption,
@@ -22,9 +22,9 @@ import {
   setFfc,
   getExposure,
   setExposure,
+  ApiError,
 } from "../api/client";
-import { useAsyncOperation } from "./useAsyncOperation";
-import { usePolling } from "./usePolling";
+import { queryKeys } from "../api/queryKeys";
 import { POLL_INTERVAL_ACTIVE_MS, POLL_INTERVAL_IDLE_MS } from "../constants";
 
 interface UseAcquisitionActionsParams {
@@ -32,14 +32,14 @@ interface UseAcquisitionActionsParams {
 }
 
 export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActionsParams) {
-  const [cameras, setCameras] = useState<CamFileInfo[]>([]);
+  const queryClient = useQueryClient();
+
   const [selectedProfile, setSelectedProfile] = useState("");
   const [mode, setMode] = useState<AcquisitionMode>("single");
   const [continuousSubMode, setContinuousSubMode] = useState<ContinuousSubMode>("auto");
   const [triggerMode, setTriggerMode] = useState<TriggerModeOption>("soft");
   const [frameCount, setFrameCount] = useState<number | null>(null);
   const [intervalMs, setIntervalMs] = useState<number | null>(null);
-  const [acquisitionStatus, setAcquisitionStatus] = useState<AcquisitionStatus | null>(null);
   const [snackbar, setSnackbar] = useState<{
     message: string;
     severity: "success" | "info" | "warning" | "error";
@@ -48,7 +48,159 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
   const [exposureValue, setExposureValue] = useState(1000);
   const [gainValue, setGainValue] = useState(0);
   const [ffcEnabled, setFfcEnabled] = useState(false);
-  const { busy, error, errorCode, clearError, execute } = useAsyncOperation();
+  const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState("");
+
+  const clearError = useCallback(() => {
+    setError("");
+    setErrorCode("");
+  }, []);
+
+  const handleError = useCallback((e: unknown) => {
+    if (e instanceof ApiError) {
+      setError(e.message);
+      setErrorCode(e.errorCode);
+    } else {
+      setError(e instanceof Error ? e.message : "Operation failed");
+      setErrorCode("UNKNOWN_ERROR");
+    }
+  }, []);
+
+  // ── Queries ──
+
+  const { data: cameras = [] } = useQuery({
+    queryKey: queryKeys.cameras,
+    queryFn: getCameras,
+  });
+
+  useEffect(() => {
+    if (cameras.length > 0 && !selectedProfile) {
+      setSelectedProfile(cameras[0].fileName);
+    }
+  }, [cameras, selectedProfile]);
+
+  const { data: acquisitionStatus } = useQuery<AcquisitionStatus>({
+    queryKey: queryKeys.acquisitionStatus,
+    queryFn: getAcquisitionStatus,
+    refetchInterval: (query) =>
+      query.state.data?.isActive ? POLL_INTERVAL_ACTIVE_MS : POLL_INTERVAL_IDLE_MS,
+  });
+
+  const { data: latestFrame } = useQuery({
+    queryKey: queryKeys.latestFrame,
+    queryFn: getLatestFrame,
+    refetchInterval: acquisitionStatus?.isActive && acquisitionStatus?.hasFrame ? 1000 : false,
+  });
+
+  useEffect(() => {
+    if (latestFrame) onFrameCaptured(latestFrame.blob, latestFrame.savedPath);
+  }, [latestFrame, onFrameCaptured]);
+
+  // ── Mutations ──
+
+  const invalidateStatus = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.acquisitionStatus });
+
+  const startMutation = useMutation({
+    mutationFn: () =>
+      startAcquisition(
+        selectedProfile,
+        triggerMode,
+        frameCount,
+        continuousSubMode === "auto" ? intervalMs : null,
+      ),
+    onSuccess: () => {
+      invalidateStatus();
+      setSnackbar({ message: "촬영이 시작되었습니다", severity: "success" });
+    },
+    onError: handleError,
+  });
+
+  const stopMutation = useMutation({
+    mutationFn: stopAcquisition,
+    onSuccess: () => {
+      invalidateStatus();
+      setSnackbar({ message: "촬영이 중지되었습니다", severity: "info" });
+    },
+    onError: handleError,
+  });
+
+  const triggerMutation = useMutation({
+    mutationFn: triggerAndCapture,
+    onSuccess: (result) => {
+      onFrameCaptured(result.blob, result.savedPath);
+      invalidateStatus();
+      setSnackbar({ message: "프레임이 촬영되었습니다", severity: "success" });
+    },
+    onError: handleError,
+  });
+
+  const snapshotMutation = useMutation({
+    mutationFn: () => snapshot(selectedProfile),
+    onSuccess: (result) => {
+      onFrameCaptured(result.blob, result.savedPath);
+      invalidateStatus();
+      setSnackbar({ message: "스냅샷이 촬영되었습니다", severity: "success" });
+    },
+    onError: handleError,
+  });
+
+  const loadExposureMutation = useMutation({
+    mutationFn: getExposure,
+    onSuccess: (info) => {
+      setExposureState(info);
+      setExposureValue(info.exposureUs);
+      setGainValue(info.gainDb);
+      setSnackbar({ message: "Exposure settings loaded", severity: "success" });
+    },
+    onError: handleError,
+  });
+
+  const applyExposureMutation = useMutation({
+    mutationFn: () => setExposure(exposureValue, gainValue),
+    onSuccess: (result) => {
+      setSnackbar({ message: result.message, severity: "success" });
+    },
+    onError: handleError,
+  });
+
+  const blackMutation = useMutation({
+    mutationFn: blackCalibration,
+    onSuccess: (result) => setSnackbar({ message: result.message, severity: "success" }),
+    onError: handleError,
+  });
+
+  const whiteMutation = useMutation({
+    mutationFn: whiteCalibration,
+    onSuccess: (result) => setSnackbar({ message: result.message, severity: "success" }),
+    onError: handleError,
+  });
+
+  const whiteBalanceMutation = useMutation({
+    mutationFn: whiteBalance,
+    onSuccess: (result) => setSnackbar({ message: result.message, severity: "success" }),
+    onError: handleError,
+  });
+
+  const ffcMutation = useMutation({
+    mutationFn: (enable: boolean) => setFfc(enable),
+    onSuccess: (result) => setSnackbar({ message: result.message, severity: "success" }),
+    onError: handleError,
+  });
+
+  // ── Computed state ──
+
+  const busy =
+    startMutation.isPending ||
+    stopMutation.isPending ||
+    triggerMutation.isPending ||
+    snapshotMutation.isPending ||
+    loadExposureMutation.isPending ||
+    applyExposureMutation.isPending ||
+    blackMutation.isPending ||
+    whiteMutation.isPending ||
+    whiteBalanceMutation.isPending ||
+    ffcMutation.isPending;
 
   const hasWarnings =
     (acquisitionStatus?.statistics?.droppedFrameCount ?? 0) > 0 ||
@@ -57,101 +209,21 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     !!acquisitionStatus?.lastError ||
     (acquisitionStatus?.statistics?.errorCount ?? 0) > 0;
 
-  const fetchStatus = useCallback(() => {
-    getAcquisitionStatus().then(setAcquisitionStatus).catch(() => {});
-  }, []);
+  const refresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.acquisitionStatus });
+  }, [queryClient]);
 
-  const pollInterval = acquisitionStatus?.isActive
-    ? POLL_INTERVAL_ACTIVE_MS
-    : POLL_INTERVAL_IDLE_MS;
-  const { refresh, throttled } = usePolling(fetchStatus, pollInterval);
+  // ── Handlers ──
 
-  useEffect(() => {
-    getCameras()
-      .then((c) => {
-        setCameras(c);
-        if (c.length > 0) setSelectedProfile(c[0].fileName);
-      })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (!acquisitionStatus?.isActive || !acquisitionStatus?.hasFrame) return;
-    const t = setInterval(async () => {
-      try {
-        const result = await getLatestFrame();
-        if (result) onFrameCaptured(result.blob, result.savedPath);
-      } catch {
-        /* ignore */
-      }
-    }, 1000);
-    return () => clearInterval(t);
-  }, [acquisitionStatus?.isActive, acquisitionStatus?.hasFrame, onFrameCaptured]);
-
-  const handleStart = () =>
-    execute(async () => {
-      await startAcquisition(
-        selectedProfile,
-        triggerMode,
-        frameCount,
-        continuousSubMode === "auto" ? intervalMs : null,
-      );
-      fetchStatus();
-      setSnackbar({ message: "촬영이 시작되었습니다", severity: "success" });
-    });
-
-  const handleStop = () =>
-    execute(async () => {
-      await stopAcquisition();
-      fetchStatus();
-      setSnackbar({ message: "촬영이 중지되었습니다", severity: "info" });
-    });
-
-  const handleTrigger = () =>
-    execute(async () => {
-      const { blob, savedPath } = await triggerAndCapture();
-      onFrameCaptured(blob, savedPath);
-      fetchStatus();
-      setSnackbar({ message: "프레임이 촬영되었습니다", severity: "success" });
-    });
-
-  const handleCapture = () =>
-    execute(async () => {
-      const { blob, savedPath } = await snapshot(selectedProfile);
-      onFrameCaptured(blob, savedPath);
-      fetchStatus();
-      setSnackbar({ message: "스냅샷이 촬영되었습니다", severity: "success" });
-    });
-
-  const handleLoadExposure = () =>
-    execute(async () => {
-      const info = await getExposure();
-      setExposureState(info);
-      setExposureValue(info.exposureUs);
-      setGainValue(info.gainDb);
-      setSnackbar({ message: "Exposure settings loaded", severity: "success" });
-    });
-
-  const handleApplyExposure = () =>
-    execute(async () => {
-      const result = await setExposure(exposureValue, gainValue);
-      setSnackbar({ message: result.message, severity: "success" });
-    });
-
-  const handleBlack = () =>
-    execute(async () => {
-      setSnackbar({ message: (await blackCalibration()).message, severity: "success" });
-    });
-
-  const handleWhite = () =>
-    execute(async () => {
-      setSnackbar({ message: (await whiteCalibration()).message, severity: "success" });
-    });
-
-  const handleWhiteBalance = () =>
-    execute(async () => {
-      setSnackbar({ message: (await whiteBalance()).message, severity: "success" });
-    });
+  const handleStart = () => startMutation.mutate();
+  const handleStop = () => stopMutation.mutate();
+  const handleTrigger = () => triggerMutation.mutate();
+  const handleCapture = () => snapshotMutation.mutate();
+  const handleLoadExposure = () => loadExposureMutation.mutate();
+  const handleApplyExposure = () => applyExposureMutation.mutate();
+  const handleBlack = () => blackMutation.mutate();
+  const handleWhite = () => whiteMutation.mutate();
+  const handleWhiteBalance = () => whiteBalanceMutation.mutate();
 
   const handleLoadPreset = useCallback((preset: AcquisitionPreset) => {
     setSelectedProfile(preset.profileId);
@@ -165,9 +237,7 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
 
   const handleFfcToggle = (_: unknown, checked: boolean) => {
     setFfcEnabled(checked);
-    execute(async () => {
-      setSnackbar({ message: (await setFfc(checked)).message, severity: "success" });
-    });
+    ffcMutation.mutate(checked);
   };
 
   return {
@@ -184,7 +254,7 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     setFrameCount,
     intervalMs,
     setIntervalMs,
-    acquisitionStatus,
+    acquisitionStatus: acquisitionStatus ?? null,
     snackbar,
     setSnackbar,
     exposure,
@@ -200,7 +270,7 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     hasWarnings,
     hasErrors,
     refresh,
-    throttled,
+    throttled: false, // React Query handles deduplication; always allow manual refresh
     handleStart,
     handleStop,
     handleTrigger,
