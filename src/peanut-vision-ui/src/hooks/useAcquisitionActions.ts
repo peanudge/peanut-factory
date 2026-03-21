@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
   AcquisitionMode,
@@ -46,6 +46,7 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
   const [exposureValue, setExposureValue] = useState(1000);
   const [ffcEnabled, setFfcEnabled] = useState(false);
   const [previewTimestamp, setPreviewTimestamp] = useState(0);
+  const lastCapturedPathRef = useRef<string | null>(null);
 
   const handleError = useCallback((e: unknown) => {
     toast(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Operation failed", "error");
@@ -87,7 +88,11 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
   useEffect(() => {
     if (!latestFrame) return;
     setPreviewTimestamp(Date.now());
-    if (latestFrame.savedPath) onEventCaptured(latestFrame.savedPath, null);
+    if (latestFrame.savedPath && latestFrame.savedPath !== lastCapturedPathRef.current) {
+      lastCapturedPathRef.current = latestFrame.savedPath;
+      const objectUrl = latestFrame.blob ? URL.createObjectURL(latestFrame.blob) : null;
+      onEventCaptured(latestFrame.savedPath, objectUrl);
+    }
   }, [latestFrame, onEventCaptured]);
 
   // ── Mutations ──
