@@ -131,6 +131,27 @@ export interface AcquisitionPreset {
 export type SaveImageFormat = "png" | "bmp" | "raw";
 export type SubfolderStrategy = "none" | "byDate" | "bySession" | "byProfile";
 
+export interface CapturedImageRecord {
+  id: string;
+  filePath: string;
+  filename: string;
+  hasThumbnail: boolean;
+  width: number;
+  height: number;
+  fileSizeBytes: number;
+  format: string;
+  capturedAt: string;
+  sessionId: string | null;
+}
+
+export interface ImagePage {
+  items: CapturedImageRecord[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export interface ImageSaveSettings {
   outputDirectory: string;
   format: SaveImageFormat;

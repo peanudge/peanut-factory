@@ -47,6 +47,8 @@ var dbPath = Path.Combine(builder.Environment.ContentRootPath, "peanut-vision.db
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
 builder.Services.AddScoped<ISessionRepository, SessionRepository>();
+builder.Services.AddScoped<ICapturedImageRepository, CapturedImageRepository>();
+builder.Services.AddSingleton<IThumbnailService, ThumbnailService>();
 
 var presetsPath = Path.Combine(builder.Environment.ContentRootPath, "acquisition-presets.json");
 builder.Services.AddSingleton<IAcquisitionPresetService>(new AcquisitionPresetService(presetsPath));
@@ -81,6 +83,23 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
+    // Add CapturedImages table for existing databases (EnsureCreated is a no-op on existing DBs)
+    db.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS CapturedImages (
+            Id TEXT NOT NULL PRIMARY KEY,
+            FilePath TEXT NOT NULL,
+            ThumbnailPath TEXT,
+            Width INTEGER NOT NULL DEFAULT 0,
+            Height INTEGER NOT NULL DEFAULT 0,
+            FileSizeBytes INTEGER NOT NULL DEFAULT 0,
+            Format TEXT NOT NULL DEFAULT '',
+            CapturedAt TEXT NOT NULL,
+            SessionId TEXT,
+            FOREIGN KEY (SessionId) REFERENCES Sessions(Id) ON DELETE SET NULL
+        );
+        CREATE INDEX IF NOT EXISTS IX_CapturedImages_CapturedAt ON CapturedImages(CapturedAt);
+        CREATE INDEX IF NOT EXISTS IX_CapturedImages_SessionId ON CapturedImages(SessionId);
+        """);
 }
 
 app.UseCors();
