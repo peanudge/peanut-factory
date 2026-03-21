@@ -84,7 +84,7 @@ using (var scope = app.Services.CreateScope())
 
 app.UseCors();
 
-app.UseExceptionHandler();
+app.UseExceptionHandler(o => { });
 
 app.MapOpenApi();
 
