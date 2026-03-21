@@ -33,37 +33,18 @@ public class AcquisitionController : ControllerBase
     [HttpPost("start")]
     public ActionResult Start([FromBody] StartAcquisitionRequest request)
     {
-        try
-        {
-            var profileId = new ProfileId(request.ProfileId);
-            var triggerMode = request.TriggerMode is not null
-                ? TriggerMode.Parse(request.TriggerMode)
-                : (TriggerMode?)null;
+        var profileId = new ProfileId(request.ProfileId);
+        var triggerMode = request.TriggerMode is not null
+            ? TriggerMode.Parse(request.TriggerMode)
+            : (TriggerMode?)null;
 
-            // Auto-release any idle channel so callers don't need explicit channel management
-            if (_acquisition.ChannelState != ChannelState.None && _acquisition.ChannelState != ChannelState.Active)
-                _acquisition.ReleaseChannel();
+        // Auto-release any idle channel so callers don't need explicit channel management
+        if (_acquisition.ChannelState != ChannelState.None && _acquisition.ChannelState != ChannelState.Active)
+            _acquisition.ReleaseChannel();
 
-            _acquisition.CreateChannel(profileId, triggerMode);
-            _acquisition.Start(request.FrameCount, request.IntervalMs);
-            return Ok(new { message = "Acquisition started", profileId = profileId.Value });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (MultiCamException ex)
-        {
-            return StatusCode(502, new { error = ErrorMessageSanitizer.Sanitize(ex) });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { error = ex.Message });
-        }
+        _acquisition.CreateChannel(profileId, triggerMode);
+        _acquisition.Start(request.FrameCount, request.IntervalMs);
+        return Ok(new { message = "Acquisition started", profileId = profileId.Value });
     }
 
     [HttpPost("stop")]
@@ -76,15 +57,8 @@ public class AcquisitionController : ControllerBase
     [HttpDelete]
     public ActionResult ReleaseChannel()
     {
-        try
-        {
-            _acquisition.ReleaseChannel();
-            return Ok(new { message = "Channel released" });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { error = ex.Message });
-        }
+        _acquisition.ReleaseChannel();
+        return Ok(new { message = "Channel released" });
     }
 
     [HttpGet("status")]
@@ -125,38 +99,23 @@ public class AcquisitionController : ControllerBase
     [HttpPost("trigger")]
     public async Task<ActionResult> Trigger()
     {
-        try
-        {
-            var image = await _acquisition.TriggerAndWaitAsync(5000);
+        var image = await _acquisition.TriggerAndWaitAsync(5000);
 
-            var settings = _saveSettings.GetSettings();
-            if (settings.AutoSave)
-            {
-                var filePath = _filenameGenerator.Generate(
-                    settings, _contentRootPath, _acquisition.ActiveProfileId?.Value);
-                new ImageWriter().Save(image, filePath);
-                Response.Headers["X-Image-Path"] = filePath;
-            }
+        var settings = _saveSettings.GetSettings();
+        if (settings.AutoSave)
+        {
+            var filePath = _filenameGenerator.Generate(
+                settings, _contentRootPath, _acquisition.ActiveProfileId?.Value);
+            new ImageWriter().Save(image, filePath);
+            Response.Headers["X-Image-Path"] = filePath;
+        }
 
-            var encoder = new PngEncoder();
-            var stream = new MemoryStream();
-            encoder.Encode(image, stream);
-            stream.Position = 0;
+        var encoder = new PngEncoder();
+        var stream = new MemoryStream();
+        encoder.Encode(image, stream);
+        stream.Position = 0;
 
-            return File(stream, "image/png", "trigger.png");
-        }
-        catch (MultiCamException ex)
-        {
-            return StatusCode(502, new { error = ErrorMessageSanitizer.Sanitize(ex) });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { error = ex.Message });
-        }
-        catch (TimeoutException ex)
-        {
-            return StatusCode(504, new { error = ex.Message });
-        }
+        return File(stream, "image/png", "trigger.png");
     }
 
     [HttpGet("latest-frame")]
@@ -203,59 +162,36 @@ public class AcquisitionController : ControllerBase
     [HttpPost("snapshot")]
     public ActionResult Snapshot([FromBody] SnapshotRequest request)
     {
-        try
+        var profileId = new ProfileId(request.ProfileId);
+        var triggerMode = request.TriggerMode is not null
+            ? TriggerMode.Parse(request.TriggerMode)
+            : (TriggerMode?)null;
+
+        var image = _acquisition.Snapshot(profileId, triggerMode);
+
+        if (!string.IsNullOrWhiteSpace(request.OutputPath))
         {
-            var profileId = new ProfileId(request.ProfileId);
-            var triggerMode = request.TriggerMode is not null
-                ? TriggerMode.Parse(request.TriggerMode)
-                : (TriggerMode?)null;
-
-            var image = _acquisition.Snapshot(profileId, triggerMode);
-
-            if (!string.IsNullOrWhiteSpace(request.OutputPath))
+            new ImageWriter().Save(image, request.OutputPath);
+            Response.Headers["X-Image-Path"] = request.OutputPath;
+        }
+        else
+        {
+            var settings = _saveSettings.GetSettings();
+            if (settings.AutoSave)
             {
-                new ImageWriter().Save(image, request.OutputPath);
-                Response.Headers["X-Image-Path"] = request.OutputPath;
+                var filePath = _filenameGenerator.Generate(
+                    settings, _contentRootPath, request.ProfileId);
+                new ImageWriter().Save(image, filePath);
+                Response.Headers["X-Image-Path"] = filePath;
             }
-            else
-            {
-                var settings = _saveSettings.GetSettings();
-                if (settings.AutoSave)
-                {
-                    var filePath = _filenameGenerator.Generate(
-                        settings, _contentRootPath, request.ProfileId);
-                    new ImageWriter().Save(image, filePath);
-                    Response.Headers["X-Image-Path"] = filePath;
-                }
-            }
+        }
 
-            var encoder = new PngEncoder();
-            var stream = new MemoryStream();
-            encoder.Encode(image, stream);
-            stream.Position = 0;
+        var encoder = new PngEncoder();
+        var stream = new MemoryStream();
+        encoder.Encode(image, stream);
+        stream.Position = 0;
 
-            return File(stream, "image/png", "snapshot.png");
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (MultiCamException ex)
-        {
-            return StatusCode(502, new { error = ErrorMessageSanitizer.Sanitize(ex) });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { error = ex.Message });
-        }
-        catch (TimeoutException ex)
-        {
-            return StatusCode(504, new { error = ex.Message });
-        }
+        return File(stream, "image/png", "snapshot.png");
     }
 }
 

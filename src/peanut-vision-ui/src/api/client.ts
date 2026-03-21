@@ -17,10 +17,24 @@ export interface CaptureResult {
   savedPath?: string;
 }
 
+export class ApiError extends Error {
+  readonly errorCode: string;
+  readonly statusCode: number;
+
+  constructor(message: string, errorCode: string, statusCode: number) {
+    super(message);
+    this.name = "ApiError";
+    this.errorCode = errorCode;
+    this.statusCode = statusCode;
+  }
+}
+
 async function handleErrorResponse(res: Response): Promise<never> {
   const body = await res.json().catch(() => ({}));
-  throw new Error(
+  throw new ApiError(
     body.error ?? body.message ?? `HTTP ${res.status}`,
+    body.errorCode ?? "UNKNOWN_ERROR",
+    res.status,
   );
 }
 
@@ -135,7 +149,9 @@ export function getActiveSession(): Promise<Session | null> {
   return fetch(`${API_BASE_URL}/sessions/active`)
     .then((res) => {
       if (res.status === 204) return null;
-      if (!res.ok) return res.json().then((b) => { throw new Error(b.error ?? `HTTP ${res.status}`); });
+      if (!res.ok) return res.json().then((b) => {
+        throw new ApiError(b.error ?? `HTTP ${res.status}`, b.errorCode ?? "UNKNOWN_ERROR", res.status);
+      });
       return res.json();
     });
 }
@@ -154,7 +170,9 @@ export function endSession(id: string): Promise<Session> {
 export function deleteSession(id: string): Promise<void> {
   return fetch(`${API_BASE_URL}/sessions/${id}`, { method: "DELETE" })
     .then((res) => {
-      if (!res.ok) return res.json().then((b) => { throw new Error(b.error ?? `HTTP ${res.status}`); });
+      if (!res.ok) return res.json().then((b) => {
+        throw new ApiError(b.error ?? `HTTP ${res.status}`, b.errorCode ?? "UNKNOWN_ERROR", res.status);
+      });
     });
 }
 
@@ -174,7 +192,9 @@ export function savePreset(preset: AcquisitionPreset): Promise<AcquisitionPreset
 export function deletePreset(name: string): Promise<void> {
   return fetch(`${API_BASE_URL}/presets/${encodeURIComponent(name)}`, { method: "DELETE" })
     .then((res) => {
-      if (!res.ok) return res.json().then((b) => { throw new Error(b.error ?? `HTTP ${res.status}`); });
+      if (!res.ok) return res.json().then((b) => {
+        throw new ApiError(b.error ?? `HTTP ${res.status}`, b.errorCode ?? "UNKNOWN_ERROR", res.status);
+      });
     });
 }
 

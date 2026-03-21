@@ -53,7 +53,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
 
   return (
     <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden", height: "100%" }}>
-      <ErrorAlert error={acq.error} onClose={acq.clearError} />
+      <ErrorAlert error={acq.error} errorCode={acq.errorCode} onClose={acq.clearError} />
 
       {/* LEFT SIDEBAR */}
       <Box

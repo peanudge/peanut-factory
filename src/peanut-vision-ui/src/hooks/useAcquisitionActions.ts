@@ -48,7 +48,7 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
   const [exposureValue, setExposureValue] = useState(1000);
   const [gainValue, setGainValue] = useState(0);
   const [ffcEnabled, setFfcEnabled] = useState(false);
-  const { busy, error, clearError, execute } = useAsyncOperation();
+  const { busy, error, errorCode, clearError, execute } = useAsyncOperation();
 
   const hasWarnings =
     (acquisitionStatus?.statistics?.droppedFrameCount ?? 0) > 0 ||
@@ -195,6 +195,7 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     ffcEnabled,
     busy,
     error,
+    errorCode,
     clearError,
     hasWarnings,
     hasErrors,
