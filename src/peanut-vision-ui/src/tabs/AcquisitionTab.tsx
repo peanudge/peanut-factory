@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import Box from "@mui/material/Box";
-import Grid from "@mui/material/Grid";
+import Collapse from "@mui/material/Collapse";
+import Chip from "@mui/material/Chip";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
+import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ErrorAlert from "../components/ErrorAlert";
@@ -49,7 +51,71 @@ function formatFilenameTimestamp(d: Date): string {
   return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}_${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}${String(d.getSeconds()).padStart(2, "0")}_${String(d.getMilliseconds()).padStart(3, "0")}`;
 }
 
-export default function AcquisitionTab() {
+function SidebarSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+      <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1 }}>
+        {label}
+      </Typography>
+      {children}
+      <Divider />
+    </Box>
+  );
+}
+
+function CollapsiblePanel({
+  label,
+  count,
+  defaultOpen = true,
+  children,
+}: {
+  label: string;
+  count?: number;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Box sx={{ borderTop: "1px solid", borderColor: "divider" }}>
+      <Box
+        onClick={() => setOpen((o) => !o)}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          px: 2,
+          py: 0.75,
+          cursor: "pointer",
+          bgcolor: "background.default",
+          "&:hover": { bgcolor: "action.hover" },
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography variant="subtitle2">{label}</Typography>
+          {count != null && <Chip label={count} size="small" />}
+        </Box>
+        <ExpandMoreIcon
+          sx={{
+            fontSize: 20,
+            transition: "transform 0.2s",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        />
+      </Box>
+      <Collapse in={open}>
+        <Box sx={{ p: 2 }}>
+          {children}
+        </Box>
+      </Collapse>
+    </Box>
+  );
+}
+
+interface Props {
+  onSessionChange?: (name: string | null) => void;
+}
+
+export default function AcquisitionTab({ onSessionChange }: Props = {}) {
   const [cameras, setCameras] = useState<CamFileInfo[]>([]);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [mode, setMode] = useState<AcquisitionMode>("single");
@@ -123,7 +189,6 @@ export default function AcquisitionTab() {
     setSelectedId(null);
   }, []);
 
-  // Revoke all URLs on unmount
   useEffect(() => {
     return () => {
       setImages((prev) => {
@@ -133,7 +198,6 @@ export default function AcquisitionTab() {
     };
   }, []);
 
-  // Live preview: poll latest frame while acquisition is active and has frames
   useEffect(() => {
     if (!status?.isActive || !status?.hasFrame) return;
     const t = setInterval(async () => {
@@ -171,10 +235,7 @@ export default function AcquisitionTab() {
       const { blob, savedPath } = await triggerAndCapture();
       addImage(blob, savedPath);
       fetchStatus();
-      setSnackbar({
-        message: "프레임이 촬영되었습니다",
-        severity: "success",
-      });
+      setSnackbar({ message: "프레임이 촬영되었습니다", severity: "success" });
     });
 
   const handleCapture = () =>
@@ -182,10 +243,7 @@ export default function AcquisitionTab() {
       const { blob, savedPath } = await snapshot(selectedProfile);
       addImage(blob, savedPath);
       fetchStatus();
-      setSnackbar({
-        message: "스냅샷이 촬영되었습니다",
-        severity: "success",
-      });
+      setSnackbar({ message: "스냅샷이 촬영되었습니다", severity: "success" });
     });
 
   const handleLoadExposure = () =>
@@ -238,113 +296,141 @@ export default function AcquisitionTab() {
   const selectedImage = images.find((img) => img.id === selectedId) ?? null;
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+    <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden", height: "100%" }}>
       <ErrorAlert error={error} onClose={clearError} />
 
-      <SessionSelector />
+      {/* LEFT SIDEBAR */}
+      <Box
+        sx={{
+          width: 300,
+          flexShrink: 0,
+          borderRight: "1px solid",
+          borderColor: "divider",
+          overflowY: "auto",
+          p: 2,
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+        }}
+      >
+        <SidebarSection label="Acquisition">
+          <PresetSelector
+            profileId={selectedProfile}
+            triggerMode={triggerMode}
+            frameCount={frameCount}
+            intervalMs={intervalMs}
+            onLoadPreset={handleLoadPreset}
+            disabled={status?.isActive}
+          />
+          <AcquisitionControls
+            cameras={cameras}
+            selectedProfile={selectedProfile}
+            onProfileChange={setSelectedProfile}
+            mode={mode}
+            onModeChange={setMode}
+            continuousSubMode={continuousSubMode}
+            triggerMode={triggerMode}
+            onTriggerModeChange={setTriggerMode}
+            status={status}
+            busy={busy}
+            onCapture={handleCapture}
+            onStart={handleStart}
+            onStop={handleStop}
+            onTrigger={handleTrigger}
+            onRefresh={refresh}
+            refreshThrottled={throttled}
+            hasWarnings={hasWarnings}
+            hasErrors={hasErrors}
+          />
+          {mode === "continuous" && (
+            <ContinuousSettings
+              subMode={continuousSubMode}
+              onSubModeChange={setContinuousSubMode}
+              frameCount={frameCount}
+              onFrameCountChange={setFrameCount}
+              intervalMs={intervalMs}
+              onIntervalMsChange={setIntervalMs}
+              disabled={status?.isActive}
+            />
+          )}
+        </SidebarSection>
 
-      <AcquisitionControls
-        cameras={cameras}
-        selectedProfile={selectedProfile}
-        onProfileChange={setSelectedProfile}
-        mode={mode}
-        onModeChange={setMode}
-        continuousSubMode={continuousSubMode}
-        triggerMode={triggerMode}
-        onTriggerModeChange={setTriggerMode}
-        status={status}
-        busy={busy}
-        onCapture={handleCapture}
-        onStart={handleStart}
-        onStop={handleStop}
-        onTrigger={handleTrigger}
-        onRefresh={refresh}
-        refreshThrottled={throttled}
-        hasWarnings={hasWarnings}
-        hasErrors={hasErrors}
-      />
+        <SidebarSection label="Exposure">
+          <ExposureControl
+            exposure={exposure}
+            exposureValue={exposureValue}
+            gainValue={gainValue}
+            busy={busy}
+            onExposureChange={setExposureValue}
+            onGainChange={setGainValue}
+            onLoad={handleLoadExposure}
+            onApply={handleApplyExposure}
+          />
+        </SidebarSection>
 
-      <PresetSelector
-        profileId={selectedProfile}
-        triggerMode={triggerMode}
-        frameCount={frameCount}
-        intervalMs={intervalMs}
-        onLoadPreset={handleLoadPreset}
-        disabled={status?.isActive}
-      />
+        <SidebarSection label="Calibration">
+          <CalibrationActions
+            busy={busy}
+            ffcEnabled={ffcEnabled}
+            onBlack={handleBlack}
+            onWhite={handleWhite}
+            onWhiteBalance={handleWhiteBalance}
+            onFfcToggle={handleFfcToggle}
+          />
+        </SidebarSection>
 
-      {mode === "continuous" && (
-        <ContinuousSettings
-          subMode={continuousSubMode}
-          onSubModeChange={setContinuousSubMode}
-          frameCount={frameCount}
-          onFrameCountChange={setFrameCount}
-          intervalMs={intervalMs}
-          onIntervalMsChange={setIntervalMs}
-          disabled={status?.isActive}
-        />
-      )}
+        <Accordion disableGutters elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="subtitle2">Save Settings</Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ p: 1 }}>
+            <ImageSaveSettingsPanel />
+          </AccordionDetails>
+        </Accordion>
 
-      <ImageSaveSettingsPanel />
+        <SidebarSection label="Session">
+          <SessionSelector onSessionChange={onSessionChange} />
+        </SidebarSection>
+      </Box>
 
-      <Accordion disableGutters>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="subtitle2">Camera Settings</Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <CalibrationActions
-                busy={busy}
-                ffcEnabled={ffcEnabled}
-                onBlack={handleBlack}
-                onWhite={handleWhite}
-                onWhiteBalance={handleWhiteBalance}
-                onFfcToggle={handleFfcToggle}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <ExposureControl
-                exposure={exposure}
-                exposureValue={exposureValue}
-                gainValue={gainValue}
-                busy={busy}
-                onExposureChange={setExposureValue}
-                onGainChange={setGainValue}
-                onLoad={handleLoadExposure}
-                onApply={handleApplyExposure}
-              />
-            </Grid>
-          </Grid>
-        </AccordionDetails>
-      </Accordion>
-
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <AcquisitionStats stats={status?.statistics} />
-            <EventLog events={status?.recentEvents} />
-          </Box>
-        </Grid>
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Box sx={{ display: "flex", flexDirection: "column" }}>
+      {/* MAIN CANVAS */}
+      <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        {/* Top area: image viewer + stats/histogram row */}
+        <Box sx={{ flexGrow: 1, p: 2, display: "flex", flexDirection: "column", gap: 2, overflow: "hidden" }}>
+          <Box sx={{ flexGrow: 1, minHeight: 0 }}>
             <ImageViewer
               url={selectedImage?.url ?? null}
               filename={selectedImage ? `capture-${formatFilenameTimestamp(selectedImage.capturedAt)}.png` : undefined}
               errorMessage={status?.lastError}
               savedPath={selectedImage?.savedPath}
             />
-            <HistogramChart />
-            <CapturedImageList
-              images={images}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              onDelete={handleDeleteImage}
-              onClear={handleClearAll}
-            />
           </Box>
-        </Grid>
-      </Grid>
+          <Box sx={{ display: "flex", gap: 2, flexShrink: 0 }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <HistogramChart />
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <AcquisitionStats stats={status?.statistics} />
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Gallery panel */}
+        <CollapsiblePanel label="Captures" count={images.length} defaultOpen>
+          <CapturedImageList
+            images={images}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            onDelete={handleDeleteImage}
+            onClear={handleClearAll}
+          />
+        </CollapsiblePanel>
+
+        {/* Event log panel */}
+        <CollapsiblePanel label="Event Log" defaultOpen={false}>
+          <EventLog events={status?.recentEvents} />
+        </CollapsiblePanel>
+      </Box>
 
       <Snackbar
         open={snackbar !== null}
