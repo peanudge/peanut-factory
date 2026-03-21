@@ -37,14 +37,7 @@ public class PresetController : ControllerBase
     [HttpDelete("{name}")]
     public async Task<ActionResult> Delete(string name)
     {
-        try
-        {
-            await _presets.DeleteAsync(name);
-            return NoContent();
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound(new { error = $"Preset '{name}' not found" });
-        }
+        await _presets.DeleteAsync(name);
+        return NoContent();
     }
 }

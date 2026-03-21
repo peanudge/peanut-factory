@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using PeanutVision.Api.Middleware;
 using PeanutVision.Api.Services;
 using PeanutVision.FakeCamDriver;
 using PeanutVision.MultiCamDriver;
@@ -55,6 +56,8 @@ builder.Services.AddSingleton<IAcquisitionService>(sp => sp.GetRequiredService<A
 builder.Services.AddSingleton<IChannelCalibration>(sp => sp.GetRequiredService<AcquisitionManager>());
 builder.Services.AddSingleton<ICalibrationService, CalibrationManager>();
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -81,12 +84,7 @@ using (var scope = app.Services.CreateScope())
 
 app.UseCors();
 
-app.UseExceptionHandler(error => error.Run(async context =>
-{
-    context.Response.StatusCode = 500;
-    context.Response.ContentType = "application/json";
-    await context.Response.WriteAsJsonAsync(new { error = "Internal server error" });
-}));
+app.UseExceptionHandler();
 
 app.MapOpenApi();
 

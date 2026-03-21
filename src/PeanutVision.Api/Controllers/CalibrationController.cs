@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using PeanutVision.Api.Exceptions;
 using PeanutVision.Api.Services;
 
 namespace PeanutVision.Api.Controllers;
@@ -18,7 +19,7 @@ public class CalibrationController : ControllerBase
     public ActionResult PerformBlackCalibration()
     {
         if (!_calibration.IsAvailable)
-            return Conflict(new { error = "No active acquisition channel." });
+            throw new ChannelNotAvailableException();
 
         _calibration.PerformBlackCalibration();
         return Ok(new { message = "Black calibration executed. Ensure lens was covered." });
@@ -28,7 +29,7 @@ public class CalibrationController : ControllerBase
     public ActionResult PerformWhiteCalibration()
     {
         if (!_calibration.IsAvailable)
-            return Conflict(new { error = "No active acquisition channel." });
+            throw new ChannelNotAvailableException();
 
         _calibration.PerformWhiteCalibration();
         return Ok(new { message = "White calibration executed. Ensure uniform ~200DN illumination." });
@@ -38,7 +39,7 @@ public class CalibrationController : ControllerBase
     public ActionResult PerformWhiteBalance()
     {
         if (!_calibration.IsAvailable)
-            return Conflict(new { error = "No active acquisition channel." });
+            throw new ChannelNotAvailableException();
 
         _calibration.PerformWhiteBalanceOnce();
         return Ok(new { message = "White balance (ONCE) executed." });
@@ -48,7 +49,7 @@ public class CalibrationController : ControllerBase
     public ActionResult SetFlatFieldCorrection([FromBody] FfcRequest request)
     {
         if (!_calibration.IsAvailable)
-            return Conflict(new { error = "No active acquisition channel." });
+            throw new ChannelNotAvailableException();
 
         _calibration.SetFlatFieldCorrection(request.Enable);
         return Ok(new { message = $"Flat field correction {(request.Enable ? "enabled" : "disabled")}." });
@@ -58,7 +59,7 @@ public class CalibrationController : ControllerBase
     public ActionResult GetExposure()
     {
         if (!_calibration.IsAvailable)
-            return Conflict(new { error = "No active acquisition channel." });
+            throw new ChannelNotAvailableException();
 
         var info = _calibration.GetExposure();
         return Ok(new
@@ -75,7 +76,7 @@ public class CalibrationController : ControllerBase
     public ActionResult SetExposure([FromBody] ExposureRequest request)
     {
         if (!_calibration.IsAvailable)
-            return Conflict(new { error = "No active acquisition channel." });
+            throw new ChannelNotAvailableException();
 
         var info = _calibration.SetExposure(request.ExposureUs, request.GainDb);
         return Ok(new
