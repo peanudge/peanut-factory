@@ -14,6 +14,7 @@ interface Props {
   exposureValue: number;
   isActive: boolean;
   busy: boolean;
+  isCalibrationAvailable: boolean;
   onExposureChange: (value: number) => void;
   onLoad: () => void;
   onApply: () => void;
@@ -24,6 +25,7 @@ export default function ExposureControl({
   exposureValue,
   isActive,
   busy,
+  isCalibrationAvailable,
   onExposureChange,
   onLoad,
   onApply,
@@ -73,7 +75,7 @@ export default function ExposureControl({
             )}
           </Box>
 
-          <Button variant="contained" onClick={onApply} disabled={busy}>
+          <Button variant="contained" onClick={onApply} disabled={busy || !isCalibrationAvailable}>
             {isActive ? "Apply Settings" : "Apply on Start"}
           </Button>
         </Box>

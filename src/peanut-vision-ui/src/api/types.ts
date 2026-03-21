@@ -66,6 +66,7 @@ export type ContinuousSubMode = "auto" | "manual";
 
 export interface AcquisitionStatus {
   isActive: boolean;
+  channelState?: ChannelState;
   profileId?: string;
   hasFrame?: boolean;
   lastError?: string | null;

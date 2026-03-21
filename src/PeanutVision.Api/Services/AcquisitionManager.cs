@@ -112,15 +112,16 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
 
     // IChannelCalibration implementation
 
-    public bool IsCalibrationAvailable => IsActive;
+    public bool IsCalibrationAvailable =>
+        ChannelState == ChannelState.Idle || ChannelState == ChannelState.Active;
 
-    public void PerformBlackCalibration() => GetRequiredActiveChannel().PerformBlackCalibration();
+    public void PerformBlackCalibration() => GetRequiredChannel().PerformBlackCalibration();
 
-    public void PerformWhiteCalibration() => GetRequiredActiveChannel().PerformWhiteCalibration();
+    public void PerformWhiteCalibration() => GetRequiredChannel().PerformWhiteCalibration();
 
-    public void PerformWhiteBalanceOnce() => GetRequiredActiveChannel().PerformWhiteBalanceOnce();
+    public void PerformWhiteBalanceOnce() => GetRequiredChannel().PerformWhiteBalanceOnce();
 
-    public void SetFlatFieldCorrection(bool enable) => GetRequiredActiveChannel().SetFlatFieldCorrection(enable);
+    public void SetFlatFieldCorrection(bool enable) => GetRequiredChannel().SetFlatFieldCorrection(enable);
 
     public ExposureInfo GetExposure()
     {
@@ -161,12 +162,12 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
         }
     }
 
-    private GrabChannel GetRequiredActiveChannel()
+    private GrabChannel GetRequiredChannel()
     {
         lock (_lock)
         {
-            if (_channelState != ChannelState.Active || _channel == null)
-                throw new InvalidOperationException("No active acquisition channel.");
+            if ((_channelState != ChannelState.Idle && _channelState != ChannelState.Active) || _channel == null)
+                throw new InvalidOperationException("No channel exists. Create a channel first.");
             return _channel;
         }
     }
