@@ -25,7 +25,7 @@ import {
 } from "../api/client";
 import { useAsyncOperation } from "./useAsyncOperation";
 import { usePolling } from "./usePolling";
-import { POLL_INTERVAL_ACTIVE_MS, POLL_INTERVAL_IDLE_MS } from "../constants";
+import { DEFAULT_CONTINUOUS_INTERVAL_MS, POLL_INTERVAL_ACTIVE_MS, POLL_INTERVAL_IDLE_MS } from "../constants";
 
 interface UseAcquisitionActionsParams {
   onFrameCaptured: (blob: Blob, savedPath?: string) => void;
@@ -88,7 +88,11 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     return () => clearInterval(t);
   }, [acquisitionStatus?.isActive, acquisitionStatus?.hasFrame, onFrameCaptured]);
 
-  const handleStart = () =>
+  const handleStart = () => {
+    if (mode === "continuous" && continuousSubMode === "auto" && intervalMs === null) {
+      setSnackbar({ message: "Please input interval time for continuous mode", severity: "warning" });
+      return;
+    }
     execute(async () => {
       await startAcquisition(
         selectedProfile,
@@ -99,6 +103,7 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
       fetchStatus();
       setSnackbar({ message: "촬영이 시작되었습니다", severity: "success" });
     });
+  };
 
   const handleStop = () =>
     execute(async () => {
@@ -170,12 +175,22 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     });
   };
 
+  const handleSetMode = useCallback(
+    (next: AcquisitionMode) => {
+      setMode(next);
+      if (next === "continuous") {
+        setIntervalMs((prev) => prev ?? DEFAULT_CONTINUOUS_INTERVAL_MS);
+      }
+    },
+    []
+  );
+
   return {
     cameras,
     selectedProfile,
     setSelectedProfile,
     mode,
-    setMode,
+    setMode: handleSetMode,
     continuousSubMode,
     setContinuousSubMode,
     triggerMode,
