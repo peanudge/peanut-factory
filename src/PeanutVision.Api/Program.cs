@@ -85,15 +85,7 @@ using (var scope = app.Services.CreateScope())
 
 app.UseCors();
 
-app.UseExceptionHandler(new ExceptionHandlerOptions
-{
-    ExceptionHandler = async context =>
-    {
-        context.Response.StatusCode = 500;
-        context.Response.ContentType = "application/json";
-        await context.Response.WriteAsJsonAsync(new { error = "Internal server error" });
-    }
-});
+app.UseExceptionHandler(o => { });
 
 app.MapOpenApi();
 
