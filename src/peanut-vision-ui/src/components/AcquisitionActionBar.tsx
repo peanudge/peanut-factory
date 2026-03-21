@@ -47,7 +47,7 @@ export default function AcquisitionActionBar({
     status?.allowedActions?.includes(action) ?? false;
 
   return (
-    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+    <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
       {mode === "single" ? (
         <Tooltip
           title={

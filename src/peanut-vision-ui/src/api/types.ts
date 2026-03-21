@@ -87,12 +87,10 @@ export interface ApiError {
   error: string;
 }
 
-export interface CapturedImage {
+export interface CapturedEvent {
   id: string;
-  url: string;
-  blob: Blob;
+  filePath: string;
   capturedAt: Date;
-  savedPath?: string;
 }
 
 export interface Session {
