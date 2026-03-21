@@ -26,7 +26,7 @@ import {
 } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
 import { useToast } from "../contexts/ToastContext";
-import { POLL_INTERVAL_ACTIVE_MS, POLL_INTERVAL_IDLE_MS } from "../constants";
+import { API_BASE_URL, POLL_INTERVAL_ACTIVE_MS, POLL_INTERVAL_IDLE_MS } from "../constants";
 
 interface UseAcquisitionActionsParams {
   onEventCaptured: (filePath: string) => void;
@@ -45,6 +45,7 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
   const [exposure, setExposureState] = useState<ExposureInfo | null>(null);
   const [exposureValue, setExposureValue] = useState(1000);
   const [ffcEnabled, setFfcEnabled] = useState(false);
+  const [previewTimestamp, setPreviewTimestamp] = useState(0);
 
   const handleError = useCallback((e: unknown) => {
     toast(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Operation failed", "error");
@@ -84,7 +85,9 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
   });
 
   useEffect(() => {
-    if (latestFrame?.savedPath) onEventCaptured(latestFrame.savedPath);
+    if (!latestFrame) return;
+    setPreviewTimestamp(Date.now());
+    if (latestFrame.savedPath) onEventCaptured(latestFrame.savedPath);
   }, [latestFrame, onEventCaptured]);
 
   // ── Mutations ──
@@ -121,6 +124,7 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
   const triggerMutation = useMutation({
     mutationFn: triggerAndCapture,
     onSuccess: (result) => {
+      setPreviewTimestamp(Date.now());
       if (result.savedPath) onEventCaptured(result.savedPath);
       invalidateStatus();
       toast("프레임이 촬영되었습니다", "success");
@@ -131,6 +135,7 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
   const snapshotMutation = useMutation({
     mutationFn: () => snapshot(selectedProfile),
     onSuccess: (result) => {
+      setPreviewTimestamp(Date.now());
       if (result.savedPath) onEventCaptured(result.savedPath);
       invalidateStatus();
       toast("스냅샷이 촬영되었습니다", "success");
@@ -236,6 +241,10 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     ffcMutation.mutate(checked);
   };
 
+  const previewUrl = previewTimestamp > 0
+    ? `${API_BASE_URL}/acquisition/latest-frame?_t=${previewTimestamp}`
+    : null;
+
   return {
     cameras,
     selectedProfile,
@@ -259,6 +268,7 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     hasWarnings,
     hasErrors,
     refresh,
+    previewUrl,
     throttled: false,
     handleStart,
     handleStop,

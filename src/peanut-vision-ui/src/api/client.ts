@@ -231,8 +231,3 @@ export function setExposure(
     body: JSON.stringify({ exposureUs }),
   });
 }
-
-/** Returns the URL to load a saved image file via the backend by filesystem path. */
-export function getImageFileUrl(filePath: string): string {
-  return `${API_BASE_URL}/images/file?path=${encodeURIComponent(filePath)}`;
-}
