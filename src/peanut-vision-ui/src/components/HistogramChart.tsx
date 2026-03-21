@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
@@ -7,7 +8,7 @@ import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from "rec
 import type { HistogramData } from "../api/types";
 import { getHistogram } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
-import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "../contexts/ToastContext";
 
 interface ChartPoint {
   bin: number;
@@ -17,7 +18,6 @@ interface ChartPoint {
 }
 
 function toChartData(data: HistogramData): ChartPoint[] {
-  // Downsample to 64 bins for cleaner rendering
   const factor = 4;
   const result: ChartPoint[] = [];
   for (let i = 0; i < 256; i += factor) {
@@ -34,12 +34,17 @@ function toChartData(data: HistogramData): ChartPoint[] {
 
 export default function HistogramChart() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  const { data: histData } = useQuery({
+  const { data: histData, error } = useQuery({
     queryKey: queryKeys.histogram,
     queryFn: getHistogram,
     select: (d) => d ? toChartData(d) : null,
   });
+
+  useEffect(() => {
+    if (error) toast(error instanceof Error ? error.message : "히스토그램을 불러오지 못했습니다", "error");
+  }, [error, toast]);
 
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: queryKeys.histogram });

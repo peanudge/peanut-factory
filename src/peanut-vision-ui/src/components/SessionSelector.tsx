@@ -25,8 +25,8 @@ import {
   endSession,
   deleteSession,
 } from "../api/client";
-
 import { queryKeys } from "../api/queryKeys";
+import { useToast } from "../contexts/ToastContext";
 
 interface SessionSelectorProps {
   onSessionChange?: (name: string | null) => void;
@@ -34,6 +34,7 @@ interface SessionSelectorProps {
 
 export default function SessionSelector({ onSessionChange }: SessionSelectorProps = {}) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [historyOpen, setHistoryOpen] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
   const [newName, setNewName] = useState("");
@@ -58,6 +59,9 @@ export default function SessionSelector({ onSessionChange }: SessionSelectorProp
     queryClient.invalidateQueries({ queryKey: queryKeys.activeSession });
   };
 
+  const handleError = (e: unknown) =>
+    toast(e instanceof Error ? e.message : "세션 작업에 실패했습니다", "error");
+
   const createMutation = useMutation({
     mutationFn: ({ name, notes }: { name: string; notes?: string }) =>
       createSession(name, notes),
@@ -67,16 +71,19 @@ export default function SessionSelector({ onSessionChange }: SessionSelectorProp
       setNewOpen(false);
       invalidate();
     },
+    onError: handleError,
   });
 
   const endMutation = useMutation({
     mutationFn: (id: string) => endSession(id),
     onSuccess: invalidate,
+    onError: handleError,
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteSession(id),
     onSuccess: invalidate,
+    onError: handleError,
   });
 
   const busy = createMutation.isPending || endMutation.isPending || deleteMutation.isPending;
