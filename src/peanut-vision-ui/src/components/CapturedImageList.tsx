@@ -120,8 +120,8 @@ export default function CapturedImageList({ images, selectedId, onSelect, onDele
               <Box
                 sx={{
                   position: "relative",
-                  width: 80,
-                  height: 60,
+                  width: 120,
+                  height: 90,
                   border: "2px solid",
                   borderColor: img.id === selectedId ? "primary.main" : "divider",
                   borderRadius: 1,

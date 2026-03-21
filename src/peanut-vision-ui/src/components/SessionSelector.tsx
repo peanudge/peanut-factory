@@ -25,7 +25,11 @@ import {
   deleteSession,
 } from "../api/client";
 
-export default function SessionSelector() {
+interface SessionSelectorProps {
+  onSessionChange?: (name: string | null) => void;
+}
+
+export default function SessionSelector({ onSessionChange }: SessionSelectorProps = {}) {
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -38,6 +42,7 @@ export default function SessionSelector() {
     try {
       const [active, all] = await Promise.all([getActiveSession(), getSessions()]);
       setActiveSession(active);
+      onSessionChange?.(active?.name ?? null);
       setSessions(all);
     } catch {
       /* ignore */
