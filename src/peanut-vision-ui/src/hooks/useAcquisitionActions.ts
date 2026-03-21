@@ -29,10 +29,10 @@ import { useToast } from "../contexts/ToastContext";
 import { POLL_INTERVAL_ACTIVE_MS, POLL_INTERVAL_IDLE_MS } from "../constants";
 
 interface UseAcquisitionActionsParams {
-  onFrameCaptured: (blob: Blob, savedPath?: string) => void;
+  onEventCaptured: (filePath: string) => void;
 }
 
-export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActionsParams) {
+export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActionsParams) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -84,8 +84,8 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
   });
 
   useEffect(() => {
-    if (latestFrame) onFrameCaptured(latestFrame.blob, latestFrame.savedPath);
-  }, [latestFrame, onFrameCaptured]);
+    if (latestFrame?.savedPath) onEventCaptured(latestFrame.savedPath);
+  }, [latestFrame, onEventCaptured]);
 
   // ── Mutations ──
 
@@ -121,7 +121,7 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
   const triggerMutation = useMutation({
     mutationFn: triggerAndCapture,
     onSuccess: (result) => {
-      onFrameCaptured(result.blob, result.savedPath);
+      if (result.savedPath) onEventCaptured(result.savedPath);
       invalidateStatus();
       toast("프레임이 촬영되었습니다", "success");
     },
@@ -131,7 +131,7 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
   const snapshotMutation = useMutation({
     mutationFn: () => snapshot(selectedProfile),
     onSuccess: (result) => {
-      onFrameCaptured(result.blob, result.savedPath);
+      if (result.savedPath) onEventCaptured(result.savedPath);
       invalidateStatus();
       toast("스냅샷이 촬영되었습니다", "success");
     },
