@@ -18,9 +18,10 @@ import ContinuousSettings from "../components/ContinuousSettings";
 import ImageSaveSettingsPanel from "../components/ImageSaveSettingsPanel";
 import SessionSelector from "../components/SessionSelector";
 import HistogramChart from "../components/HistogramChart";
+import PresetSelector from "../components/PresetSelector";
 import CalibrationActions from "../components/CalibrationActions";
 import ExposureControl from "../components/ExposureControl";
-import type { AcquisitionMode, AcquisitionStatus, CamFileInfo, CapturedImage, ContinuousSubMode, ExposureInfo } from "../api/types";
+import type { AcquisitionMode, AcquisitionPreset, AcquisitionStatus, CamFileInfo, CapturedImage, ContinuousSubMode, ExposureInfo, TriggerModeOption } from "../api/types";
 import {
   getCameras,
   startAcquisition,
@@ -53,6 +54,7 @@ export default function AcquisitionTab() {
   const [selectedProfile, setSelectedProfile] = useState("");
   const [mode, setMode] = useState<AcquisitionMode>("single");
   const [continuousSubMode, setContinuousSubMode] = useState<ContinuousSubMode>("auto");
+  const [triggerMode, setTriggerMode] = useState<TriggerModeOption>("soft");
   const [frameCount, setFrameCount] = useState<number | null>(null);
   const [intervalMs, setIntervalMs] = useState<number | null>(null);
   const [status, setStatus] = useState<AcquisitionStatus | null>(null);
@@ -149,7 +151,7 @@ export default function AcquisitionTab() {
     execute(async () => {
       await startAcquisition(
         selectedProfile,
-        undefined,
+        triggerMode,
         frameCount,
         continuousSubMode === "auto" ? intervalMs : null,
       );
@@ -216,6 +218,16 @@ export default function AcquisitionTab() {
       setSnackbar({ message: (await whiteBalance()).message, severity: "success" });
     });
 
+  const handleLoadPreset = useCallback((preset: AcquisitionPreset) => {
+    setSelectedProfile(preset.profileId);
+    setTriggerMode((preset.triggerMode as TriggerModeOption) ?? "soft");
+    setFrameCount(preset.frameCount ?? null);
+    setIntervalMs(preset.intervalMs ?? null);
+    if (preset.frameCount != null || preset.intervalMs != null) {
+      setMode("continuous");
+    }
+  }, []);
+
   const handleFfcToggle = (_: unknown, checked: boolean) => {
     setFfcEnabled(checked);
     execute(async () => {
@@ -238,6 +250,8 @@ export default function AcquisitionTab() {
         mode={mode}
         onModeChange={setMode}
         continuousSubMode={continuousSubMode}
+        triggerMode={triggerMode}
+        onTriggerModeChange={setTriggerMode}
         status={status}
         busy={busy}
         onCapture={handleCapture}
@@ -248,6 +262,15 @@ export default function AcquisitionTab() {
         refreshThrottled={throttled}
         hasWarnings={hasWarnings}
         hasErrors={hasErrors}
+      />
+
+      <PresetSelector
+        profileId={selectedProfile}
+        triggerMode={triggerMode}
+        frameCount={frameCount}
+        intervalMs={intervalMs}
+        onLoadPreset={handleLoadPreset}
+        disabled={status?.isActive}
       />
 
       {mode === "continuous" && (

@@ -9,6 +9,7 @@ import type {
   ImageSaveSettings,
   Session,
   HistogramData,
+  AcquisitionPreset,
 } from "./types";
 
 export interface CaptureResult {
@@ -152,6 +153,26 @@ export function endSession(id: string): Promise<Session> {
 
 export function deleteSession(id: string): Promise<void> {
   return fetch(`${API_BASE_URL}/sessions/${id}`, { method: "DELETE" })
+    .then((res) => {
+      if (!res.ok) return res.json().then((b) => { throw new Error(b.error ?? `HTTP ${res.status}`); });
+    });
+}
+
+// ── Presets ──
+
+export function getPresets(): Promise<AcquisitionPreset[]> {
+  return request("/presets");
+}
+
+export function savePreset(preset: AcquisitionPreset): Promise<AcquisitionPreset> {
+  return request("/presets", {
+    method: "PUT",
+    body: JSON.stringify(preset),
+  });
+}
+
+export function deletePreset(name: string): Promise<void> {
+  return fetch(`${API_BASE_URL}/presets/${encodeURIComponent(name)}`, { method: "DELETE" })
     .then((res) => {
       if (!res.ok) return res.json().then((b) => { throw new Error(b.error ?? `HTTP ${res.status}`); });
     });

@@ -112,6 +112,16 @@ export interface HistogramData {
   bins: number;
 }
 
+export type TriggerModeOption = "soft" | "hard" | "combined";
+
+export interface AcquisitionPreset {
+  name: string;
+  profileId: string;
+  triggerMode?: string | null;
+  frameCount?: number | null;
+  intervalMs?: number | null;
+}
+
 export type SaveImageFormat = "png" | "bmp" | "raw";
 export type SubfolderStrategy = "none" | "byDate" | "bySession" | "byProfile";
 
