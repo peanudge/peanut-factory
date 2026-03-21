@@ -17,6 +17,7 @@ public class CalibrationExposureSpec : IClassFixture<PeanutVisionApiFactory>, IA
     public async Task DisposeAsync()
     {
         await _client.PostAsync("/api/acquisition/stop", null);
+        await _client.DeleteAsync("/api/acquisition");
     }
 
     // --- No active channel ---
@@ -93,6 +94,37 @@ public class CalibrationExposureSpec : IClassFixture<PeanutVisionApiFactory>, IA
         await _client.PutJsonAsync("/api/calibration/exposure", new { exposureUs = 8000.0 });
 
         var response = await _client.GetAsync("/api/calibration/exposure");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var doc = await response.ReadJsonDocumentAsync();
+        Assert.Equal(8000.0, doc.RootElement.GetProperty("exposureUs").GetDouble());
+    }
+
+    // --- With idle channel ---
+
+    [Fact]
+    public async Task GetExposure_with_idle_channel_returns_ok()
+    {
+        await _client.PostJsonAsync("/api/acquisition/start",
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
+        await _client.PostAsync("/api/acquisition/stop", null);
+
+        var response = await _client.GetAsync("/api/calibration/exposure");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var doc = await response.ReadJsonDocumentAsync();
+        Assert.True(doc.RootElement.TryGetProperty("exposureUs", out _));
+    }
+
+    [Fact]
+    public async Task SetExposure_with_idle_channel_returns_ok()
+    {
+        await _client.PostJsonAsync("/api/acquisition/start",
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
+        await _client.PostAsync("/api/acquisition/stop", null);
+
+        var response = await _client.PutJsonAsync("/api/calibration/exposure",
+            new { exposureUs = 8000.0 });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var doc = await response.ReadJsonDocumentAsync();

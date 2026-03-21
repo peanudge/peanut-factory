@@ -68,6 +68,7 @@ public class AcquisitionController : ControllerBase
         return Ok(new
         {
             isActive = _acquisition.IsActive,
+            channelState = _acquisition.ChannelState.ToString().ToLowerInvariant(),
             profileId = _acquisition.ActiveProfileId?.Value,
             hasFrame = _acquisition.HasFrame,
             lastError = _acquisition.LastError,

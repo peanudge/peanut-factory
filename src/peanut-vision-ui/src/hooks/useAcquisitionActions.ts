@@ -194,6 +194,10 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     whiteBalanceMutation.isPending ||
     ffcMutation.isPending;
 
+  const isCalibrationAvailable =
+    acquisitionStatus?.channelState === "idle" ||
+    acquisitionStatus?.channelState === "active";
+
   const hasWarnings =
     (acquisitionStatus?.statistics?.droppedFrameCount ?? 0) > 0 ||
     (acquisitionStatus?.statistics?.clusterUnavailableCount ?? 0) > 0;
@@ -262,6 +266,7 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     handleCapture,
     handleLoadExposure,
     handleApplyExposure,
+    isCalibrationAvailable,
     handleBlack,
     handleWhite,
     handleWhiteBalance,

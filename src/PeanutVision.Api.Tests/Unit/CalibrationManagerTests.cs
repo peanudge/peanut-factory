@@ -165,6 +165,66 @@ public class CalibrationManagerTests : IDisposable
         }
     }
 
+    public class Given_idle_channel : CalibrationManagerTests
+    {
+        public Given_idle_channel()
+        {
+            _acquisitionManager.CreateChannel("crevis-tc-a160k-freerun-rgb8.cam");
+        }
+
+        [Fact]
+        public void Then_is_available()
+        {
+            Assert.True(_calibrationManager.IsAvailable);
+        }
+
+        [Fact]
+        public void When_black_calibration_then_calls_hal()
+        {
+            _mockHal.CallLog.Reset();
+
+            _calibrationManager.PerformBlackCalibration();
+
+            Assert.True(_mockHal.CallLog.BlackCalibrationPerformed);
+        }
+
+        [Fact]
+        public void When_white_calibration_then_calls_hal()
+        {
+            _mockHal.CallLog.Reset();
+
+            _calibrationManager.PerformWhiteCalibration();
+
+            Assert.True(_mockHal.CallLog.WhiteCalibrationPerformed);
+        }
+
+        [Fact]
+        public void When_white_balance_then_calls_hal()
+        {
+            _mockHal.CallLog.Reset();
+
+            _calibrationManager.PerformWhiteBalanceOnce();
+
+            Assert.True(_mockHal.CallLog.WhiteBalancePerformed);
+        }
+
+        [Fact]
+        public void When_get_exposure_then_returns_values()
+        {
+            var info = _calibrationManager.GetExposure();
+
+            Assert.Equal(10000.0, info.ExposureUs);
+        }
+
+        [Fact]
+        public void When_set_exposure_then_returns_updated_values()
+        {
+            var info = _calibrationManager.SetExposure(5000.0);
+
+            Assert.Equal(5000.0, info.ExposureUs);
+        }
+    }
+
     public class Given_active_then_stopped : CalibrationManagerTests
     {
         public Given_active_then_stopped()
@@ -175,9 +235,41 @@ public class CalibrationManagerTests : IDisposable
         }
 
         [Fact]
+        public void Then_is_still_available()
+        {
+            // Channel remains alive in Idle state after Stop — calibration is still available.
+            Assert.True(_calibrationManager.IsAvailable);
+        }
+
+        [Fact]
+        public void When_black_calibration_then_calls_hal()
+        {
+            _mockHal.CallLog.Reset();
+
+            _calibrationManager.PerformBlackCalibration();
+
+            Assert.True(_mockHal.CallLog.BlackCalibrationPerformed);
+        }
+    }
+
+    public class Given_channel_released : CalibrationManagerTests
+    {
+        public Given_channel_released()
+        {
+            _acquisitionManager.CreateChannel("crevis-tc-a160k-freerun-rgb8.cam");
+            _acquisitionManager.ReleaseChannel();
+        }
+
+        [Fact]
         public void Then_is_not_available()
         {
             Assert.False(_calibrationManager.IsAvailable);
+        }
+
+        [Fact]
+        public void When_black_calibration_then_throws()
+        {
+            Assert.Throws<InvalidOperationException>(() => _calibrationManager.PerformBlackCalibration());
         }
     }
 }
