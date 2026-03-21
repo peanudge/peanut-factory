@@ -16,7 +16,6 @@ import CollapsiblePanel from "../components/CollapsiblePanel";
 import { useCaptureLog } from "../hooks/useCaptureLog";
 import { useAcquisitionActions } from "../hooks/useAcquisitionActions";
 import { useResizablePanel } from "../hooks/useResizablePanel";
-import { getImageFileUrl } from "../api/client";
 import { getFilename } from "../utils/formatTimestamp";
 
 interface Props {
@@ -44,7 +43,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
   const [sidebarTab, setSidebarTab] = useState(0);
 
   const selectedEvent = events.find((e) => e.id === selectedEventId) ?? null;
-  const viewerUrl = selectedEvent ? getImageFileUrl(selectedEvent.filePath) : acq.previewUrl;
+  const viewerUrl = acq.previewUrl;
 
   return (
     <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden", height: "100%" }}>
