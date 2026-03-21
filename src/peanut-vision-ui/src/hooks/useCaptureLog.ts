@@ -12,7 +12,7 @@ export function useCaptureLog() {
       capturedAt: new Date(),
     };
     setEvents((prev) => [newEvent, ...prev]);
-    // No auto-select — user must click to load
+    setSelectedEventId(newEvent.id);
   }, []);
 
   const deleteEvent = useCallback((id: string) => {
