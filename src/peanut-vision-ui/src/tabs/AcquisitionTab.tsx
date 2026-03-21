@@ -395,7 +395,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
 
       {/* MAIN CANVAS */}
       <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        {/* Top area: image viewer + stats/histogram row */}
+        {/* Image viewer + stats/histogram row */}
         <Box sx={{ flexGrow: 1, p: 2, display: "flex", flexDirection: "column", gap: 2, overflow: "hidden" }}>
           <Box sx={{ flexGrow: 1, minHeight: 0 }}>
             <ImageViewer
@@ -414,8 +414,20 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
             </Box>
           </Box>
         </Box>
+      </Box>
 
-        {/* Gallery panel */}
+      {/* RIGHT PANEL */}
+      <Box
+        sx={{
+          width: 280,
+          flexShrink: 0,
+          borderLeft: "1px solid",
+          borderColor: "divider",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
         <CollapsiblePanel label="Captures" count={images.length} defaultOpen>
           <CapturedImageList
             images={images}
@@ -426,7 +438,6 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
           />
         </CollapsiblePanel>
 
-        {/* Event log panel */}
         <CollapsiblePanel label="Event Log" defaultOpen={false}>
           <EventLog events={status?.recentEvents} />
         </CollapsiblePanel>
