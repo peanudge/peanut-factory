@@ -1,9 +1,14 @@
+import { useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import CloseIcon from "@mui/icons-material/Close";
+import DownloadIcon from "@mui/icons-material/Download";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import type { CapturedImage } from "../api/types";
 
 interface Props {
@@ -18,23 +23,58 @@ function formatTime(d: Date): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
 }
 
+function formatFilename(d: Date, index: number): string {
+  return `capture_${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}_${formatTime(d).replace(/:/g, "")}_${String(index).padStart(3, "0")}.png`;
+}
+
 export default function CapturedImageList({ images, selectedId, onSelect, onDelete, onClear }: Props) {
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportZip = async () => {
+    if (images.length === 0) return;
+    setExporting(true);
+    try {
+      const zip = new JSZip();
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        zip.file(formatFilename(img.capturedAt, i + 1), img.blob);
+      }
+      const blob = await zip.generateAsync({ type: "blob" });
+      saveAs(blob, `captures_${new Date().toISOString().slice(0, 10)}.zip`);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+
   return (
     <Box sx={{ mt: 1 }}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
         <Typography variant="subtitle2" color="text.secondary">
           Captured Images ({images.length})
         </Typography>
-        {images.length > 0 && (
-          <Button
-            size="small"
-            color="error"
-            startIcon={<DeleteSweepIcon />}
-            onClick={onClear}
-          >
-            Clear All
-          </Button>
-        )}
+        <Box sx={{ display: "flex", gap: 0.5 }}>
+          {images.length > 0 && (
+            <>
+              <Button
+                size="small"
+                startIcon={exporting ? <CircularProgress size={14} /> : <DownloadIcon />}
+                onClick={handleExportZip}
+                disabled={exporting}
+              >
+                Export ZIP
+              </Button>
+              <Button
+                size="small"
+                color="error"
+                startIcon={<DeleteSweepIcon />}
+                onClick={onClear}
+              >
+                Clear All
+              </Button>
+            </>
+          )}
+        </Box>
       </Box>
 
       {images.length === 0 ? (
