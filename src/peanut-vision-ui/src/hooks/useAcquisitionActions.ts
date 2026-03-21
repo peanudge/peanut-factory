@@ -82,7 +82,9 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
   const { data: latestFrame } = useQuery({
     queryKey: queryKeys.latestFrame,
     queryFn: getLatestFrame,
-    refetchInterval: acquisitionStatus?.isActive && acquisitionStatus?.hasFrame ? 1000 : false,
+    refetchInterval: acquisitionStatus?.isActive && acquisitionStatus?.hasFrame
+      ? Math.max(Math.floor((intervalMs ?? POLL_INTERVAL_ACTIVE_MS) / 2), 200)
+      : false,
   });
 
   useEffect(() => {
