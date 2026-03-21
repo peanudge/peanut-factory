@@ -225,10 +225,9 @@ export function getExposure(): Promise<ExposureInfo> {
 
 export function setExposure(
   exposureUs?: number,
-  gainDb?: number,
-): Promise<ApiMessage & { exposureUs: number; gainDb: number }> {
+): Promise<ApiMessage & { exposureUs: number }> {
   return request("/calibration/exposure", {
     method: "PUT",
-    body: JSON.stringify({ exposureUs, gainDb }),
+    body: JSON.stringify({ exposureUs }),
   });
 }

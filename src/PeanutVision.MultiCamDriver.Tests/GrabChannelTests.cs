@@ -372,29 +372,6 @@ public class GrabChannelTests
         Assert.Equal(1000000.0, max);
     }
 
-    [Fact]
-    public void GetGainDb_ReturnsCurrentGain()
-    {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
-
-        var gain = channel.GetGainDb();
-
-        Assert.Equal(0.0, gain);
-    }
-
-    [Fact]
-    public void SetGainDb_SetsGain()
-    {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
-
-        channel.SetGainDb(6.0);
-        var gain = channel.GetGainDb();
-
-        Assert.Equal(6.0, gain);
-    }
-
     #endregion
 
     #region Parameter Access

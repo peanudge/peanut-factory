@@ -46,7 +46,6 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
   } | null>(null);
   const [exposure, setExposureState] = useState<ExposureInfo | null>(null);
   const [exposureValue, setExposureValue] = useState(1000);
-  const [gainValue, setGainValue] = useState(0);
   const [ffcEnabled, setFfcEnabled] = useState(false);
   const [error, setError] = useState("");
   const [errorCode, setErrorCode] = useState("");
@@ -79,6 +78,13 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     }
   }, [cameras, selectedProfile]);
 
+  useEffect(() => {
+    getExposure()
+      .then((info) => { setExposureState(info); setExposureValue(info.exposureUs); })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const { data: acquisitionStatus } = useQuery<AcquisitionStatus>({
     queryKey: queryKeys.acquisitionStatus,
     queryFn: getAcquisitionStatus,
@@ -109,8 +115,10 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
         frameCount,
         continuousSubMode === "auto" ? intervalMs : null,
       ),
-    onSuccess: () => {
+    onSuccess: async () => {
       invalidateStatus();
+      const info = await getExposure().catch(() => null);
+      if (info) { setExposureState(info); setExposureValue(info.exposureUs); }
       setSnackbar({ message: "촬영이 시작되었습니다", severity: "success" });
     },
     onError: handleError,
@@ -150,14 +158,13 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     onSuccess: (info) => {
       setExposureState(info);
       setExposureValue(info.exposureUs);
-      setGainValue(info.gainDb);
       setSnackbar({ message: "Exposure settings loaded", severity: "success" });
     },
     onError: handleError,
   });
 
   const applyExposureMutation = useMutation({
-    mutationFn: () => setExposure(exposureValue, gainValue),
+    mutationFn: () => setExposure(exposureValue),
     onSuccess: (result) => {
       setSnackbar({ message: result.message, severity: "success" });
     },
@@ -260,8 +267,6 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     exposure,
     exposureValue,
     setExposureValue,
-    gainValue,
-    setGainValue,
     ffcEnabled,
     busy,
     error,

@@ -2,8 +2,9 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
 import Slider from "@mui/material/Slider";
-import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type { ExposureInfo } from "../api/types";
 import { DEFAULT_EXPOSURE_MIN, DEFAULT_EXPOSURE_MAX } from "../constants";
@@ -11,10 +12,9 @@ import { DEFAULT_EXPOSURE_MIN, DEFAULT_EXPOSURE_MAX } from "../constants";
 interface Props {
   exposure: ExposureInfo | null;
   exposureValue: number;
-  gainValue: number;
+  isActive: boolean;
   busy: boolean;
   onExposureChange: (value: number) => void;
-  onGainChange: (value: number) => void;
   onLoad: () => void;
   onApply: () => void;
 }
@@ -22,10 +22,9 @@ interface Props {
 export default function ExposureControl({
   exposure,
   exposureValue,
-  gainValue,
+  isActive,
   busy,
   onExposureChange,
-  onGainChange,
   onLoad,
   onApply,
 }: Props) {
@@ -35,11 +34,22 @@ export default function ExposureControl({
   return (
     <Card variant="outlined">
       <CardContent>
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
-          <Typography variant="subtitle2">Exposure &amp; Gain</Typography>
-          <Button size="small" variant="text" onClick={onLoad} disabled={busy}>
-            Load Current
-          </Button>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography variant="subtitle2">Exposure</Typography>
+            {isActive ? (
+              <Chip label="Live" size="small" color="success" variant="outlined" />
+            ) : (
+              <Chip label="Pending" size="small" color="default" variant="outlined" />
+            )}
+          </Box>
+          <Tooltip title={isActive ? "Load current values from camera" : "Start acquisition to load camera values"}>
+            <span>
+              <Button size="small" variant="text" onClick={onLoad} disabled={busy || !isActive}>
+                Load Current
+              </Button>
+            </span>
+          </Tooltip>
         </Box>
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -63,17 +73,8 @@ export default function ExposureControl({
             )}
           </Box>
 
-          <TextField
-            label="Gain (dB)"
-            type="number"
-            size="small"
-            value={gainValue}
-            onChange={(e) => onGainChange(parseFloat(e.target.value) || 0)}
-            slotProps={{ htmlInput: { step: 0.5 } }}
-          />
-
           <Button variant="contained" onClick={onApply} disabled={busy}>
-            Apply Settings
+            {isActive ? "Apply Settings" : "Apply on Start"}
           </Button>
         </Box>
       </CardContent>

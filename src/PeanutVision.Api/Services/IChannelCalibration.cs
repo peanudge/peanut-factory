@@ -8,5 +8,5 @@ public interface IChannelCalibration
     void PerformWhiteBalanceOnce();
     void SetFlatFieldCorrection(bool enable);
     ExposureInfo GetExposure();
-    ExposureInfo SetExposure(double? exposureUs, double? gainDb);
+    ExposureInfo SetExposure(double? exposureUs);
 }

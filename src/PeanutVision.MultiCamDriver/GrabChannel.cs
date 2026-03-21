@@ -798,22 +798,6 @@ public sealed class GrabChannel : IDisposable
         return (min, max);
     }
 
-    /// <summary>
-    /// Gets the current gain in dB.
-    /// </summary>
-    public double GetGainDb()
-    {
-        return GetParamFloat(MultiCamApi.PN_Gain_dB);
-    }
-
-    /// <summary>
-    /// Sets the gain in dB.
-    /// </summary>
-    public void SetGainDb(double gainDb)
-    {
-        SetParamFloat(MultiCamApi.PN_Gain_dB, gainDb);
-    }
-
     #endregion
 
     #region Error Handling
