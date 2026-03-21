@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
@@ -14,6 +15,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FolderIcon from "@mui/icons-material/Folder";
 import type { ImageSaveSettings, SaveImageFormat, SubfolderStrategy } from "../api/types";
 import { getImageSaveSettings, updateImageSaveSettings } from "../api/client";
+import { queryKeys } from "../api/queryKeys";
 
 const FORMAT_OPTIONS: { value: SaveImageFormat; label: string }[] = [
   { value: "png", label: "PNG" },
@@ -39,35 +41,33 @@ const DEFAULT_SETTINGS: ImageSaveSettings = {
 };
 
 export default function ImageSaveSettingsPanel() {
-  const [settings, setSettings] = useState<ImageSaveSettings>(DEFAULT_SETTINGS);
+  const queryClient = useQueryClient();
+  const [localSettings, setLocalSettings] = useState<ImageSaveSettings>(DEFAULT_SETTINGS);
   const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+
+  const { data: serverSettings } = useQuery({
+    queryKey: queryKeys.imageSaveSettings,
+    queryFn: getImageSaveSettings,
+  });
 
   useEffect(() => {
-    getImageSaveSettings()
-      .then(setSettings)
-      .catch(() => {});
-  }, []);
+    if (serverSettings) setLocalSettings(serverSettings);
+  }, [serverSettings]);
 
-  const handleSave = async () => {
-    setBusy(true);
-    setError(null);
-    setSaved(false);
-    try {
-      const updated = await updateImageSaveSettings(settings);
-      setSettings(updated);
+  const saveMutation = useMutation({
+    mutationFn: (settings: ImageSaveSettings) => updateImageSaveSettings(settings),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(queryKeys.imageSaveSettings, updated);
+      setLocalSettings(updated);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save settings");
-    } finally {
-      setBusy(false);
-    }
-  };
+    },
+  });
 
   const update = <K extends keyof ImageSaveSettings>(key: K, value: ImageSaveSettings[K]) =>
-    setSettings((prev) => ({ ...prev, [key]: value }));
+    setLocalSettings((prev) => ({ ...prev, [key]: value }));
+
+  const settings = localSettings;
 
   const exampleFilename = [
     settings.filenamePrefix || "capture",
@@ -171,14 +171,18 @@ export default function ImageSaveSettingsPanel() {
             <Button
               size="small"
               variant="contained"
-              onClick={handleSave}
-              disabled={busy}
+              onClick={() => saveMutation.mutate(localSettings)}
+              disabled={saveMutation.isPending}
             >
               Save Settings
             </Button>
           </Box>
 
-          {error && <Alert severity="error" sx={{ py: 0 }}>{error}</Alert>}
+          {saveMutation.isError && (
+            <Alert severity="error" sx={{ py: 0 }}>
+              {saveMutation.error instanceof Error ? saveMutation.error.message : "Failed to save settings"}
+            </Alert>
+          )}
           {saved && <Alert severity="success" sx={{ py: 0 }}>Settings saved</Alert>}
         </Box>
       </AccordionDetails>

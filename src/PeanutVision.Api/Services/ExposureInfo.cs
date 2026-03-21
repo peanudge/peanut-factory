@@ -3,7 +3,6 @@ namespace PeanutVision.Api.Services;
 public class ExposureInfo
 {
     public double ExposureUs { get; init; }
-    public double GainDb { get; init; }
     public ExposureRangeInfo? ExposureRange { get; init; }
 }
 

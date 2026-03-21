@@ -77,7 +77,6 @@ export interface AcquisitionStatus {
 export interface ExposureInfo {
   exposureUs: number;
   exposureRange?: { min: number; max: number };
-  gainDb: number;
 }
 
 export interface ApiMessage {

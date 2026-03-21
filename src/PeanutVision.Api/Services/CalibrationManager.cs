@@ -21,6 +21,6 @@ public class CalibrationManager : ICalibrationService
 
     public ExposureInfo GetExposure() => _calibration.GetExposure();
 
-    public ExposureInfo SetExposure(double? exposureUs, double? gainDb) =>
-        _calibration.SetExposure(exposureUs, gainDb);
+    public ExposureInfo SetExposure(double? exposureUs) =>
+        _calibration.SetExposure(exposureUs);
 }

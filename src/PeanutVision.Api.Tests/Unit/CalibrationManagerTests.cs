@@ -72,15 +72,21 @@ public class CalibrationManagerTests : IDisposable
         }
 
         [Fact]
-        public void When_get_exposure_then_throws()
+        public void When_get_exposure_returns_desired_default()
         {
-            Assert.Throws<InvalidOperationException>(() => _calibrationManager.GetExposure());
+            var info = _calibrationManager.GetExposure();
+
+            Assert.True(info.ExposureUs > 0);
+            Assert.Null(info.ExposureRange); // no range without active channel
         }
 
         [Fact]
-        public void When_set_exposure_then_throws()
+        public void When_set_exposure_stores_desired_value()
         {
-            Assert.Throws<InvalidOperationException>(() => _calibrationManager.SetExposure(5000, null));
+            var info = _calibrationManager.SetExposure(5000);
+
+            Assert.Equal(5000.0, info.ExposureUs);
+            Assert.Null(info.ExposureRange); // no range without active channel
         }
     }
 
@@ -144,38 +150,18 @@ public class CalibrationManagerTests : IDisposable
             var info = _calibrationManager.GetExposure();
 
             Assert.Equal(10000.0, info.ExposureUs);
-            Assert.Equal(0.0, info.GainDb);
             Assert.NotNull(info.ExposureRange);
             Assert.Equal(10.0, info.ExposureRange.Min);
             Assert.Equal(1000000.0, info.ExposureRange.Max);
         }
 
         [Fact]
-        public void When_set_exposure_and_gain_then_returns_updated_values()
+        public void When_set_exposure_then_returns_updated_values()
         {
-            var info = _calibrationManager.SetExposure(5000.0, 2.5);
+            var info = _calibrationManager.SetExposure(5000.0);
 
             Assert.Equal(5000.0, info.ExposureUs);
-            Assert.Equal(2.5, info.GainDb);
             Assert.NotNull(info.ExposureRange);
-        }
-
-        [Fact]
-        public void When_set_only_exposure_then_gain_unchanged()
-        {
-            var info = _calibrationManager.SetExposure(7500.0, null);
-
-            Assert.Equal(7500.0, info.ExposureUs);
-            Assert.Equal(0.0, info.GainDb);
-        }
-
-        [Fact]
-        public void When_set_only_gain_then_exposure_unchanged()
-        {
-            var info = _calibrationManager.SetExposure(null, 3.0);
-
-            Assert.Equal(10000.0, info.ExposureUs);
-            Assert.Equal(3.0, info.GainDb);
         }
     }
 
