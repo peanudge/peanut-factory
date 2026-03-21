@@ -1,13 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef } from "react";
 import Box from "@mui/material/Box";
-import Collapse from "@mui/material/Collapse";
-import Chip from "@mui/material/Chip";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
-import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ErrorAlert from "../components/ErrorAlert";
@@ -23,92 +20,14 @@ import HistogramChart from "../components/HistogramChart";
 import PresetSelector from "../components/PresetSelector";
 import CalibrationActions from "../components/CalibrationActions";
 import ExposureControl from "../components/ExposureControl";
-import type { AcquisitionMode, AcquisitionPreset, AcquisitionStatus, CamFileInfo, CapturedImage, ContinuousSubMode, ExposureInfo, TriggerModeOption } from "../api/types";
-import {
-  getCameras,
-  startAcquisition,
-  stopAcquisition,
-  getAcquisitionStatus,
-  triggerAndCapture,
-  snapshot,
-  getLatestFrame,
-  blackCalibration,
-  whiteCalibration,
-  whiteBalance,
-  setFfc,
-  getExposure,
-  setExposure,
-} from "../api/client";
-import { useAsyncOperation } from "../hooks/useAsyncOperation";
-import { usePolling } from "../hooks/usePolling";
-import {
-  POLL_INTERVAL_ACTIVE_MS,
-  POLL_INTERVAL_IDLE_MS,
-  MAX_CAPTURED_IMAGES,
-} from "../constants";
+import SidebarSection from "../components/SidebarSection";
+import CollapsiblePanel from "../components/CollapsiblePanel";
+import { useImageBuffer } from "../hooks/useImageBuffer";
+import { useAcquisitionActions } from "../hooks/useAcquisitionActions";
+import { MAX_CAPTURED_IMAGES } from "../constants";
 
 function formatFilenameTimestamp(d: Date): string {
   return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}_${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}${String(d.getSeconds()).padStart(2, "0")}_${String(d.getMilliseconds()).padStart(3, "0")}`;
-}
-
-function SidebarSection({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-      <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1 }}>
-        {label}
-      </Typography>
-      {children}
-      <Divider />
-    </Box>
-  );
-}
-
-function CollapsiblePanel({
-  label,
-  count,
-  defaultOpen = true,
-  children,
-}: {
-  label: string;
-  count?: number;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <Box sx={{ borderTop: "1px solid", borderColor: "divider" }}>
-      <Box
-        onClick={() => setOpen((o) => !o)}
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          px: 2,
-          py: 0.75,
-          cursor: "pointer",
-          bgcolor: "background.default",
-          "&:hover": { bgcolor: "action.hover" },
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Typography variant="subtitle2">{label}</Typography>
-          {count != null && <Chip label={count} size="small" />}
-        </Box>
-        <ExpandMoreIcon
-          sx={{
-            fontSize: 20,
-            transition: "transform 0.2s",
-            transform: open ? "rotate(180deg)" : "rotate(0deg)",
-          }}
-        />
-      </Box>
-      <Collapse in={open}>
-        <Box sx={{ p: 2 }}>
-          {children}
-        </Box>
-      </Collapse>
-    </Box>
-  );
 }
 
 interface Props {
@@ -120,10 +39,13 @@ const RIGHT_PANEL_MAX = 560;
 const RIGHT_PANEL_DEFAULT = 280;
 
 export default function AcquisitionTab({ onSessionChange }: Props = {}) {
-  const [cameras, setCameras] = useState<CamFileInfo[]>([]);
+  const { capturedFrames, selectedFrameId, addFrame, deleteFrame, clearAllFrames, selectFrame } =
+    useImageBuffer(MAX_CAPTURED_IMAGES);
+
+  const acq = useAcquisitionActions({ onFrameCaptured: addFrame });
 
   // Right panel resize — width stored in a ref and applied via DOM ref
-  // to avoid re-renders (and layout shifts) during dragging
+  // to avoid re-renders during dragging
   const rightPanelRef = useRef<HTMLDivElement>(null);
   const rightPanelWidth = useRef(RIGHT_PANEL_DEFAULT);
   const isDragging = useRef(false);
@@ -157,187 +79,12 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
   }, []);
-  const [selectedProfile, setSelectedProfile] = useState("");
-  const [mode, setMode] = useState<AcquisitionMode>("single");
-  const [continuousSubMode, setContinuousSubMode] = useState<ContinuousSubMode>("auto");
-  const [triggerMode, setTriggerMode] = useState<TriggerModeOption>("soft");
-  const [frameCount, setFrameCount] = useState<number | null>(null);
-  const [intervalMs, setIntervalMs] = useState<number | null>(null);
-  const [status, setStatus] = useState<AcquisitionStatus | null>(null);
-  const [images, setImages] = useState<CapturedImage[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [snackbar, setSnackbar] = useState<{
-    message: string;
-    severity: "success" | "info" | "warning" | "error";
-  } | null>(null);
-  const [exposure, setExposureState] = useState<ExposureInfo | null>(null);
-  const [exposureValue, setExposureValue] = useState(1000);
-  const [gainValue, setGainValue] = useState(0);
-  const [ffcEnabled, setFfcEnabled] = useState(false);
-  const { busy, error, clearError, execute } = useAsyncOperation();
 
-  const hasWarnings = (status?.statistics?.droppedFrameCount ?? 0) > 0
-    || (status?.statistics?.clusterUnavailableCount ?? 0) > 0;
-  const hasErrors = !!status?.lastError || (status?.statistics?.errorCount ?? 0) > 0;
-
-  const fetchStatus = useCallback(() => {
-    getAcquisitionStatus().then(setStatus).catch(() => {});
-  }, []);
-
-  const pollInterval = status?.isActive
-    ? POLL_INTERVAL_ACTIVE_MS
-    : POLL_INTERVAL_IDLE_MS;
-  const { refresh, throttled } = usePolling(fetchStatus, pollInterval);
-
-  useEffect(() => {
-    getCameras()
-      .then((c) => {
-        setCameras(c);
-        if (c.length > 0) setSelectedProfile(c[0].fileName);
-      })
-      .catch(() => {});
-  }, []);
-
-  const addImage = useCallback((blob: Blob, savedPath?: string) => {
-    const url = URL.createObjectURL(blob);
-    const newImage: CapturedImage = { id: crypto.randomUUID(), url, blob, capturedAt: new Date(), savedPath };
-    setImages((prev) => {
-      const next = [newImage, ...prev];
-      if (next.length > MAX_CAPTURED_IMAGES) {
-        next.slice(MAX_CAPTURED_IMAGES).forEach((img) => URL.revokeObjectURL(img.url));
-        return next.slice(0, MAX_CAPTURED_IMAGES);
-      }
-      return next;
-    });
-    setSelectedId(newImage.id);
-  }, []);
-
-  const handleDeleteImage = useCallback((id: string) => {
-    setImages((prev) => {
-      const target = prev.find((img) => img.id === id);
-      if (target) URL.revokeObjectURL(target.url);
-      return prev.filter((img) => img.id !== id);
-    });
-    setSelectedId((prev) => (prev === id ? null : prev));
-  }, []);
-
-  const handleClearAll = useCallback(() => {
-    setImages((prev) => {
-      prev.forEach((img) => URL.revokeObjectURL(img.url));
-      return [];
-    });
-    setSelectedId(null);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      setImages((prev) => {
-        prev.forEach((img) => URL.revokeObjectURL(img.url));
-        return prev;
-      });
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!status?.isActive || !status?.hasFrame) return;
-    const t = setInterval(async () => {
-      try {
-        const result = await getLatestFrame();
-        if (result) addImage(result.blob, result.savedPath);
-      } catch {
-        /* ignore */
-      }
-    }, 1000);
-    return () => clearInterval(t);
-  }, [status?.isActive, status?.hasFrame, addImage]);
-
-  const handleStart = () =>
-    execute(async () => {
-      await startAcquisition(
-        selectedProfile,
-        triggerMode,
-        frameCount,
-        continuousSubMode === "auto" ? intervalMs : null,
-      );
-      fetchStatus();
-      setSnackbar({ message: "촬영이 시작되었습니다", severity: "success" });
-    });
-
-  const handleStop = () =>
-    execute(async () => {
-      await stopAcquisition();
-      fetchStatus();
-      setSnackbar({ message: "촬영이 중지되었습니다", severity: "info" });
-    });
-
-  const handleTrigger = () =>
-    execute(async () => {
-      const { blob, savedPath } = await triggerAndCapture();
-      addImage(blob, savedPath);
-      fetchStatus();
-      setSnackbar({ message: "프레임이 촬영되었습니다", severity: "success" });
-    });
-
-  const handleCapture = () =>
-    execute(async () => {
-      const { blob, savedPath } = await snapshot(selectedProfile);
-      addImage(blob, savedPath);
-      fetchStatus();
-      setSnackbar({ message: "스냅샷이 촬영되었습니다", severity: "success" });
-    });
-
-  const handleLoadExposure = () =>
-    execute(async () => {
-      const info = await getExposure();
-      setExposureState(info);
-      setExposureValue(info.exposureUs);
-      setGainValue(info.gainDb);
-      setSnackbar({ message: "Exposure settings loaded", severity: "success" });
-    });
-
-  const handleApplyExposure = () =>
-    execute(async () => {
-      const result = await setExposure(exposureValue, gainValue);
-      setSnackbar({ message: result.message, severity: "success" });
-    });
-
-  const handleBlack = () =>
-    execute(async () => {
-      setSnackbar({ message: (await blackCalibration()).message, severity: "success" });
-    });
-
-  const handleWhite = () =>
-    execute(async () => {
-      setSnackbar({ message: (await whiteCalibration()).message, severity: "success" });
-    });
-
-  const handleWhiteBalance = () =>
-    execute(async () => {
-      setSnackbar({ message: (await whiteBalance()).message, severity: "success" });
-    });
-
-  const handleLoadPreset = useCallback((preset: AcquisitionPreset) => {
-    setSelectedProfile(preset.profileId);
-    setTriggerMode((preset.triggerMode as TriggerModeOption) ?? "soft");
-    setFrameCount(preset.frameCount ?? null);
-    setIntervalMs(preset.intervalMs ?? null);
-    if (preset.frameCount != null || preset.intervalMs != null) {
-      setMode("continuous");
-    }
-  }, []);
-
-  const handleFfcToggle = (_: unknown, checked: boolean) => {
-    setFfcEnabled(checked);
-    execute(async () => {
-      setSnackbar({ message: (await setFfc(checked)).message, severity: "success" });
-    });
-  };
-
-  const selectedImage = images.find((img) => img.id === selectedId) ?? null;
+  const selectedFrame = capturedFrames.find((f) => f.id === selectedFrameId) ?? null;
 
   return (
     <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden", height: "100%" }}>
-      <ErrorAlert error={error} onClose={clearError} />
+      <ErrorAlert error={acq.error} onClose={acq.clearError} />
 
       {/* LEFT SIDEBAR */}
       <Box
@@ -355,67 +102,67 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
       >
         <SidebarSection label="Acquisition">
           <PresetSelector
-            profileId={selectedProfile}
-            triggerMode={triggerMode}
-            frameCount={frameCount}
-            intervalMs={intervalMs}
-            onLoadPreset={handleLoadPreset}
-            disabled={status?.isActive}
+            profileId={acq.selectedProfile}
+            triggerMode={acq.triggerMode}
+            frameCount={acq.frameCount}
+            intervalMs={acq.intervalMs}
+            onLoadPreset={acq.handleLoadPreset}
+            disabled={acq.acquisitionStatus?.isActive}
           />
           <AcquisitionControls
-            cameras={cameras}
-            selectedProfile={selectedProfile}
-            onProfileChange={setSelectedProfile}
-            mode={mode}
-            onModeChange={setMode}
-            continuousSubMode={continuousSubMode}
-            triggerMode={triggerMode}
-            onTriggerModeChange={setTriggerMode}
-            status={status}
-            busy={busy}
-            onCapture={handleCapture}
-            onStart={handleStart}
-            onStop={handleStop}
-            onTrigger={handleTrigger}
-            onRefresh={refresh}
-            refreshThrottled={throttled}
-            hasWarnings={hasWarnings}
-            hasErrors={hasErrors}
+            cameras={acq.cameras}
+            selectedProfile={acq.selectedProfile}
+            onProfileChange={acq.setSelectedProfile}
+            mode={acq.mode}
+            onModeChange={acq.setMode}
+            continuousSubMode={acq.continuousSubMode}
+            triggerMode={acq.triggerMode}
+            onTriggerModeChange={acq.setTriggerMode}
+            status={acq.acquisitionStatus}
+            busy={acq.busy}
+            onCapture={acq.handleCapture}
+            onStart={acq.handleStart}
+            onStop={acq.handleStop}
+            onTrigger={acq.handleTrigger}
+            onRefresh={acq.refresh}
+            refreshThrottled={acq.throttled}
+            hasWarnings={acq.hasWarnings}
+            hasErrors={acq.hasErrors}
           />
-          {mode === "continuous" && (
+          {acq.mode === "continuous" && (
             <ContinuousSettings
-              subMode={continuousSubMode}
-              onSubModeChange={setContinuousSubMode}
-              frameCount={frameCount}
-              onFrameCountChange={setFrameCount}
-              intervalMs={intervalMs}
-              onIntervalMsChange={setIntervalMs}
-              disabled={status?.isActive}
+              subMode={acq.continuousSubMode}
+              onSubModeChange={acq.setContinuousSubMode}
+              frameCount={acq.frameCount}
+              onFrameCountChange={acq.setFrameCount}
+              intervalMs={acq.intervalMs}
+              onIntervalMsChange={acq.setIntervalMs}
+              disabled={acq.acquisitionStatus?.isActive}
             />
           )}
         </SidebarSection>
 
         <SidebarSection label="Exposure">
           <ExposureControl
-            exposure={exposure}
-            exposureValue={exposureValue}
-            gainValue={gainValue}
-            busy={busy}
-            onExposureChange={setExposureValue}
-            onGainChange={setGainValue}
-            onLoad={handleLoadExposure}
-            onApply={handleApplyExposure}
+            exposure={acq.exposure}
+            exposureValue={acq.exposureValue}
+            gainValue={acq.gainValue}
+            busy={acq.busy}
+            onExposureChange={acq.setExposureValue}
+            onGainChange={acq.setGainValue}
+            onLoad={acq.handleLoadExposure}
+            onApply={acq.handleApplyExposure}
           />
         </SidebarSection>
 
         <SidebarSection label="Calibration">
           <CalibrationActions
-            busy={busy}
-            ffcEnabled={ffcEnabled}
-            onBlack={handleBlack}
-            onWhite={handleWhite}
-            onWhiteBalance={handleWhiteBalance}
-            onFfcToggle={handleFfcToggle}
+            busy={acq.busy}
+            ffcEnabled={acq.ffcEnabled}
+            onBlack={acq.handleBlack}
+            onWhite={acq.handleWhite}
+            onWhiteBalance={acq.handleWhiteBalance}
+            onFfcToggle={acq.handleFfcToggle}
           />
         </SidebarSection>
 
@@ -435,14 +182,13 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
 
       {/* MAIN CANVAS */}
       <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        {/* Image viewer + stats/histogram row */}
         <Box sx={{ flexGrow: 1, p: 2, display: "flex", flexDirection: "column", gap: 2, overflow: "hidden" }}>
           <Box sx={{ flexGrow: 1, minHeight: 0 }}>
             <ImageViewer
-              url={selectedImage?.url ?? null}
-              filename={selectedImage ? `capture-${formatFilenameTimestamp(selectedImage.capturedAt)}.png` : undefined}
-              errorMessage={status?.lastError}
-              savedPath={selectedImage?.savedPath}
+              url={selectedFrame?.url ?? null}
+              filename={selectedFrame ? `capture-${formatFilenameTimestamp(selectedFrame.capturedAt)}.png` : undefined}
+              errorMessage={acq.acquisitionStatus?.lastError}
+              savedPath={selectedFrame?.savedPath}
             />
           </Box>
           <Box sx={{ display: "flex", gap: 2, flexShrink: 0 }}>
@@ -450,7 +196,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
               <HistogramChart />
             </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <AcquisitionStats stats={status?.statistics} />
+              <AcquisitionStats stats={acq.acquisitionStatus?.statistics} />
             </Box>
           </Box>
         </Box>
@@ -480,34 +226,34 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
           overflow: "hidden",
         }}
       >
-        <CollapsiblePanel label="Captures" count={images.length} defaultOpen>
+        <CollapsiblePanel label="Captures" count={capturedFrames.length} defaultOpen>
           <CapturedImageList
-            images={images}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            onDelete={handleDeleteImage}
-            onClear={handleClearAll}
+            images={capturedFrames}
+            selectedId={selectedFrameId}
+            onSelect={selectFrame}
+            onDelete={deleteFrame}
+            onClear={clearAllFrames}
           />
         </CollapsiblePanel>
 
         <CollapsiblePanel label="Event Log" defaultOpen={false}>
-          <EventLog events={status?.recentEvents} />
+          <EventLog events={acq.acquisitionStatus?.recentEvents} />
         </CollapsiblePanel>
       </Box>
 
       <Snackbar
-        open={snackbar !== null}
+        open={acq.snackbar !== null}
         autoHideDuration={3000}
-        onClose={() => setSnackbar(null)}
+        onClose={() => acq.setSnackbar(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert
-          onClose={() => setSnackbar(null)}
-          severity={snackbar?.severity ?? "info"}
+          onClose={() => acq.setSnackbar(null)}
+          severity={acq.snackbar?.severity ?? "info"}
           variant="filled"
           sx={{ width: "100%" }}
         >
-          {snackbar?.message}
+          {acq.snackbar?.message}
         </Alert>
       </Snackbar>
     </Box>
