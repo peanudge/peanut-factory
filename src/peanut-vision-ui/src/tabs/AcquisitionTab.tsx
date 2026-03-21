@@ -1,10 +1,7 @@
 import { useState } from "react";
 import Box from "@mui/material/Box";
-import Snackbar from "@mui/material/Snackbar";
-import Alert from "@mui/material/Alert";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
-import ErrorAlert from "../components/ErrorAlert";
 import AcquisitionControls from "../components/AcquisitionControls";
 import EventLog from "../components/EventLog";
 import CapturedImageList from "../components/CapturedImageList";
@@ -53,8 +50,6 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
 
   return (
     <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden", height: "100%" }}>
-      <ErrorAlert error={acq.error} errorCode={acq.errorCode} onClose={acq.clearError} />
-
       {/* LEFT SIDEBAR */}
       <Box
         ref={sidebarRef}
@@ -236,21 +231,6 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
         onClose={() => setDialogImageId(null)}
       />
 
-      <Snackbar
-        open={acq.snackbar !== null}
-        autoHideDuration={3000}
-        onClose={() => acq.setSnackbar(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() => acq.setSnackbar(null)}
-          severity={acq.snackbar?.severity ?? "info"}
-          variant="filled"
-          sx={{ width: "100%" }}
-        >
-          {acq.snackbar?.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }

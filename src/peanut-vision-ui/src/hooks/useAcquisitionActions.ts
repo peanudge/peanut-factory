@@ -25,6 +25,7 @@ import {
   ApiError,
 } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
+import { useToast } from "../contexts/ToastContext";
 import { POLL_INTERVAL_ACTIVE_MS, POLL_INTERVAL_IDLE_MS } from "../constants";
 
 interface UseAcquisitionActionsParams {
@@ -33,6 +34,7 @@ interface UseAcquisitionActionsParams {
 
 export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActionsParams) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const [selectedProfile, setSelectedProfile] = useState("");
   const [mode, setMode] = useState<AcquisitionMode>("single");
@@ -40,30 +42,13 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
   const [triggerMode, setTriggerMode] = useState<TriggerModeOption>("soft");
   const [frameCount, setFrameCount] = useState<number | null>(null);
   const [intervalMs, setIntervalMs] = useState<number | null>(null);
-  const [snackbar, setSnackbar] = useState<{
-    message: string;
-    severity: "success" | "info" | "warning" | "error";
-  } | null>(null);
   const [exposure, setExposureState] = useState<ExposureInfo | null>(null);
   const [exposureValue, setExposureValue] = useState(1000);
   const [ffcEnabled, setFfcEnabled] = useState(false);
-  const [error, setError] = useState("");
-  const [errorCode, setErrorCode] = useState("");
-
-  const clearError = useCallback(() => {
-    setError("");
-    setErrorCode("");
-  }, []);
 
   const handleError = useCallback((e: unknown) => {
-    if (e instanceof ApiError) {
-      setError(e.message);
-      setErrorCode(e.errorCode);
-    } else {
-      setError(e instanceof Error ? e.message : "Operation failed");
-      setErrorCode("UNKNOWN_ERROR");
-    }
-  }, []);
+    toast(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Operation failed", "error");
+  }, [toast]);
 
   // ── Queries ──
 
@@ -119,7 +104,7 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
       invalidateStatus();
       const info = await getExposure().catch(() => null);
       if (info) { setExposureState(info); setExposureValue(info.exposureUs); }
-      setSnackbar({ message: "촬영이 시작되었습니다", severity: "success" });
+      toast("촬영이 시작되었습니다", "success");
     },
     onError: handleError,
   });
@@ -128,7 +113,7 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     mutationFn: stopAcquisition,
     onSuccess: () => {
       invalidateStatus();
-      setSnackbar({ message: "촬영이 중지되었습니다", severity: "info" });
+      toast("촬영이 중지되었습니다", "info");
     },
     onError: handleError,
   });
@@ -138,7 +123,7 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     onSuccess: (result) => {
       onFrameCaptured(result.blob, result.savedPath);
       invalidateStatus();
-      setSnackbar({ message: "프레임이 촬영되었습니다", severity: "success" });
+      toast("프레임이 촬영되었습니다", "success");
     },
     onError: handleError,
   });
@@ -148,7 +133,7 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     onSuccess: (result) => {
       onFrameCaptured(result.blob, result.savedPath);
       invalidateStatus();
-      setSnackbar({ message: "스냅샷이 촬영되었습니다", severity: "success" });
+      toast("스냅샷이 촬영되었습니다", "success");
     },
     onError: handleError,
   });
@@ -158,7 +143,7 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     onSuccess: (info) => {
       setExposureState(info);
       setExposureValue(info.exposureUs);
-      setSnackbar({ message: "Exposure settings loaded", severity: "success" });
+      toast("Exposure settings loaded", "success");
     },
     onError: handleError,
   });
@@ -166,32 +151,32 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
   const applyExposureMutation = useMutation({
     mutationFn: () => setExposure(exposureValue),
     onSuccess: (result) => {
-      setSnackbar({ message: result.message, severity: "success" });
+      toast(result.message, "success");
     },
     onError: handleError,
   });
 
   const blackMutation = useMutation({
     mutationFn: blackCalibration,
-    onSuccess: (result) => setSnackbar({ message: result.message, severity: "success" }),
+    onSuccess: (result) => toast(result.message, "success"),
     onError: handleError,
   });
 
   const whiteMutation = useMutation({
     mutationFn: whiteCalibration,
-    onSuccess: (result) => setSnackbar({ message: result.message, severity: "success" }),
+    onSuccess: (result) => toast(result.message, "success"),
     onError: handleError,
   });
 
   const whiteBalanceMutation = useMutation({
     mutationFn: whiteBalance,
-    onSuccess: (result) => setSnackbar({ message: result.message, severity: "success" }),
+    onSuccess: (result) => toast(result.message, "success"),
     onError: handleError,
   });
 
   const ffcMutation = useMutation({
     mutationFn: (enable: boolean) => setFfc(enable),
-    onSuccess: (result) => setSnackbar({ message: result.message, severity: "success" }),
+    onSuccess: (result) => toast(result.message, "success"),
     onError: handleError,
   });
 
@@ -262,20 +247,15 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     intervalMs,
     setIntervalMs,
     acquisitionStatus: acquisitionStatus ?? null,
-    snackbar,
-    setSnackbar,
     exposure,
     exposureValue,
     setExposureValue,
     ffcEnabled,
     busy,
-    error,
-    errorCode,
-    clearError,
     hasWarnings,
     hasErrors,
     refresh,
-    throttled: false, // React Query handles deduplication; always allow manual refresh
+    throttled: false,
     handleStart,
     handleStop,
     handleTrigger,
