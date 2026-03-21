@@ -29,27 +29,33 @@ export default function CalibrationActions({
         <Typography variant="subtitle2" gutterBottom>
           Calibration Actions
         </Typography>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-          <Button variant="outlined" disabled={busy} onClick={onBlack}>
-            Black Calibration
-          </Button>
-          <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
-            Cover the lens before executing
-          </Typography>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mt: 1 }}>
+          <Box>
+            <Button variant="outlined" fullWidth disabled={busy} onClick={onBlack}>
+              Black Calibration
+            </Button>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5, px: 0.5 }}>
+              Cover the lens before executing
+            </Typography>
+          </Box>
 
-          <Button variant="outlined" disabled={busy} onClick={onWhite}>
-            White Calibration
-          </Button>
-          <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
-            Ensure uniform ~200DN illumination
-          </Typography>
+          <Box>
+            <Button variant="outlined" fullWidth disabled={busy} onClick={onWhite}>
+              White Calibration
+            </Button>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5, px: 0.5 }}>
+              Ensure uniform ~200DN illumination
+            </Typography>
+          </Box>
 
-          <Button variant="outlined" disabled={busy} onClick={onWhiteBalance}>
-            White Balance (Once)
-          </Button>
-          <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
-            Point lens at white target (~200DN)
-          </Typography>
+          <Box>
+            <Button variant="outlined" fullWidth disabled={busy} onClick={onWhiteBalance}>
+              White Balance (Once)
+            </Button>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5, px: 0.5 }}>
+              Point lens at white target (~200DN)
+            </Typography>
+          </Box>
 
           <FormControlLabel
             control={

@@ -1,22 +1,10 @@
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import ButtonGroup from "@mui/material/ButtonGroup";
-import FormControl from "@mui/material/FormControl";
-import IconButton from "@mui/material/IconButton";
-import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
-import ToggleButton from "@mui/material/ToggleButton";
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import Tooltip from "@mui/material/Tooltip";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import StopIcon from "@mui/icons-material/Stop";
-import AdjustIcon from "@mui/icons-material/Adjust";
-import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import StatusChip from "./StatusChip";
-import type { AcquisitionAction, AcquisitionMode, AcquisitionStatus, CamFileInfo, ContinuousSubMode, TriggerModeOption } from "../api/types";
+import CameraProfileSelector from "./CameraProfileSelector";
+import AcquisitionModeSelector from "./AcquisitionModeSelector";
+import AcquisitionActionBar from "./AcquisitionActionBar";
+import type { AcquisitionMode, AcquisitionStatus, CamFileInfo, ContinuousSubMode, TriggerModeOption } from "../api/types";
 
+/** Thin wrapper composing camera profile, mode/trigger selection, and action buttons. */
 interface Props {
   cameras: CamFileInfo[];
   selectedProfile: string;
@@ -58,148 +46,38 @@ export default function AcquisitionControls({
   hasWarnings,
   hasErrors,
 }: Props) {
-  const allowed = (action: AcquisitionAction) =>
-    status?.allowedActions?.includes(action) ?? false;
-
   return (
-    <Box sx={{ display: "flex", gap: 2, alignItems: "flex-end", flexWrap: "wrap" }}>
-      <FormControl size="small" sx={{ minWidth: 280 }}>
-        <InputLabel>Camera Profile</InputLabel>
-        <Select
-          value={selectedProfile}
-          label="Camera Profile"
-          onChange={(e) => onProfileChange(e.target.value)}
-          disabled={status?.isActive}
-        >
-          {cameras.map((c) => (
-            <MenuItem key={c.fileName} value={c.fileName}>
-              {c.fileName}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
-      <ToggleButtonGroup
-        value={mode}
-        exclusive
-        onChange={(_, v) => v && onModeChange(v)}
-        size="small"
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+      <CameraProfileSelector
+        cameras={cameras}
+        selectedProfile={selectedProfile}
+        onProfileChange={onProfileChange}
         disabled={status?.isActive}
-      >
-        <ToggleButton value="single">Single</ToggleButton>
-        <ToggleButton value="continuous">Continuous</ToggleButton>
-      </ToggleButtonGroup>
+      />
 
-      <FormControl size="small" sx={{ minWidth: 120 }}>
-        <InputLabel>Trigger</InputLabel>
-        <Select
-          value={triggerMode}
-          label="Trigger"
-          onChange={(e) => onTriggerModeChange(e.target.value as TriggerModeOption)}
-          disabled={status?.isActive}
-        >
-          <MenuItem value="soft">Soft</MenuItem>
-          <MenuItem value="hard">Hard</MenuItem>
-          <MenuItem value="combined">Combined</MenuItem>
-        </Select>
-      </FormControl>
+      <AcquisitionModeSelector
+        mode={mode}
+        onModeChange={onModeChange}
+        triggerMode={triggerMode}
+        onTriggerModeChange={onTriggerModeChange}
+        disabled={status?.isActive}
+      />
 
-      {mode === "single" ? (
-        <Tooltip
-          title={
-            busy || !allowed("snapshot") || !selectedProfile
-              ? "촬영 중에는 스냅샷을 찍을 수 없습니다"
-              : "단일 촬영"
-          }
-        >
-          <span>
-            <Button
-              variant="contained"
-              startIcon={<PhotoCameraIcon />}
-              onClick={onCapture}
-              disabled={busy || !allowed("snapshot") || !selectedProfile}
-            >
-              Capture
-            </Button>
-          </span>
-        </Tooltip>
-      ) : (
-        <ButtonGroup variant="contained">
-          {allowed("stop") ? (
-            <Tooltip title={busy ? "처리 중..." : "촬영 중지"}>
-              <span>
-                <Button
-                  color="error"
-                  startIcon={<StopIcon />}
-                  onClick={onStop}
-                  disabled={busy}
-                >
-                  Stop
-                </Button>
-              </span>
-            </Tooltip>
-          ) : (
-            <Tooltip
-              title={
-                !selectedProfile
-                  ? "프로파일을 선택하세요"
-                  : busy
-                  ? "처리 중..."
-                  : !allowed("start")
-                  ? "시작할 수 없습니다"
-                  : "연속 촬영 시작"
-              }
-            >
-              <span>
-                <Button
-                  color="success"
-                  startIcon={<PlayArrowIcon />}
-                  onClick={onStart}
-                  disabled={busy || !allowed("start") || !selectedProfile}
-                >
-                  Start
-                </Button>
-              </span>
-            </Tooltip>
-          )}
-          {allowed("trigger") && continuousSubMode === "manual" && (
-            <Tooltip
-              title={busy ? "처리 중..." : "수동 촬영 (Manual capture)"}
-            >
-              <span>
-                <Button
-                  startIcon={<AdjustIcon />}
-                  onClick={onTrigger}
-                  disabled={busy}
-                >
-                  Trigger
-                </Button>
-              </span>
-            </Tooltip>
-          )}
-        </ButtonGroup>
-      )}
-
-      {status && (
-        <StatusChip
-          active={status.isActive}
-          label={status.isActive ? `Active (${status.profileId ?? ""})` : "Inactive"}
-          hasWarnings={hasWarnings}
-          hasErrors={hasErrors}
-        />
-      )}
-
-      <Tooltip title={refreshThrottled ? "Wait..." : "Refresh status"}>
-        <span>
-          <IconButton
-            size="small"
-            onClick={onRefresh}
-            disabled={refreshThrottled}
-          >
-            <RefreshIcon />
-          </IconButton>
-        </span>
-      </Tooltip>
+      <AcquisitionActionBar
+        mode={mode}
+        continuousSubMode={continuousSubMode}
+        selectedProfile={selectedProfile}
+        status={status}
+        busy={busy}
+        onCapture={onCapture}
+        onStart={onStart}
+        onStop={onStop}
+        onTrigger={onTrigger}
+        onRefresh={onRefresh}
+        refreshThrottled={refreshThrottled}
+        hasWarnings={hasWarnings}
+        hasErrors={hasErrors}
+      />
     </Box>
   );
 }
