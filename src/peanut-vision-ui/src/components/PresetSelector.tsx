@@ -18,6 +18,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import type { AcquisitionPreset, TriggerModeOption } from "../api/types";
 import { getPresets, savePreset, deletePreset } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
+import { useToast } from "../contexts/ToastContext";
 
 interface Props {
   profileId: string;
@@ -37,6 +38,7 @@ export default function PresetSelector({
   disabled,
 }: Props) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [loadOpen, setLoadOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [presetName, setPresetName] = useState("");
@@ -49,6 +51,9 @@ export default function PresetSelector({
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: queryKeys.presets });
 
+  const handleError = (e: unknown) =>
+    toast(e instanceof Error ? e.message : "프리셋 작업에 실패했습니다", "error");
+
   const saveMutation = useMutation({
     mutationFn: (preset: AcquisitionPreset) => savePreset(preset),
     onSuccess: () => {
@@ -56,11 +61,13 @@ export default function PresetSelector({
       setSaveOpen(false);
       invalidate();
     },
+    onError: handleError,
   });
 
   const deleteMutation = useMutation({
     mutationFn: (name: string) => deletePreset(name),
     onSuccess: invalidate,
+    onError: handleError,
   });
 
   const busy = saveMutation.isPending || deleteMutation.isPending;
