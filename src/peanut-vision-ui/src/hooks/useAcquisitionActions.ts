@@ -29,7 +29,7 @@ import { useToast } from "../contexts/ToastContext";
 import { API_BASE_URL, DEFAULT_CONTINUOUS_INTERVAL_MS, POLL_INTERVAL_ACTIVE_MS, POLL_INTERVAL_IDLE_MS } from "../constants";
 
 interface UseAcquisitionActionsParams {
-  onEventCaptured: (filePath: string) => void;
+  onEventCaptured: (filePath: string, objectUrl: string | null) => void;
 }
 
 export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActionsParams) {
@@ -87,7 +87,7 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
   useEffect(() => {
     if (!latestFrame) return;
     setPreviewTimestamp(Date.now());
-    if (latestFrame.savedPath) onEventCaptured(latestFrame.savedPath);
+    if (latestFrame.savedPath) onEventCaptured(latestFrame.savedPath, null);
   }, [latestFrame, onEventCaptured]);
 
   // ── Mutations ──
@@ -125,7 +125,12 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     mutationFn: triggerAndCapture,
     onSuccess: (result) => {
       setPreviewTimestamp(Date.now());
-      if (result.savedPath) onEventCaptured(result.savedPath);
+      const objectUrl = result.blob ? URL.createObjectURL(result.blob) : null;
+      if (result.savedPath) {
+        onEventCaptured(result.savedPath, objectUrl);
+      } else if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
       invalidateStatus();
       toast("프레임이 촬영되었습니다", "success");
     },
@@ -136,7 +141,12 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     mutationFn: () => snapshot(selectedProfile),
     onSuccess: (result) => {
       setPreviewTimestamp(Date.now());
-      if (result.savedPath) onEventCaptured(result.savedPath);
+      const objectUrl = result.blob ? URL.createObjectURL(result.blob) : null;
+      if (result.savedPath) {
+        onEventCaptured(result.savedPath, objectUrl);
+      } else if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
       invalidateStatus();
       toast("스냅샷이 촬영되었습니다", "success");
     },
@@ -256,6 +266,7 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     },
     []
   );
+
 
   const previewUrl = previewTimestamp > 0
     ? `${API_BASE_URL}/acquisition/latest-frame?_t=${previewTimestamp}`

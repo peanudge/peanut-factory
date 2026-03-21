@@ -92,6 +92,7 @@ export interface CapturedEvent {
   id: string;
   filePath: string;
   capturedAt: Date;
+  objectUrl: string | null;
 }
 
 export interface Session {
