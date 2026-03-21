@@ -2,15 +2,19 @@ import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 import ImageActionBar from "./ImageActionBar";
+import { formatTime } from "../utils/formatTimestamp";
 
 interface Props {
   url: string | null;
   filename?: string;
   errorMessage?: string | null;
   savedPath?: string;
+  isLive: boolean;
+  capturedAt: Date | null;
+  onReturnToLive: () => void;
 }
 
-export default function ImageViewer({ url, filename, errorMessage, savedPath }: Props) {
+export default function ImageViewer({ url, filename, errorMessage, savedPath, isLive, capturedAt, onReturnToLive }: Props) {
   if (!url) {
     return (
       <Box
@@ -62,6 +66,37 @@ export default function ImageViewer({ url, filename, errorMessage, savedPath }: 
             />
           </Box>
         )}
+        <Box sx={{ position: "absolute", top: 8, right: 8, display: "flex", alignItems: "center", gap: 0.5 }}>
+          {isLive ? (
+            <Chip
+              size="small"
+              label="LIVE"
+              color="success"
+              sx={{ fontWeight: 700, fontSize: "0.65rem" }}
+            />
+          ) : (
+            <>
+              <Chip
+                size="small"
+                label={capturedAt ? formatTime(capturedAt) : "Captured"}
+                sx={{
+                  fontWeight: 600,
+                  fontSize: "0.65rem",
+                  bgcolor: "rgba(0,0,0,0.55)",
+                  color: "#fff",
+                }}
+              />
+              <Chip
+                size="small"
+                label="Return to Live"
+                onClick={onReturnToLive}
+                variant="outlined"
+                color="primary"
+                sx={{ fontWeight: 600, fontSize: "0.65rem", cursor: "pointer", bgcolor: "rgba(0,0,0,0.4)" }}
+              />
+            </>
+          )}
+        </Box>
       </Box>
       <Box sx={{ flexShrink: 0 }}>
         <ImageActionBar url={url} filename={filename} savedPath={savedPath} />

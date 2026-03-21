@@ -43,7 +43,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
   const [sidebarTab, setSidebarTab] = useState(0);
 
   const selectedEvent = events.find((e) => e.id === selectedEventId) ?? null;
-  const viewerUrl = acq.previewUrl;
+  const viewerUrl = selectedEvent?.objectUrl ?? acq.previewUrl;
 
   return (
     <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden", height: "100%" }}>
@@ -176,6 +176,9 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
             filename={selectedEvent ? getFilename(selectedEvent.filePath) : undefined}
             errorMessage={acq.acquisitionStatus?.lastError}
             savedPath={selectedEvent?.filePath}
+            isLive={selectedEvent === null || selectedEvent.objectUrl === null}
+            capturedAt={selectedEvent?.capturedAt ?? null}
+            onReturnToLive={() => selectEvent(null)}
           />
         </Box>
       </Box>

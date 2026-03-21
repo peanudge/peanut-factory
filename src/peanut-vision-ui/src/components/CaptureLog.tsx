@@ -71,7 +71,21 @@ export default function CaptureLog({ events, selectedId, onSelect, onDelete, onC
                 "&:hover .delete-btn": { opacity: 1 },
               }}
             >
-              <CameraAltIcon sx={{ fontSize: 14, color: "text.secondary", flexShrink: 0 }} />
+              <Box sx={{
+                width: 40, height: 40, flexShrink: 0, borderRadius: 0.5, overflow: "hidden",
+                bgcolor: "background.default", border: "1px solid", borderColor: "divider",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                {evt.objectUrl ? (
+                  <img
+                    src={evt.objectUrl}
+                    alt=""
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  />
+                ) : (
+                  <CameraAltIcon sx={{ fontSize: 18, color: "text.disabled" }} />
+                )}
+              </Box>
               <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                 <Typography
                   variant="caption"
