@@ -26,7 +26,7 @@ import {
 } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
 import { useToast } from "../contexts/ToastContext";
-import { API_BASE_URL, POLL_INTERVAL_ACTIVE_MS, POLL_INTERVAL_IDLE_MS } from "../constants";
+import { API_BASE_URL, DEFAULT_CONTINUOUS_INTERVAL_MS, POLL_INTERVAL_ACTIVE_MS, POLL_INTERVAL_IDLE_MS } from "../constants";
 
 interface UseAcquisitionActionsParams {
   onEventCaptured: (filePath: string, objectUrl: string | null) => void;
@@ -226,7 +226,13 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
 
   // ── Handlers ──
 
-  const handleStart = () => startMutation.mutate();
+  const handleStart = () => {
+    if (mode === "continuous" && continuousSubMode === "auto" && intervalMs === null) {
+      toast("Please input interval time for continuous mode", "warning");
+      return;
+    }
+    startMutation.mutate();
+  };
   const handleStop = () => stopMutation.mutate();
   const handleTrigger = () => triggerMutation.mutate();
   const handleCapture = () => snapshotMutation.mutate();
@@ -251,6 +257,17 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     ffcMutation.mutate(checked);
   };
 
+  const handleSetMode = useCallback(
+    (next: AcquisitionMode) => {
+      setMode(next);
+      if (next === "continuous") {
+        setIntervalMs((prev) => prev ?? DEFAULT_CONTINUOUS_INTERVAL_MS);
+      }
+    },
+    []
+  );
+
+
   const previewUrl = previewTimestamp > 0
     ? `${API_BASE_URL}/acquisition/latest-frame?_t=${previewTimestamp}`
     : null;
@@ -260,7 +277,7 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     selectedProfile,
     setSelectedProfile,
     mode,
-    setMode,
+    setMode: handleSetMode,
     continuousSubMode,
     setContinuousSubMode,
     triggerMode,
