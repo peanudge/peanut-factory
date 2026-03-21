@@ -5,6 +5,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import theme from "./theme";
 import App from "./App";
+import { ToastProvider } from "./contexts/ToastContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,7 +21,9 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <App />
+        <ToastProvider>
+          <App />
+        </ToastProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </StrictMode>,
