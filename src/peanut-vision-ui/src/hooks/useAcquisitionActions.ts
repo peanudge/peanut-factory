@@ -46,7 +46,6 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
   } | null>(null);
   const [exposure, setExposureState] = useState<ExposureInfo | null>(null);
   const [exposureValue, setExposureValue] = useState(1000);
-  const [gainValue, setGainValue] = useState(0);
   const [ffcEnabled, setFfcEnabled] = useState(false);
   const [error, setError] = useState("");
   const [errorCode, setErrorCode] = useState("");
@@ -150,14 +149,13 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     onSuccess: (info) => {
       setExposureState(info);
       setExposureValue(info.exposureUs);
-      setGainValue(info.gainDb);
       setSnackbar({ message: "Exposure settings loaded", severity: "success" });
     },
     onError: handleError,
   });
 
   const applyExposureMutation = useMutation({
-    mutationFn: () => setExposure(exposureValue, gainValue),
+    mutationFn: () => setExposure(exposureValue),
     onSuccess: (result) => {
       setSnackbar({ message: result.message, severity: "success" });
     },
@@ -260,8 +258,6 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     exposure,
     exposureValue,
     setExposureValue,
-    gainValue,
-    setGainValue,
     ffcEnabled,
     busy,
     error,

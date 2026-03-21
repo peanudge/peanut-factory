@@ -127,21 +127,18 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
         return new ExposureInfo
         {
             ExposureUs = channel.GetExposureUs(),
-            GainDb = channel.GetGainDb(),
             ExposureRange = new ExposureRangeInfo { Min = range.Min, Max = range.Max },
         };
     }
 
-    public ExposureInfo SetExposure(double? exposureUs, double? gainDb)
+    public ExposureInfo SetExposure(double? exposureUs)
     {
         var channel = GetRequiredActiveChannel();
         if (exposureUs.HasValue) channel.SetExposureUs(exposureUs.Value);
-        if (gainDb.HasValue) channel.SetGainDb(gainDb.Value);
         var range = channel.GetExposureRange();
         return new ExposureInfo
         {
             ExposureUs = channel.GetExposureUs(),
-            GainDb = channel.GetGainDb(),
             ExposureRange = new ExposureRangeInfo { Min = range.Min, Max = range.Max },
         };
     }

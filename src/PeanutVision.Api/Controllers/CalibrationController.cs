@@ -68,7 +68,6 @@ public class CalibrationController : ControllerBase
             exposureRange = info.ExposureRange != null
                 ? new { min = info.ExposureRange.Min, max = info.ExposureRange.Max }
                 : null,
-            gainDb = info.GainDb,
         });
     }
 
@@ -78,12 +77,11 @@ public class CalibrationController : ControllerBase
         if (!_calibration.IsAvailable)
             throw new ChannelNotAvailableException();
 
-        var info = _calibration.SetExposure(request.ExposureUs, request.GainDb);
+        var info = _calibration.SetExposure(request.ExposureUs);
         return Ok(new
         {
             message = "Exposure settings updated.",
             exposureUs = info.ExposureUs,
-            gainDb = info.GainDb,
         });
     }
 }
@@ -96,5 +94,4 @@ public class FfcRequest
 public class ExposureRequest
 {
     public double? ExposureUs { get; set; }
-    public double? GainDb { get; set; }
 }

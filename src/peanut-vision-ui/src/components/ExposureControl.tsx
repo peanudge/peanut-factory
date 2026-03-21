@@ -3,7 +3,6 @@ import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Slider from "@mui/material/Slider";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type { ExposureInfo } from "../api/types";
 import { DEFAULT_EXPOSURE_MIN, DEFAULT_EXPOSURE_MAX } from "../constants";
@@ -11,10 +10,8 @@ import { DEFAULT_EXPOSURE_MIN, DEFAULT_EXPOSURE_MAX } from "../constants";
 interface Props {
   exposure: ExposureInfo | null;
   exposureValue: number;
-  gainValue: number;
   busy: boolean;
   onExposureChange: (value: number) => void;
-  onGainChange: (value: number) => void;
   onLoad: () => void;
   onApply: () => void;
 }
@@ -22,10 +19,8 @@ interface Props {
 export default function ExposureControl({
   exposure,
   exposureValue,
-  gainValue,
   busy,
   onExposureChange,
-  onGainChange,
   onLoad,
   onApply,
 }: Props) {
@@ -36,7 +31,7 @@ export default function ExposureControl({
     <Card variant="outlined">
       <CardContent>
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
-          <Typography variant="subtitle2">Exposure &amp; Gain</Typography>
+          <Typography variant="subtitle2">Exposure</Typography>
           <Button size="small" variant="text" onClick={onLoad} disabled={busy}>
             Load Current
           </Button>
@@ -62,15 +57,6 @@ export default function ExposureControl({
               </Typography>
             )}
           </Box>
-
-          <TextField
-            label="Gain (dB)"
-            type="number"
-            size="small"
-            value={gainValue}
-            onChange={(e) => onGainChange(parseFloat(e.target.value) || 0)}
-            slotProps={{ htmlInput: { step: 0.5 } }}
-          />
 
           <Button variant="contained" onClick={onApply} disabled={busy}>
             Apply Settings
