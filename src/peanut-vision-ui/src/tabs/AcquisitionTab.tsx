@@ -133,12 +133,14 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
             exposureValue={acq.exposureValue}
             isActive={acq.acquisitionStatus?.isActive ?? false}
             busy={acq.busy}
+            isCalibrationAvailable={acq.isCalibrationAvailable}
             onExposureChange={acq.setExposureValue}
             onLoad={acq.handleLoadExposure}
             onApply={acq.handleApplyExposure}
           />
           <CalibrationActions
             busy={acq.busy}
+            isCalibrationAvailable={acq.isCalibrationAvailable}
             ffcEnabled={acq.ffcEnabled}
             onBlack={acq.handleBlack}
             onWhite={acq.handleWhite}
