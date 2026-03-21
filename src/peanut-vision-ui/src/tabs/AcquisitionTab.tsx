@@ -59,6 +59,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
           borderRight: "1px solid",
           borderColor: "divider",
           overflowY: "auto",
+          overflowX: "hidden",
           p: 3,
           display: "flex",
           flexDirection: "column",
