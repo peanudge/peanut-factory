@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Box from "@mui/material/Box";
 import Collapse from "@mui/material/Collapse";
 import Chip from "@mui/material/Chip";
@@ -115,8 +115,48 @@ interface Props {
   onSessionChange?: (name: string | null) => void;
 }
 
+const RIGHT_PANEL_MIN = 200;
+const RIGHT_PANEL_MAX = 560;
+const RIGHT_PANEL_DEFAULT = 280;
+
 export default function AcquisitionTab({ onSessionChange }: Props = {}) {
   const [cameras, setCameras] = useState<CamFileInfo[]>([]);
+
+  // Right panel resize — width stored in a ref and applied via DOM ref
+  // to avoid re-renders (and layout shifts) during dragging
+  const rightPanelRef = useRef<HTMLDivElement>(null);
+  const rightPanelWidth = useRef(RIGHT_PANEL_DEFAULT);
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const dragStartWidth = useRef(0);
+
+  const onResizerMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    dragStartX.current = e.clientX;
+    dragStartWidth.current = rightPanelWidth.current;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!isDragging.current) return;
+      const delta = dragStartX.current - ev.clientX;
+      const next = Math.min(RIGHT_PANEL_MAX, Math.max(RIGHT_PANEL_MIN, dragStartWidth.current + delta));
+      rightPanelWidth.current = next;
+      if (rightPanelRef.current) rightPanelRef.current.style.width = `${next}px`;
+    };
+
+    const onMouseUp = () => {
+      isDragging.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  }, []);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [mode, setMode] = useState<AcquisitionMode>("single");
   const [continuousSubMode, setContinuousSubMode] = useState<ContinuousSubMode>("auto");
@@ -302,12 +342,12 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
       {/* LEFT SIDEBAR */}
       <Box
         sx={{
-          width: 300,
+          width: 340,
           flexShrink: 0,
           borderRight: "1px solid",
           borderColor: "divider",
           overflowY: "auto",
-          p: 2,
+          p: 3,
           display: "flex",
           flexDirection: "column",
           gap: 2,
@@ -395,7 +435,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
 
       {/* MAIN CANVAS */}
       <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        {/* Top area: image viewer + stats/histogram row */}
+        {/* Image viewer + stats/histogram row */}
         <Box sx={{ flexGrow: 1, p: 2, display: "flex", flexDirection: "column", gap: 2, overflow: "hidden" }}>
           <Box sx={{ flexGrow: 1, minHeight: 0 }}>
             <ImageViewer
@@ -414,8 +454,32 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
             </Box>
           </Box>
         </Box>
+      </Box>
 
-        {/* Gallery panel */}
+      {/* DRAG HANDLE */}
+      <Box
+        onMouseDown={onResizerMouseDown}
+        sx={{
+          width: 4,
+          flexShrink: 0,
+          cursor: "col-resize",
+          bgcolor: "divider",
+          transition: "background-color 0.15s",
+          "&:hover": { bgcolor: "primary.main" },
+        }}
+      />
+
+      {/* RIGHT PANEL */}
+      <Box
+        ref={rightPanelRef}
+        sx={{
+          width: RIGHT_PANEL_DEFAULT,
+          flexShrink: 0,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
         <CollapsiblePanel label="Captures" count={images.length} defaultOpen>
           <CapturedImageList
             images={images}
@@ -426,7 +490,6 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
           />
         </CollapsiblePanel>
 
-        {/* Event log panel */}
         <CollapsiblePanel label="Event Log" defaultOpen={false}>
           <EventLog events={status?.recentEvents} />
         </CollapsiblePanel>
