@@ -11,8 +11,13 @@ export function useCaptureLog() {
       filePath,
       capturedAt: new Date(),
     };
-    setEvents((prev) => [newEvent, ...prev]);
-    setSelectedEventId(newEvent.id);
+    setEvents((prev) => {
+      // Auto-select only when no event is selected or the newest event is currently selected
+      setSelectedEventId((prevSelected) =>
+        prevSelected === null || prevSelected === prev[0]?.id ? newEvent.id : prevSelected
+      );
+      return [newEvent, ...prev];
+    });
   }, []);
 
   const deleteEvent = useCallback((id: string) => {
