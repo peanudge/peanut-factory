@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { Session } from "../api/types";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
@@ -16,7 +18,6 @@ import AddIcon from "@mui/icons-material/Add";
 import StopIcon from "@mui/icons-material/Stop";
 import HistoryIcon from "@mui/icons-material/History";
 import DeleteIcon from "@mui/icons-material/Delete";
-import type { Session } from "../api/types";
 import {
   getSessions,
   getActiveSession,
@@ -25,73 +26,67 @@ import {
   deleteSession,
 } from "../api/client";
 
+import { queryKeys } from "../api/queryKeys";
+
 interface SessionSelectorProps {
   onSessionChange?: (name: string | null) => void;
 }
 
 export default function SessionSelector({ onSessionChange }: SessionSelectorProps = {}) {
-  const [activeSession, setActiveSession] = useState<Session | null>(null);
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const queryClient = useQueryClient();
   const [historyOpen, setHistoryOpen] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newNotes, setNewNotes] = useState("");
-  const [busy, setBusy] = useState(false);
 
-  const refresh = useCallback(async () => {
-    try {
-      const [active, all] = await Promise.all([getActiveSession(), getSessions()]);
-      setActiveSession(active);
-      onSessionChange?.(active?.name ?? null);
-      setSessions(all);
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  const { data: activeSession } = useQuery({
+    queryKey: queryKeys.activeSession,
+    queryFn: getActiveSession,
+  });
+
+  const { data: sessions = [] } = useQuery<Session[]>({
+    queryKey: queryKeys.sessions,
+    queryFn: () => getSessions(),
+  });
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    onSessionChange?.(activeSession?.name ?? null);
+  }, [activeSession, onSessionChange]);
 
-  const handleCreate = async () => {
-    if (!newName.trim()) return;
-    setBusy(true);
-    try {
-      await createSession(newName.trim(), newNotes.trim() || undefined);
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.sessions });
+    queryClient.invalidateQueries({ queryKey: queryKeys.activeSession });
+  };
+
+  const createMutation = useMutation({
+    mutationFn: ({ name, notes }: { name: string; notes?: string }) =>
+      createSession(name, notes),
+    onSuccess: () => {
       setNewName("");
       setNewNotes("");
       setNewOpen(false);
-      await refresh();
-    } finally {
-      setBusy(false);
-    }
+      invalidate();
+    },
+  });
+
+  const endMutation = useMutation({
+    mutationFn: (id: string) => endSession(id),
+    onSuccess: invalidate,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteSession(id),
+    onSuccess: invalidate,
+  });
+
+  const busy = createMutation.isPending || endMutation.isPending || deleteMutation.isPending;
+
+  const handleCreate = () => {
+    if (!newName.trim()) return;
+    createMutation.mutate({ name: newName.trim(), notes: newNotes.trim() || undefined });
   };
 
-  const handleEnd = async () => {
-    if (!activeSession) return;
-    setBusy(true);
-    try {
-      await endSession(activeSession.id);
-      await refresh();
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    setBusy(true);
-    try {
-      await deleteSession(id);
-      await refresh();
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const formatDate = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleString();
-  };
+  const formatDate = (iso: string) => new Date(iso).toLocaleString();
 
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
@@ -111,7 +106,7 @@ export default function SessionSelector({ onSessionChange }: SessionSelectorProp
             size="small"
             color="warning"
             startIcon={<StopIcon />}
-            onClick={handleEnd}
+            onClick={() => endMutation.mutate(activeSession.id)}
             disabled={busy}
           >
             End Session
@@ -198,7 +193,7 @@ export default function SessionSelector({ onSessionChange }: SessionSelectorProp
                     <IconButton
                       edge="end"
                       size="small"
-                      onClick={(e) => { e.stopPropagation(); handleDelete(s.id); }}
+                      onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(s.id); }}
                       disabled={busy}
                     >
                       <DeleteIcon fontSize="small" />
