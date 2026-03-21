@@ -22,6 +22,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
     private ChannelState _channelState = ChannelState.None;
     private ProfileId? _channelProfileId;
     private TriggerMode? _channelTriggerMode;
+    private double _desiredExposureUs = 10000.0;
 
     public AcquisitionManager(IGrabService grabService, ICamFileService camFileService)
     {
@@ -122,25 +123,41 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
 
     public ExposureInfo GetExposure()
     {
-        var channel = GetRequiredActiveChannel();
-        var range = channel.GetExposureRange();
-        return new ExposureInfo
+        lock (_lock)
         {
-            ExposureUs = channel.GetExposureUs(),
-            ExposureRange = new ExposureRangeInfo { Min = range.Min, Max = range.Max },
-        };
+            if (_channelState == ChannelState.Active && _channel != null)
+            {
+                _desiredExposureUs = _channel.GetExposureUs();
+                var range = _channel.GetExposureRange();
+                return new ExposureInfo
+                {
+                    ExposureUs = _desiredExposureUs,
+                    ExposureRange = new ExposureRangeInfo { Min = range.Min, Max = range.Max },
+                };
+            }
+            return new ExposureInfo { ExposureUs = _desiredExposureUs };
+        }
     }
 
     public ExposureInfo SetExposure(double? exposureUs)
     {
-        var channel = GetRequiredActiveChannel();
-        if (exposureUs.HasValue) channel.SetExposureUs(exposureUs.Value);
-        var range = channel.GetExposureRange();
-        return new ExposureInfo
+        lock (_lock)
         {
-            ExposureUs = channel.GetExposureUs(),
-            ExposureRange = new ExposureRangeInfo { Min = range.Min, Max = range.Max },
-        };
+            if (exposureUs.HasValue)
+                _desiredExposureUs = exposureUs.Value;
+
+            if (_channelState == ChannelState.Active && _channel != null)
+            {
+                _channel.SetExposureUs(_desiredExposureUs);
+                var range = _channel.GetExposureRange();
+                return new ExposureInfo
+                {
+                    ExposureUs = _channel.GetExposureUs(),
+                    ExposureRange = new ExposureRangeInfo { Min = range.Min, Max = range.Max },
+                };
+            }
+            return new ExposureInfo { ExposureUs = _desiredExposureUs };
+        }
     }
 
     private GrabChannel GetRequiredActiveChannel()
@@ -234,6 +251,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
             _channelState = ChannelState.Active;
             _statistics.Start();
             _channel.StartAcquisition(frameCount ?? -1);
+            try { _channel.SetExposureUs(_desiredExposureUs); } catch { /* best-effort */ }
 
             if (intervalMs.HasValue && intervalMs.Value > 0)
             {

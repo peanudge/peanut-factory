@@ -78,6 +78,13 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
     }
   }, [cameras, selectedProfile]);
 
+  useEffect(() => {
+    getExposure()
+      .then((info) => { setExposureState(info); setExposureValue(info.exposureUs); })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const { data: acquisitionStatus } = useQuery<AcquisitionStatus>({
     queryKey: queryKeys.acquisitionStatus,
     queryFn: getAcquisitionStatus,
@@ -108,8 +115,10 @@ export function useAcquisitionActions({ onFrameCaptured }: UseAcquisitionActions
         frameCount,
         continuousSubMode === "auto" ? intervalMs : null,
       ),
-    onSuccess: () => {
+    onSuccess: async () => {
       invalidateStatus();
+      const info = await getExposure().catch(() => null);
+      if (info) { setExposureState(info); setExposureValue(info.exposureUs); }
       setSnackbar({ message: "촬영이 시작되었습니다", severity: "success" });
     },
     onError: handleError,

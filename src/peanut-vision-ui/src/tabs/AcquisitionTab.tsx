@@ -137,6 +137,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
           <ExposureControl
             exposure={acq.exposure}
             exposureValue={acq.exposureValue}
+            isActive={acq.acquisitionStatus?.isActive ?? false}
             busy={acq.busy}
             onExposureChange={acq.setExposureValue}
             onLoad={acq.handleLoadExposure}

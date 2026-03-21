@@ -58,9 +58,6 @@ public class CalibrationController : ControllerBase
     [HttpGet("exposure")]
     public ActionResult GetExposure()
     {
-        if (!_calibration.IsAvailable)
-            throw new ChannelNotAvailableException();
-
         var info = _calibration.GetExposure();
         return Ok(new
         {
@@ -74,9 +71,6 @@ public class CalibrationController : ControllerBase
     [HttpPut("exposure")]
     public ActionResult SetExposure([FromBody] ExposureRequest request)
     {
-        if (!_calibration.IsAvailable)
-            throw new ChannelNotAvailableException();
-
         var info = _calibration.SetExposure(request.ExposureUs);
         return Ok(new
         {
