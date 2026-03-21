@@ -18,7 +18,6 @@ export default function ImageThumbnail({ image, selected, onSelect, onDelete }: 
     <Box
       onClick={() => onSelect(image.id)}
       sx={{
-        flexShrink: 0,
         cursor: "pointer",
         display: "flex",
         flexDirection: "column",
@@ -29,7 +28,7 @@ export default function ImageThumbnail({ image, selected, onSelect, onDelete }: 
       <Box
         sx={{
           position: "relative",
-          width: 80,
+          width: "100%",
           height: 60,
           border: "2px solid",
           borderColor: selected ? "primary.main" : "divider",

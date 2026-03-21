@@ -56,11 +56,13 @@ export default function CapturedImageList({ images, selectedId, onSelect, onDele
       ) : (
         <Box
           sx={{
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))",
             gap: 1,
-            overflowX: "auto",
-            pb: 1,
-            "&::-webkit-scrollbar": { height: 4 },
+            maxHeight: 220,
+            overflowY: "auto",
+            pr: 0.5,
+            "&::-webkit-scrollbar": { width: 4 },
             "&::-webkit-scrollbar-thumb": { borderRadius: 2, bgcolor: "divider" },
           }}
         >
