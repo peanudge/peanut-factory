@@ -1,34 +1,41 @@
+using Microsoft.Extensions.Options;
+
 namespace PeanutVision.Api.Services;
 
 /// <summary>
-/// In-memory circular buffer that stores the most recent trigger-to-frame latency measurements.
-/// Thread-safe. Retains up to <see cref="Capacity"/> records; older entries are evicted automatically.
+/// Thread-safe in-memory circular buffer for latency records.
+/// Responsible only for storage — statistical computation lives in <see cref="LatencyAnalyzer"/>.
 /// </summary>
-public sealed class LatencyRepository
+public sealed class LatencyRepository : ILatencyRepository
 {
-    private const int Capacity = 1000;
-
+    private readonly int _capacity;
     private readonly object _lock = new();
-    private readonly List<LatencyRecord> _records = new(Capacity + 1);
+    private readonly Queue<LatencyRecord> _records;
     private int _nextId = 1;
+
+    public LatencyRepository(IOptions<LatencyRepositoryOptions> options)
+    {
+        _capacity = options.Value.Capacity;
+        _records = new Queue<LatencyRecord>(_capacity + 1);
+    }
 
     public void Add(DateTimeOffset triggerSentAt, DateTimeOffset frameReceivedAt, long frameIndex, string? profileId)
     {
         var record = new LatencyRecord
         {
-            Id = _nextId++,
-            TriggerSentAt = triggerSentAt,
+            Id              = _nextId++,
+            TriggerSentAt   = triggerSentAt,
             FrameReceivedAt = frameReceivedAt,
-            LatencyMs = Math.Round((frameReceivedAt - triggerSentAt).TotalMilliseconds, 3),
-            FrameIndex = frameIndex,
-            ProfileId = profileId,
+            LatencyMs       = Math.Round((frameReceivedAt - triggerSentAt).TotalMilliseconds, 3),
+            FrameIndex      = frameIndex,
+            ProfileId       = profileId,
         };
 
         lock (_lock)
         {
-            _records.Add(record);
-            if (_records.Count > Capacity)
-                _records.RemoveAt(0);
+            _records.Enqueue(record);
+            if (_records.Count > _capacity)
+                _records.Dequeue();
         }
     }
 
@@ -36,8 +43,7 @@ public sealed class LatencyRepository
     {
         lock (_lock)
         {
-            var skip = Math.Max(0, _records.Count - max);
-            return _records.Skip(skip).ToList();
+            return _records.TakeLast(max).ToList();
         }
     }
 
@@ -48,42 +54,5 @@ public sealed class LatencyRepository
             _records.Clear();
             _nextId = 1;
         }
-    }
-
-    public LatencyStats? GetStats()
-    {
-        double[] latencies;
-
-        lock (_lock)
-        {
-            if (_records.Count == 0) return null;
-            latencies = _records.Select(r => r.LatencyMs).OrderBy(x => x).ToArray();
-        }
-
-        var count = latencies.Length;
-        var mean = latencies.Average();
-        var variance = latencies.Average(x => (x - mean) * (x - mean));
-
-        return new LatencyStats
-        {
-            Count = count,
-            MinMs = Math.Round(latencies[0], 3),
-            MaxMs = Math.Round(latencies[count - 1], 3),
-            MeanMs = Math.Round(mean, 3),
-            P50Ms = Percentile(latencies, 50),
-            P95Ms = Percentile(latencies, 95),
-            P99Ms = Percentile(latencies, 99),
-            StdDevMs = Math.Round(Math.Sqrt(variance), 3),
-        };
-    }
-
-    private static double Percentile(double[] sorted, int p)
-    {
-        if (sorted.Length == 1) return sorted[0];
-        double index = (p / 100.0) * (sorted.Length - 1);
-        int lower = (int)Math.Floor(index);
-        int upper = Math.Min(lower + 1, sorted.Length - 1);
-        double fraction = index - lower;
-        return Math.Round(sorted[lower] + fraction * (sorted[upper] - sorted[lower]), 3);
     }
 }

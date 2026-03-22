@@ -5,11 +5,11 @@ using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.Api.Services;
 
-public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibration
+public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibration, IExposureControl
 {
     private readonly IGrabService _grabService;
     private readonly ICamFileService _camFileService;
-    private readonly LatencyRepository _latencyRepo;
+    private readonly ILatencyService _latencyService;
     private readonly object _lock = new();
     private readonly ChannelEventLog _eventLog = new();
     private readonly ConcurrentQueue<DateTimeOffset> _triggerTimestamps = new();
@@ -28,11 +28,11 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
     private double _desiredExposureUs = 10000.0;
     private int? _targetFrameCount;
 
-    public AcquisitionManager(IGrabService grabService, ICamFileService camFileService, LatencyRepository latencyRepo)
+    public AcquisitionManager(IGrabService grabService, ICamFileService camFileService, ILatencyService latencyService)
     {
         _grabService = grabService;
         _camFileService = camFileService;
-        _latencyRepo = latencyRepo;
+        _latencyService = latencyService;
     }
 
     public ChannelState ChannelState
@@ -399,7 +399,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
                     ?? throw new TimeoutException("Snapshot timed out waiting for frame.");
 
                 var snapshotFrameAt = DateTimeOffset.UtcNow;
-                _latencyRepo.Add(snapshotTriggerAt, snapshotFrameAt, 1, profileId.Value);
+                _latencyService.Record(snapshotTriggerAt, snapshotFrameAt, 1, profileId.Value);
 
                 try
                 {
@@ -482,7 +482,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
         }
 
         if (_triggerTimestamps.TryDequeue(out var triggerSentAt))
-            _latencyRepo.Add(triggerSentAt, frameReceivedAt, frameIndex, profileId);
+            _latencyService.Record(triggerSentAt, frameReceivedAt, frameIndex, profileId);
 
         tcs?.TrySetResult(image);
     }
