@@ -128,6 +128,28 @@ export interface AcquisitionPreset {
   intervalMs?: number | null;
 }
 
+// ── Latency Analysis ──
+
+export interface LatencyRecord {
+  id: number;
+  triggerSentAt: string;
+  frameReceivedAt: string;
+  latencyMs: number;
+  frameIndex: number;
+  profileId: string | null;
+}
+
+export interface LatencyStats {
+  count: number;
+  minMs: number;
+  maxMs: number;
+  meanMs: number;
+  p50Ms: number;
+  p95Ms: number;
+  p99Ms: number;
+  stdDevMs: number;
+}
+
 export type SaveImageFormat = "png" | "bmp" | "raw";
 export type SubfolderStrategy = "none" | "byDate" | "bySession" | "byProfile";
 
