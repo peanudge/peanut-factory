@@ -4,7 +4,7 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import AcquisitionControls from "../components/AcquisitionControls";
 import EventLog from "../components/EventLog";
-import CaptureLog from "../components/CaptureLog";
+import ImageGallery from "../components/ImageGallery";
 import ContinuousSettings from "../components/ContinuousSettings";
 import ImageSaveSettingsPanel from "../components/ImageSaveSettingsPanel";
 import SessionSelector from "../components/SessionSelector";
@@ -13,19 +13,18 @@ import CalibrationActions from "../components/CalibrationActions";
 import ExposureControl from "../components/ExposureControl";
 import ImageViewer from "../components/ImageViewer";
 import CollapsiblePanel from "../components/CollapsiblePanel";
-import { useCaptureLog } from "../hooks/useCaptureLog";
+import { useImageGallery } from "../hooks/useImageGallery";
 import { useAcquisitionActions } from "../hooks/useAcquisitionActions";
 import { useResizablePanel } from "../hooks/useResizablePanel";
-import { getFilename } from "../utils/formatTimestamp";
 
 interface Props {
   onSessionChange?: (name: string | null) => void;
 }
 
 export default function AcquisitionTab({ onSessionChange }: Props = {}) {
-  const { events, selectedEventId, addEvent, deleteEvent, clearAll, selectEvent } = useCaptureLog();
+  const gallery = useImageGallery();
 
-  const acq = useAcquisitionActions({ onEventCaptured: addEvent });
+  const acq = useAcquisitionActions({ onEventCaptured: gallery.invalidate });
 
   const { panelRef: sidebarRef, onResizerMouseDown: onSidebarResizerMouseDown } = useResizablePanel({
     defaultWidth: 340,
@@ -42,8 +41,11 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
 
   const [sidebarTab, setSidebarTab] = useState(0);
 
-  const selectedEvent = events.find((e) => e.id === selectedEventId) ?? null;
-  const viewerUrl = selectedEvent?.objectUrl ?? acq.previewUrl;
+  // Show live preview during active acquisition; show selected historical image otherwise
+  const isLive = acq.acquisitionStatus?.isActive ?? !gallery.selectedId;
+  const viewerUrl = acq.acquisitionStatus?.isActive
+    ? acq.previewUrl
+    : (gallery.selectedImageUrl ?? acq.previewUrl);
 
   return (
     <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden", height: "100%" }}>
@@ -173,12 +175,12 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
         <Box sx={{ flexGrow: 1, minHeight: 0, p: 1.5, display: "flex", flexDirection: "column" }}>
           <ImageViewer
             url={viewerUrl}
-            filename={selectedEvent ? getFilename(selectedEvent.filePath) : undefined}
+            filename={gallery.selectedImage?.filename}
             errorMessage={acq.acquisitionStatus?.lastError}
-            savedPath={selectedEvent?.filePath}
-            isLive={selectedEvent === null || selectedEvent.objectUrl === null}
-            capturedAt={selectedEvent?.capturedAt ?? null}
-            onReturnToLive={() => selectEvent(null)}
+            savedPath={gallery.selectedImage?.filePath}
+            isLive={isLive}
+            capturedAt={gallery.selectedImage ? new Date(gallery.selectedImage.capturedAt) : null}
+            onReturnToLive={() => gallery.setSelectedId(null)}
           />
         </Box>
       </Box>
@@ -207,13 +209,18 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
           overflow: "hidden",
         }}
       >
-        <CollapsiblePanel label="Captures" count={events.length} defaultOpen={true}>
-          <CaptureLog
-            events={events}
-            selectedId={selectedEventId}
-            onSelect={selectEvent}
-            onDelete={deleteEvent}
-            onClear={clearAll}
+        <CollapsiblePanel label="Captures" count={gallery.totalCount} defaultOpen={true}>
+          <ImageGallery
+            images={gallery.images}
+            selectedId={gallery.selectedId}
+            onSelect={gallery.setSelectedId}
+            onDelete={gallery.handleDelete}
+            page={gallery.page}
+            totalPages={gallery.totalPages}
+            onPageChange={gallery.setPage}
+            filterSessionId={gallery.filterSessionId}
+            onFilterChange={gallery.setFilterSessionId}
+            isLoading={gallery.isLoading}
           />
         </CollapsiblePanel>
         <CollapsiblePanel label="Event Log" defaultOpen={false}>

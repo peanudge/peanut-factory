@@ -10,6 +10,7 @@ import type {
   Session,
   HistogramData,
   AcquisitionPreset,
+  ImagePage,
 } from "./types";
 
 export interface CaptureResult {
@@ -196,6 +197,40 @@ export function deletePreset(name: string): Promise<void> {
         throw new ApiError(b.error ?? `HTTP ${res.status}`, b.errorCode ?? "UNKNOWN_ERROR", res.status);
       });
     });
+}
+
+// ── Images ──
+
+export function listImages(params: {
+  page?: number;
+  pageSize?: number;
+  sessionId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+} = {}): Promise<ImagePage> {
+  const qs = new URLSearchParams();
+  if (params.page != null)      qs.set("page", String(params.page));
+  if (params.pageSize != null)  qs.set("pageSize", String(params.pageSize));
+  if (params.sessionId)         qs.set("sessionId", params.sessionId);
+  if (params.dateFrom)          qs.set("dateFrom", params.dateFrom);
+  if (params.dateTo)            qs.set("dateTo", params.dateTo);
+  return request(`/images?${qs}`);
+}
+
+export function deleteImage(id: string): Promise<void> {
+  return fetch(`${API_BASE_URL}/images/${id}`, { method: "DELETE" }).then((res) => {
+    if (!res.ok) return res.json().then((b) => {
+      throw new ApiError(b.error ?? `HTTP ${res.status}`, b.errorCode ?? "UNKNOWN_ERROR", res.status);
+    });
+  });
+}
+
+export function thumbnailUrl(id: string): string {
+  return `${API_BASE_URL}/images/${id}/thumbnail`;
+}
+
+export function imageFileUrl(id: string): string {
+  return `${API_BASE_URL}/images/${id}/file`;
 }
 
 // ── Calibration ──

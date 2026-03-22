@@ -14,6 +14,9 @@ public class AcquisitionController : ControllerBase
     private readonly IImageSaveSettingsService _saveSettings;
     private readonly FilenameGenerator _filenameGenerator;
     private readonly FrameSaveTracker _frameSaveTracker;
+    private readonly ICapturedImageRepository _imageRepository;
+    private readonly IThumbnailService _thumbnailService;
+    private readonly ISessionRepository _sessionRepository;
     private readonly string _contentRootPath;
 
     public AcquisitionController(
@@ -21,12 +24,18 @@ public class AcquisitionController : ControllerBase
         IImageSaveSettingsService saveSettings,
         FilenameGenerator filenameGenerator,
         FrameSaveTracker frameSaveTracker,
+        ICapturedImageRepository imageRepository,
+        IThumbnailService thumbnailService,
+        ISessionRepository sessionRepository,
         IWebHostEnvironment environment)
     {
         _acquisition = acquisition;
         _saveSettings = saveSettings;
         _filenameGenerator = filenameGenerator;
         _frameSaveTracker = frameSaveTracker;
+        _imageRepository = imageRepository;
+        _thumbnailService = thumbnailService;
+        _sessionRepository = sessionRepository;
         _contentRootPath = environment.ContentRootPath;
     }
 
@@ -105,9 +114,8 @@ public class AcquisitionController : ControllerBase
         var settings = _saveSettings.GetSettings();
         if (settings.AutoSave)
         {
-            var filePath = _filenameGenerator.Generate(
-                settings, _contentRootPath, _acquisition.ActiveProfileId?.Value);
-            new ImageWriter().Save(image, filePath);
+            var filePath = await SaveAndRecordAsync(
+                image, settings, _acquisition.ActiveProfileId?.Value);
             Response.Headers["X-Image-Path"] = filePath;
         }
 
@@ -120,7 +128,7 @@ public class AcquisitionController : ControllerBase
     }
 
     [HttpGet("latest-frame")]
-    public ActionResult GetLatestFrame()
+    public async Task<ActionResult> GetLatestFrame()
     {
         var frame = _acquisition.GetLatestFrame();
         if (frame is null)
@@ -129,9 +137,8 @@ public class AcquisitionController : ControllerBase
         var settings = _saveSettings.GetSettings();
         if (settings.AutoSave && _frameSaveTracker.ShouldSave(frame))
         {
-            var filePath = _filenameGenerator.Generate(
-                settings, _contentRootPath, _acquisition.ActiveProfileId?.Value);
-            new ImageWriter().Save(frame, filePath);
+            var filePath = await SaveAndRecordAsync(
+                frame, settings, _acquisition.ActiveProfileId?.Value);
             Response.Headers["X-Image-Path"] = filePath;
         }
 
@@ -161,7 +168,7 @@ public class AcquisitionController : ControllerBase
     }
 
     [HttpPost("snapshot")]
-    public ActionResult Snapshot([FromBody] SnapshotRequest request)
+    public async Task<ActionResult> Snapshot([FromBody] SnapshotRequest request)
     {
         var profileId = new ProfileId(request.ProfileId);
         var triggerMode = request.TriggerMode is not null
@@ -180,9 +187,7 @@ public class AcquisitionController : ControllerBase
             var settings = _saveSettings.GetSettings();
             if (settings.AutoSave)
             {
-                var filePath = _filenameGenerator.Generate(
-                    settings, _contentRootPath, request.ProfileId);
-                new ImageWriter().Save(image, filePath);
+                var filePath = await SaveAndRecordAsync(image, settings, request.ProfileId);
                 Response.Headers["X-Image-Path"] = filePath;
             }
         }
@@ -193,6 +198,32 @@ public class AcquisitionController : ControllerBase
         stream.Position = 0;
 
         return File(stream, "image/png", "snapshot.png");
+    }
+
+    private async Task<string> SaveAndRecordAsync(
+        ImageData image, ImageSaveSettings settings, string? profileId)
+    {
+        var filePath = _filenameGenerator.Generate(settings, _contentRootPath, profileId);
+        new ImageWriter().Save(image, filePath);
+
+        var thumbPath = await _thumbnailService.GenerateAsync(filePath);
+        var activeSession = await _sessionRepository.GetActiveAsync();
+        var fileInfo = new FileInfo(filePath);
+
+        await _imageRepository.AddAsync(new CapturedImage
+        {
+            Id = Guid.NewGuid(),
+            FilePath = filePath,
+            ThumbnailPath = thumbPath,
+            Width = image.Width,
+            Height = image.Height,
+            FileSizeBytes = fileInfo.Exists ? fileInfo.Length : 0,
+            Format = settings.Format.ToString().ToLower(),
+            CapturedAt = DateTime.UtcNow,
+            SessionId = activeSession?.Id,
+        });
+
+        return filePath;
     }
 }
 

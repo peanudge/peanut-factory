@@ -9,4 +9,6 @@ public sealed class Session
     public string? Notes { get; set; }
 
     public bool IsActive => EndedAt is null;
+
+    public ICollection<CapturedImage> CapturedImages { get; set; } = [];
 }
