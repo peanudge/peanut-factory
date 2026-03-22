@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CapturedEvent } from "../api/types";
 
-const MAX_CAPTURES = 50;
+const MAX_CAPTURES = 30;
 
 export function useCaptureLog() {
   const [events, setEvents] = useState<CapturedEvent[]>([]);
