@@ -11,6 +11,8 @@ import type {
   HistogramData,
   AcquisitionPreset,
   ImagePage,
+  LatencyRecord,
+  LatencyStats,
 } from "./types";
 
 export interface CaptureResult {
@@ -231,6 +233,27 @@ export function thumbnailUrl(id: string): string {
 
 export function imageFileUrl(id: string): string {
   return `${API_BASE_URL}/images/${id}/file`;
+}
+
+// ── Latency Analysis ──
+
+export function getLatencyRecords(limit = 200): Promise<LatencyRecord[]> {
+  return request(`/latency/records?limit=${limit}`);
+}
+
+export function getLatencyStats(): Promise<LatencyStats | null> {
+  return fetch(`${API_BASE_URL}/latency/stats`)
+    .then((res) => {
+      if (res.status === 204) return null;
+      if (!res.ok) return res.json().then((b: Record<string, unknown>) => {
+        throw new ApiError(String(b.error ?? `HTTP ${res.status}`), String(b.errorCode ?? "UNKNOWN_ERROR"), res.status);
+      });
+      return res.json();
+    });
+}
+
+export function clearLatencyRecords(): Promise<ApiMessage> {
+  return request("/latency/records", { method: "DELETE" });
 }
 
 // ── Calibration ──

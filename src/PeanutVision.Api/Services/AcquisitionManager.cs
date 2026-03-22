@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using PeanutVision.MultiCamDriver;
 using PeanutVision.MultiCamDriver.Camera;
 using PeanutVision.MultiCamDriver.Imaging;
@@ -8,8 +9,10 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
 {
     private readonly IGrabService _grabService;
     private readonly ICamFileService _camFileService;
+    private readonly LatencyRepository _latencyRepo;
     private readonly object _lock = new();
     private readonly ChannelEventLog _eventLog = new();
+    private readonly ConcurrentQueue<DateTimeOffset> _triggerTimestamps = new();
 
     private GrabChannel? _channel;
     private ImageData? _lastFrame;
@@ -25,10 +28,11 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
     private double _desiredExposureUs = 10000.0;
     private int? _targetFrameCount;
 
-    public AcquisitionManager(IGrabService grabService, ICamFileService camFileService)
+    public AcquisitionManager(IGrabService grabService, ICamFileService camFileService, LatencyRepository latencyRepo)
     {
         _grabService = grabService;
         _camFileService = camFileService;
+        _latencyRepo = latencyRepo;
     }
 
     public ChannelState ChannelState
@@ -263,7 +267,10 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
                     lock (_lock)
                     {
                         if (_channel?.IsActive == true)
+                        {
+                            _triggerTimestamps.Enqueue(DateTimeOffset.UtcNow);
                             _channel.SendSoftwareTrigger();
+                        }
                     }
                 }, null, 0, intervalMs.Value);
             }
@@ -330,6 +337,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
 
             tcs = new TaskCompletionSource<ImageData>(TaskCreationOptions.RunContinuationsAsynchronously);
             _triggerTcs = tcs;
+            _triggerTimestamps.Enqueue(DateTimeOffset.UtcNow);
             _channel.SendSoftwareTrigger();
         }
 
@@ -384,10 +392,14 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
             try
             {
                 channel.StartAcquisition(1);
+                var snapshotTriggerAt = DateTimeOffset.UtcNow;
                 channel.SendSoftwareTrigger();
 
                 var surface = channel.WaitForFrame(5000)
                     ?? throw new TimeoutException("Snapshot timed out waiting for frame.");
+
+                var snapshotFrameAt = DateTimeOffset.UtcNow;
+                _latencyRepo.Add(snapshotTriggerAt, snapshotFrameAt, 1, profileId.Value);
 
                 try
                 {
@@ -453,15 +465,24 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
 
     private void ProcessFrame(ImageData image)
     {
+        var frameReceivedAt = DateTimeOffset.UtcNow;
+
         TaskCompletionSource<ImageData>? tcs;
+        long frameIndex;
+        string? profileId;
 
         lock (_lock)
         {
             _lastFrame = image;
             _statistics?.RecordFrame();
+            frameIndex = _statistics?.FrameCount ?? 0;
+            profileId = _channelProfileId?.Value;
             tcs = _triggerTcs;
             _triggerTcs = null;
         }
+
+        if (_triggerTimestamps.TryDequeue(out var triggerSentAt))
+            _latencyRepo.Add(triggerSentAt, frameReceivedAt, frameIndex, profileId);
 
         tcs?.TrySetResult(image);
     }
