@@ -164,6 +164,8 @@ export interface CapturedImageRecord {
   format: string;
   capturedAt: string;
   sessionId: string | null;
+  tags: string[];
+  notes: string;
 }
 
 export interface ImagePage {

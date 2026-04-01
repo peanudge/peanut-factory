@@ -25,6 +25,8 @@ public sealed class AppDbContext : DbContext
             entity.Property(c => c.FilePath).HasMaxLength(1000).IsRequired();
             entity.Property(c => c.ThumbnailPath).HasMaxLength(1000);
             entity.Property(c => c.Format).HasMaxLength(10).IsRequired();
+            entity.Property(c => c.Tags).HasDefaultValue("[]").IsRequired();
+            entity.Property(c => c.Notes).HasDefaultValue(string.Empty).IsRequired();
             entity.HasIndex(c => c.CapturedAt);
             entity.HasIndex(c => c.SessionId);
             entity.HasOne(c => c.Session)
