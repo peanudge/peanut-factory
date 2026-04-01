@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -32,8 +33,9 @@ import { useToast } from "../contexts/ToastContext";
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
+// onBack kept for backward compatibility but navigation is handled via useNavigate
 interface GalleryPageProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 // ─── ImageDetailOverlay ──────────────────────────────────────────────────────
@@ -449,6 +451,7 @@ function ImageGrid({ images, selectMode, checkedIds, onToggleCheck, onOpenDetail
 // ─── GalleryPage ─────────────────────────────────────────────────────────────
 
 export default function GalleryPage({ onBack }: GalleryPageProps) {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const gallery = useImageGallery();
 
@@ -521,7 +524,7 @@ export default function GalleryPage({ onBack }: GalleryPageProps) {
       {/* AppBar */}
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar variant="dense" sx={{ gap: 1 }}>
-          <IconButton edge="start" onClick={onBack} size="small">
+          <IconButton edge="start" onClick={() => onBack ? onBack() : navigate("/")} size="small">
             <ArrowBackIcon />
           </IconButton>
 
