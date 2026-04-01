@@ -41,16 +41,71 @@ async function handleErrorResponse(res: Response): Promise<never> {
   );
 }
 
+const DEFAULT_TIMEOUT_MS = 10_000;
+const CALIBRATION_TIMEOUT_MS = 30_000;
+const MAX_RETRIES = 3;
+
+const CALIBRATION_PATHS = ["/calibration/black", "/calibration/white", "/calibration/white-balance"];
+
+function isCalibrationPath(path: string): boolean {
+  return CALIBRATION_PATHS.some((p) => path.startsWith(p));
+}
+
+function isRetryable(error: unknown): boolean {
+  // Retry on network-level errors (TypeError: Failed to fetch, AbortError from timeout)
+  if (error instanceof TypeError) return true;
+  if (error instanceof ApiError) return error.statusCode >= 500;
+  return false;
+}
+
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchWithRetry(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      const delayMs = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+    try {
+      const res = await fetchWithTimeout(url, options, timeoutMs);
+      // Don't retry 4xx — only 5xx is retryable
+      if (res.ok || (res.status >= 400 && res.status < 500)) return res;
+      // 5xx: treat as retryable error unless it's the last attempt
+      if (attempt === MAX_RETRIES) return res;
+      lastError = new ApiError(`HTTP ${res.status}`, "SERVER_ERROR", res.status);
+    } catch (err) {
+      lastError = err;
+      if (!isRetryable(err) || attempt === MAX_RETRIES) throw err;
+    }
+  }
+  throw lastError;
+}
+
 async function request<T>(
   path: string,
   options?: RequestInit,
 ): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const timeoutMs = isCalibrationPath(path) ? CALIBRATION_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
+  const res = await fetchWithRetry(`${API_BASE_URL}${path}`, {
     headers: { "Content-Type": "application/json" },
     ...options,
-  });
+  }, timeoutMs);
   if (!res.ok) await handleErrorResponse(res);
   return res.json();
+}
+
+async function rawFetch(path: string, options?: RequestInit): Promise<Response> {
+  const timeoutMs = isCalibrationPath(path) ? CALIBRATION_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
+  return fetchWithRetry(`${API_BASE_URL}${path}`, options ?? {}, timeoutMs);
 }
 
 // ── System ──
@@ -90,9 +145,7 @@ export function getAcquisitionStatus(): Promise<AcquisitionStatus> {
 }
 
 export async function triggerAndCapture(): Promise<CaptureResult> {
-  const res = await fetch(`${API_BASE_URL}/acquisition/trigger`, {
-    method: "POST",
-  });
+  const res = await rawFetch("/acquisition/trigger", { method: "POST" });
   if (!res.ok) await handleErrorResponse(res);
   const savedPath = res.headers.get("X-Image-Path") ?? undefined;
   return { blob: await res.blob(), savedPath };
@@ -102,7 +155,7 @@ export async function snapshot(
   profileId: string,
   triggerMode?: string,
 ): Promise<CaptureResult> {
-  const res = await fetch(`${API_BASE_URL}/acquisition/snapshot`, {
+  const res = await rawFetch("/acquisition/snapshot", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ profileId, triggerMode }),
@@ -113,7 +166,7 @@ export async function snapshot(
 }
 
 export async function getLatestFrame(): Promise<CaptureResult | null> {
-  const res = await fetch(`${API_BASE_URL}/acquisition/latest-frame`);
+  const res = await rawFetch("/acquisition/latest-frame");
   if (res.status === 204) return null;
   if (!res.ok) await handleErrorResponse(res);
   const savedPath = res.headers.get("X-Image-Path") ?? undefined;
@@ -121,7 +174,7 @@ export async function getLatestFrame(): Promise<CaptureResult | null> {
 }
 
 export async function getHistogram(): Promise<HistogramData | null> {
-  const res = await fetch(`${API_BASE_URL}/acquisition/latest-frame/histogram`);
+  const res = await rawFetch("/acquisition/latest-frame/histogram");
   if (res.status === 204) return null;
   if (!res.ok) await handleErrorResponse(res);
   return res.json();
@@ -149,7 +202,7 @@ export function getSessions(limit = 50): Promise<Session[]> {
 }
 
 export function getActiveSession(): Promise<Session | null> {
-  return fetch(`${API_BASE_URL}/sessions/active`)
+  return rawFetch("/sessions/active")
     .then((res) => {
       if (res.status === 204) return null;
       if (!res.ok) return res.json().then((b) => {
@@ -171,7 +224,7 @@ export function endSession(id: string): Promise<Session> {
 }
 
 export function deleteSession(id: string): Promise<void> {
-  return fetch(`${API_BASE_URL}/sessions/${id}`, { method: "DELETE" })
+  return rawFetch(`/sessions/${id}`, { method: "DELETE" })
     .then((res) => {
       if (!res.ok) return res.json().then((b) => {
         throw new ApiError(b.error ?? `HTTP ${res.status}`, b.errorCode ?? "UNKNOWN_ERROR", res.status);
@@ -193,7 +246,7 @@ export function savePreset(preset: AcquisitionPreset): Promise<AcquisitionPreset
 }
 
 export function deletePreset(name: string): Promise<void> {
-  return fetch(`${API_BASE_URL}/presets/${encodeURIComponent(name)}`, { method: "DELETE" })
+  return rawFetch(`/presets/${encodeURIComponent(name)}`, { method: "DELETE" })
     .then((res) => {
       if (!res.ok) return res.json().then((b) => {
         throw new ApiError(b.error ?? `HTTP ${res.status}`, b.errorCode ?? "UNKNOWN_ERROR", res.status);
@@ -220,7 +273,7 @@ export function listImages(params: {
 }
 
 export function deleteImage(id: string): Promise<void> {
-  return fetch(`${API_BASE_URL}/images/${id}`, { method: "DELETE" }).then((res) => {
+  return rawFetch(`/images/${id}`, { method: "DELETE" }).then((res) => {
     if (!res.ok) return res.json().then((b) => {
       throw new ApiError(b.error ?? `HTTP ${res.status}`, b.errorCode ?? "UNKNOWN_ERROR", res.status);
     });
@@ -242,7 +295,7 @@ export function getLatencyRecords(limit = 200): Promise<LatencyRecord[]> {
 }
 
 export function getLatencyStats(): Promise<LatencyStats | null> {
-  return fetch(`${API_BASE_URL}/latency/stats`)
+  return rawFetch("/latency/stats")
     .then((res) => {
       if (res.status === 204) return null;
       if (!res.ok) return res.json().then((b: Record<string, unknown>) => {
