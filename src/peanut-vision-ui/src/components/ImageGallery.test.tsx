@@ -193,19 +193,24 @@ describe("ImageGallery", () => {
   });
 
   describe("Format dropdown options", () => {
-    it("has an 'All formats' option", () => {
+    it("has an 'All formats' placeholder option", () => {
       render(<ImageGallery {...defaultProps} />, { wrapper: makeWrapper() });
 
-      // MUI Select renders option text in the DOM
+      // MUI renders the selected placeholder text directly in the DOM
       expect(screen.getByText(/all formats/i)).toBeInTheDocument();
     });
 
-    it("has PNG, BMP, and RAW options", () => {
+    it("has PNG, BMP, and RAW options visible in the format select listbox", async () => {
       render(<ImageGallery {...defaultProps} />, { wrapper: makeWrapper() });
 
-      expect(screen.getByText("PNG")).toBeInTheDocument();
-      expect(screen.getByText("BMP")).toBeInTheDocument();
-      expect(screen.getByText("RAW")).toBeInTheDocument();
+      // Open the format select (second Select in the component)
+      const selects = screen.getAllByRole("combobox");
+      // The format select is the second one (after session select)
+      await userEvent.click(selects[1]);
+
+      expect(screen.getByRole("option", { name: "PNG" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "BMP" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "RAW" })).toBeInTheDocument();
     });
   });
 
