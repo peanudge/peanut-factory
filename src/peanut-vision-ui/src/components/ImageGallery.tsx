@@ -22,9 +22,16 @@ interface Props {
   onDelete: (id: string) => void;
   page: number;
   totalPages: number;
+  totalCount: number;
   onPageChange: (p: number) => void;
   filterSessionId: string | null;
   onFilterChange: (sessionId: string | null) => void;
+  filterFromDate: string | null;
+  onFromDateChange: (date: string | null) => void;
+  filterToDate: string | null;
+  onToDateChange: (date: string | null) => void;
+  filterFormat: string | null;
+  onFormatChange: (format: string | null) => void;
   isLoading: boolean;
 }
 
@@ -35,9 +42,16 @@ export default function ImageGallery({
   onDelete,
   page,
   totalPages,
+  totalCount,
   onPageChange,
   filterSessionId,
   onFilterChange,
+  filterFromDate,
+  onFromDateChange,
+  filterToDate,
+  onToDateChange,
+  filterFormat,
+  onFormatChange,
   isLoading,
 }: Props) {
   const { data: sessions } = useQuery({
@@ -45,17 +59,20 @@ export default function ImageGallery({
     queryFn: () => getSessions(),
   });
 
+  const hasActiveFilters = !!(filterSessionId || filterFromDate || filterToDate || filterFormat);
+
   return (
     <Box>
-      {/* Session filter */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+      {/* Filters */}
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mb: 1 }}>
+        {/* Session filter */}
         <Select
           size="small"
           value={filterSessionId ?? ""}
           onChange={(e) => onFilterChange(e.target.value || null)}
           displayEmpty
           IconComponent={ExpandMoreIcon}
-          sx={{ fontSize: "0.75rem", flex: 1, "& .MuiSelect-select": { py: 0.5 } }}
+          sx={{ fontSize: "0.75rem", "& .MuiSelect-select": { py: 0.5 } }}
         >
           <MenuItem value=""><em>All sessions</em></MenuItem>
           {sessions?.map((s) => (
@@ -64,6 +81,93 @@ export default function ImageGallery({
             </MenuItem>
           ))}
         </Select>
+
+        {/* Format filter */}
+        <Select
+          size="small"
+          value={filterFormat ?? ""}
+          onChange={(e) => onFormatChange(e.target.value || null)}
+          displayEmpty
+          IconComponent={ExpandMoreIcon}
+          sx={{ fontSize: "0.75rem", "& .MuiSelect-select": { py: 0.5 } }}
+        >
+          <MenuItem value=""><em>All formats</em></MenuItem>
+          <MenuItem value="png">PNG</MenuItem>
+          <MenuItem value="bmp">BMP</MenuItem>
+          <MenuItem value="raw">RAW</MenuItem>
+        </Select>
+
+        {/* Date range filters */}
+        <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+          <Box
+            component="input"
+            type="date"
+            value={filterFromDate ?? ""}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              onFromDateChange(e.target.value || null)
+            }
+            title="From date"
+            sx={{
+              flex: 1,
+              fontSize: "0.7rem",
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 0.5,
+              px: 0.5,
+              py: 0.375,
+              bgcolor: "background.paper",
+              color: "text.primary",
+              outline: "none",
+              "&:focus": { borderColor: "primary.main" },
+              minWidth: 0,
+            }}
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>–</Typography>
+          <Box
+            component="input"
+            type="date"
+            value={filterToDate ?? ""}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              onToDateChange(e.target.value || null)
+            }
+            title="To date"
+            sx={{
+              flex: 1,
+              fontSize: "0.7rem",
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 0.5,
+              px: 0.5,
+              py: 0.375,
+              bgcolor: "background.paper",
+              color: "text.primary",
+              outline: "none",
+              "&:focus": { borderColor: "primary.main" },
+              minWidth: 0,
+            }}
+          />
+        </Box>
+
+        {/* Filter summary + clear */}
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Typography variant="caption" color="text.secondary">
+            {totalCount} {totalCount === 1 ? "image" : "images"}
+          </Typography>
+          {hasActiveFilters && (
+            <Button
+              size="small"
+              onClick={() => {
+                onFilterChange(null);
+                onFromDateChange(null);
+                onToDateChange(null);
+                onFormatChange(null);
+              }}
+              sx={{ fontSize: "0.65rem", py: 0, minWidth: 0, ml: 1 }}
+            >
+              Clear filters
+            </Button>
+          )}
+        </Box>
       </Box>
 
       {/* Loading state */}

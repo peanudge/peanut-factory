@@ -284,9 +284,16 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
               onDelete={gallery.handleDelete}
               page={gallery.page}
               totalPages={gallery.totalPages}
+              totalCount={gallery.totalCount}
               onPageChange={gallery.setPage}
               filterSessionId={gallery.filterSessionId}
               onFilterChange={gallery.setFilterSessionId}
+              filterFromDate={gallery.filterFromDate}
+              onFromDateChange={gallery.setFilterFromDate}
+              filterToDate={gallery.filterToDate}
+              onToDateChange={gallery.setFilterToDate}
+              filterFormat={gallery.filterFormat}
+              onFormatChange={gallery.setFilterFormat}
               isLoading={gallery.isLoading}
             />
           </ErrorBoundary>

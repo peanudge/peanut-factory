@@ -7,7 +7,8 @@ public interface ICapturedImageRepository
         int page, int pageSize,
         Guid? sessionId = null,
         DateTime? dateFrom = null,
-        DateTime? dateTo = null);
+        DateTime? dateTo = null,
+        string? format = null);
     Task<CapturedImage?> GetByIdAsync(Guid id);
     Task DeleteAsync(Guid id);
 }
