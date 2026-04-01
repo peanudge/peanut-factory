@@ -14,9 +14,7 @@ import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import DownloadIcon from "@mui/icons-material/Download";
-import { useQuery } from "@tanstack/react-query";
-import { getSessions, thumbnailUrl, exportImagesZip } from "../api/client";
-import { queryKeys } from "../api/queryKeys";
+import { thumbnailUrl, exportImagesZip } from "../api/client";
 import type { CapturedImageRecord } from "../api/types";
 import { formatTime } from "../utils/formatTimestamp";
 import { useToast } from "../contexts/ToastContext";
@@ -30,8 +28,6 @@ interface Props {
   totalPages: number;
   totalCount: number;
   onPageChange: (p: number) => void;
-  filterSessionId: string | null;
-  onFilterChange: (sessionId: string | null) => void;
   filterFromDate: string | null;
   onFromDateChange: (date: string | null) => void;
   filterToDate: string | null;
@@ -50,8 +46,6 @@ export default function ImageGallery({
   totalPages,
   totalCount,
   onPageChange,
-  filterSessionId,
-  onFilterChange,
   filterFromDate,
   onFromDateChange,
   filterToDate,
@@ -60,18 +54,13 @@ export default function ImageGallery({
   onFormatChange,
   isLoading,
 }: Props) {
-  const { data: sessions } = useQuery({
-    queryKey: queryKeys.sessions,
-    queryFn: () => getSessions(),
-  });
-
   const { toast } = useToast();
   const [selectMode, setSelectMode] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const hasActiveFilters = !!(filterSessionId || filterFromDate || filterToDate || filterFormat);
+  const hasActiveFilters = !!(filterFromDate || filterToDate || filterFormat);
 
   const exitSelectMode = useCallback(() => {
     setSelectMode(false);
@@ -132,23 +121,6 @@ export default function ImageGallery({
     <Box ref={containerRef}>
       {/* Filters */}
       <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mb: 1 }}>
-        {/* Session filter */}
-        <Select
-          size="small"
-          value={filterSessionId ?? ""}
-          onChange={(e) => onFilterChange(e.target.value || null)}
-          displayEmpty
-          IconComponent={ExpandMoreIcon}
-          sx={{ fontSize: "0.75rem", "& .MuiSelect-select": { py: 0.5 } }}
-        >
-          <MenuItem value=""><em>All sessions</em></MenuItem>
-          {sessions?.map((s) => (
-            <MenuItem key={s.id} value={s.id}>
-              <Typography variant="caption" noWrap>{s.name}</Typography>
-            </MenuItem>
-          ))}
-        </Select>
-
         {/* Format filter */}
         <Select
           size="small"
@@ -225,7 +197,6 @@ export default function ImageGallery({
               <Button
                 size="small"
                 onClick={() => {
-                  onFilterChange(null);
                   onFromDateChange(null);
                   onToDateChange(null);
                   onFormatChange(null);

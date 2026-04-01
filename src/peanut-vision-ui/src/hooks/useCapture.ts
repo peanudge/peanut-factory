@@ -5,7 +5,6 @@ import type {
   AcquisitionPreset,
   AcquisitionStatus,
   ContinuousSubMode,
-  ExposureInfo,
   TriggerModeOption,
 } from "../api/types";
 import {
@@ -16,23 +15,17 @@ import {
   triggerAndCapture,
   snapshot,
   getLatestFrame,
-  blackCalibration,
-  whiteCalibration,
-  whiteBalance,
-  setFfc,
-  getExposure,
-  setExposure,
   ApiError,
 } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
 import { useToast } from "../contexts/ToastContext";
 import { API_BASE_URL, DEFAULT_CONTINUOUS_INTERVAL_MS, POLL_INTERVAL_ACTIVE_MS, POLL_INTERVAL_IDLE_MS } from "../constants";
 
-interface UseAcquisitionActionsParams {
-  onEventCaptured: (filePath: string, objectUrl: string | null) => void;
+interface UseCaptureParams {
+  onImageCaptured: (filePath: string, objectUrl: string | null) => void;
 }
 
-export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActionsParams) {
+export function useCapture({ onImageCaptured }: UseCaptureParams) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -42,9 +35,6 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
   const [triggerMode, setTriggerMode] = useState<TriggerModeOption>("soft");
   const [frameCount, setFrameCount] = useState<number | null>(null);
   const [intervalMs, setIntervalMs] = useState<number | null>(null);
-  const [exposure, setExposureState] = useState<ExposureInfo | null>(null);
-  const [exposureValue, setExposureValue] = useState(1000);
-  const [ffcEnabled, setFfcEnabled] = useState(false);
   const [previewTimestamp, setPreviewTimestamp] = useState(0);
   const lastCapturedPathRef = useRef<string | null>(null);
 
@@ -64,13 +54,6 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
       setSelectedProfile(cameras[0].fileName);
     }
   }, [cameras, selectedProfile]);
-
-  useEffect(() => {
-    getExposure()
-      .then((info) => { setExposureState(info); setExposureValue(info.exposureUs); })
-      .catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const { data: acquisitionStatus } = useQuery<AcquisitionStatus>({
     queryKey: queryKeys.acquisitionStatus,
@@ -93,9 +76,9 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     if (latestFrame.savedPath && latestFrame.savedPath !== lastCapturedPathRef.current) {
       lastCapturedPathRef.current = latestFrame.savedPath;
       const objectUrl = latestFrame.blob ? URL.createObjectURL(latestFrame.blob) : null;
-      onEventCaptured(latestFrame.savedPath, objectUrl);
+      onImageCaptured(latestFrame.savedPath, objectUrl);
     }
-  }, [latestFrame, onEventCaptured]);
+  }, [latestFrame, onImageCaptured]);
 
   // ── Mutations ──
 
@@ -110,10 +93,8 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
         frameCount,
         continuousSubMode === "auto" ? intervalMs : null,
       ),
-    onSuccess: async () => {
+    onSuccess: () => {
       invalidateStatus();
-      const info = await getExposure().catch(() => null);
-      if (info) { setExposureState(info); setExposureValue(info.exposureUs); }
       toast("촬영이 시작되었습니다", "success");
     },
     onError: handleError,
@@ -134,7 +115,7 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
       setPreviewTimestamp(Date.now());
       const objectUrl = result.blob ? URL.createObjectURL(result.blob) : null;
       if (result.savedPath) {
-        onEventCaptured(result.savedPath, objectUrl);
+        onImageCaptured(result.savedPath, objectUrl);
       } else if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
       }
@@ -150,7 +131,7 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
       setPreviewTimestamp(Date.now());
       const objectUrl = result.blob ? URL.createObjectURL(result.blob) : null;
       if (result.savedPath) {
-        onEventCaptured(result.savedPath, objectUrl);
+        onImageCaptured(result.savedPath, objectUrl);
       } else if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
       }
@@ -160,65 +141,13 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     onError: handleError,
   });
 
-  const loadExposureMutation = useMutation({
-    mutationFn: getExposure,
-    onSuccess: (info) => {
-      setExposureState(info);
-      setExposureValue(info.exposureUs);
-      toast("Exposure settings loaded", "success");
-    },
-    onError: handleError,
-  });
-
-  const applyExposureMutation = useMutation({
-    mutationFn: () => setExposure(exposureValue),
-    onSuccess: (result) => {
-      toast(result.message, "success");
-    },
-    onError: handleError,
-  });
-
-  const blackMutation = useMutation({
-    mutationFn: blackCalibration,
-    onSuccess: (result) => toast(result.message, "success"),
-    onError: handleError,
-  });
-
-  const whiteMutation = useMutation({
-    mutationFn: whiteCalibration,
-    onSuccess: (result) => toast(result.message, "success"),
-    onError: handleError,
-  });
-
-  const whiteBalanceMutation = useMutation({
-    mutationFn: whiteBalance,
-    onSuccess: (result) => toast(result.message, "success"),
-    onError: handleError,
-  });
-
-  const ffcMutation = useMutation({
-    mutationFn: (enable: boolean) => setFfc(enable),
-    onSuccess: (result) => toast(result.message, "success"),
-    onError: handleError,
-  });
-
   // ── Computed state ──
 
   const busy =
     startMutation.isPending ||
     stopMutation.isPending ||
     triggerMutation.isPending ||
-    snapshotMutation.isPending ||
-    loadExposureMutation.isPending ||
-    applyExposureMutation.isPending ||
-    blackMutation.isPending ||
-    whiteMutation.isPending ||
-    whiteBalanceMutation.isPending ||
-    ffcMutation.isPending;
-
-  const isCalibrationAvailable =
-    acquisitionStatus?.channelState === "idle" ||
-    acquisitionStatus?.channelState === "active";
+    snapshotMutation.isPending;
 
   const hasWarnings =
     (acquisitionStatus?.statistics?.droppedFrameCount ?? 0) > 0 ||
@@ -243,11 +172,6 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
   const handleStop = () => stopMutation.mutate();
   const handleTrigger = () => triggerMutation.mutate();
   const handleCapture = () => snapshotMutation.mutate();
-  const handleLoadExposure = () => loadExposureMutation.mutate();
-  const handleApplyExposure = () => applyExposureMutation.mutate();
-  const handleBlack = () => blackMutation.mutate();
-  const handleWhite = () => whiteMutation.mutate();
-  const handleWhiteBalance = () => whiteBalanceMutation.mutate();
 
   const handleLoadPreset = useCallback((preset: AcquisitionPreset) => {
     setSelectedProfile(preset.profileId);
@@ -259,11 +183,6 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     }
   }, []);
 
-  const handleFfcToggle = (_: unknown, checked: boolean) => {
-    setFfcEnabled(checked);
-    ffcMutation.mutate(checked);
-  };
-
   const handleSetMode = useCallback(
     (next: AcquisitionMode) => {
       setMode(next);
@@ -273,7 +192,6 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     },
     []
   );
-
 
   const previewUrl = previewTimestamp > 0
     ? `${API_BASE_URL}/acquisition/latest-frame?_t=${previewTimestamp}`
@@ -294,10 +212,6 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     intervalMs,
     setIntervalMs,
     acquisitionStatus: acquisitionStatus ?? null,
-    exposure,
-    exposureValue,
-    setExposureValue,
-    ffcEnabled,
     busy,
     hasWarnings,
     hasErrors,
@@ -308,13 +222,6 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     handleStop,
     handleTrigger,
     handleCapture,
-    handleLoadExposure,
-    handleApplyExposure,
-    isCalibrationAvailable,
-    handleBlack,
-    handleWhite,
-    handleWhiteBalance,
     handleLoadPreset,
-    handleFfcToggle,
   };
 }

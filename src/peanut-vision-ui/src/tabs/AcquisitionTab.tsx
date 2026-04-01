@@ -7,16 +7,15 @@ import EventLog from "../components/EventLog";
 import ImageGallery from "../components/ImageGallery";
 import ContinuousSettings from "../components/ContinuousSettings";
 import ImageSaveSettingsPanel from "../components/ImageSaveSettingsPanel";
-import SessionSelector from "../components/SessionSelector";
 import PresetSelector from "../components/PresetSelector";
-import CalibrationActions from "../components/CalibrationActions";
 import ExposureControl from "../components/ExposureControl";
 import ImageViewer from "../components/ImageViewer";
 import CollapsiblePanel from "../components/CollapsiblePanel";
 import ErrorBoundary from "../components/ErrorBoundary";
 import KeyboardShortcutsHelp from "../components/KeyboardShortcutsHelp";
 import { useImageGallery } from "../hooks/useImageGallery";
-import { useAcquisitionActions } from "../hooks/useAcquisitionActions";
+import { useCapture } from "../hooks/useCapture";
+import { useExposure } from "../hooks/useExposure";
 import { useResizablePanel } from "../hooks/useResizablePanel";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 
@@ -33,14 +32,15 @@ function readSidebarTab(): number {
   }
 }
 
-interface Props {
-  onSessionChange?: (name: string | null) => void;
-}
-
-export default function AcquisitionTab({ onSessionChange }: Props = {}) {
+export default function AcquisitionTab() {
   const gallery = useImageGallery();
 
-  const acq = useAcquisitionActions({ onEventCaptured: gallery.invalidate });
+  const acq = useCapture({ onImageCaptured: gallery.invalidate });
+  const exp = useExposure();
+
+  const isCalibrationAvailable =
+    acq.acquisitionStatus?.channelState === "idle" ||
+    acq.acquisitionStatus?.channelState === "active";
 
   const { panelRef: sidebarRef, onResizerMouseDown: onSidebarResizerMouseDown } = useResizablePanel({
     defaultWidth: 340,
@@ -126,7 +126,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
           flexDirection: "column",
         }}
       >
-        {/* Sticky tab header — bleeds past p:3 with mx:-3 */}
+        {/* Sticky tab header */}
         <Box
           sx={{
             position: "sticky",
@@ -146,8 +146,8 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
           </Tabs>
         </Box>
 
-        {/* Tab 0: Capture */}
         <ErrorBoundary label="Sidebar">
+        {/* Tab 0: Capture */}
         <Box sx={{ display: sidebarTab === 0 ? "flex" : "none", flexDirection: "column", gap: 2 }}>
           <PresetSelector
             profileId={acq.selectedProfile}
@@ -193,30 +193,20 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
         {/* Tab 1: Camera */}
         <Box sx={{ display: sidebarTab === 1 ? "flex" : "none", flexDirection: "column", gap: 2 }}>
           <ExposureControl
-            exposure={acq.exposure}
-            exposureValue={acq.exposureValue}
+            exposure={exp.exposure}
+            exposureValue={exp.exposureValue}
             isActive={acq.acquisitionStatus?.isActive ?? false}
-            busy={acq.busy}
-            isCalibrationAvailable={acq.isCalibrationAvailable}
-            onExposureChange={acq.setExposureValue}
-            onLoad={acq.handleLoadExposure}
-            onApply={acq.handleApplyExposure}
-          />
-          <CalibrationActions
-            busy={acq.busy}
-            isCalibrationAvailable={acq.isCalibrationAvailable}
-            ffcEnabled={acq.ffcEnabled}
-            onBlack={acq.handleBlack}
-            onWhite={acq.handleWhite}
-            onWhiteBalance={acq.handleWhiteBalance}
-            onFfcToggle={acq.handleFfcToggle}
+            busy={exp.busy}
+            isCalibrationAvailable={isCalibrationAvailable}
+            onExposureChange={exp.setExposureValue}
+            onLoad={exp.handleLoadExposure}
+            onApply={exp.handleApplyExposure}
           />
         </Box>
 
         {/* Tab 2: Settings */}
         <Box sx={{ display: sidebarTab === 2 ? "flex" : "none", flexDirection: "column", gap: 2 }}>
           <ImageSaveSettingsPanel />
-          <SessionSelector onSessionChange={onSessionChange} />
         </Box>
         </ErrorBoundary>
       </Box>
@@ -289,8 +279,6 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
               totalPages={gallery.totalPages}
               totalCount={gallery.totalCount}
               onPageChange={gallery.setPage}
-              filterSessionId={gallery.filterSessionId}
-              onFilterChange={gallery.setFilterSessionId}
               filterFromDate={gallery.filterFromDate}
               onFromDateChange={gallery.setFilterFromDate}
               filterToDate={gallery.filterToDate}
