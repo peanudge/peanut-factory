@@ -1,11 +1,14 @@
 import { defineConfig } from "@playwright/test";
 
+const UI_PORT = process.env.UI_PORT ?? "5173";
+const UI_BASE_URL = process.env.UI_BASE_URL ?? `http://localhost:${UI_PORT}`;
+
 export default defineConfig({
   testDir: "./tests",
   timeout: 30_000,
   retries: 0,
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: UI_BASE_URL,
     screenshot: "only-on-failure",
   },
   projects: [
@@ -23,8 +26,8 @@ export default defineConfig({
       timeout: 60_000,
     },
     {
-      command: "npm run dev -- --port 5173",
-      url: "http://localhost:5173",
+      command: `npm run dev -- --port ${UI_PORT}`,
+      url: UI_BASE_URL,
       reuseExistingServer: !process.env.CI,
       timeout: 30_000,
     },
