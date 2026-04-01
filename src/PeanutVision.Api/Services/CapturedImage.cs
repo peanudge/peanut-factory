@@ -12,5 +12,11 @@ public sealed class CapturedImage
     public DateTime CapturedAt { get; set; }
     public Guid? SessionId { get; set; }
 
+    /// <summary>Tags stored as a JSON array string, e.g. "[\"defect\",\"blur\"]"</summary>
+    public string Tags { get; set; } = "[]";
+
+    /// <summary>Freeform annotation notes for this capture</summary>
+    public string Notes { get; set; } = string.Empty;
+
     public Session? Session { get; set; }
 }

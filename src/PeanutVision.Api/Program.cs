@@ -101,11 +101,16 @@ using (var scope = app.Services.CreateScope())
             Format TEXT NOT NULL DEFAULT '',
             CapturedAt TEXT NOT NULL,
             SessionId TEXT,
+            Tags TEXT NOT NULL DEFAULT '[]',
+            Notes TEXT NOT NULL DEFAULT '',
             FOREIGN KEY (SessionId) REFERENCES Sessions(Id) ON DELETE SET NULL
         );
         CREATE INDEX IF NOT EXISTS IX_CapturedImages_CapturedAt ON CapturedImages(CapturedAt);
         CREATE INDEX IF NOT EXISTS IX_CapturedImages_SessionId ON CapturedImages(SessionId);
         """);
+    // Add annotation columns to existing databases (no-op if already present)
+    try { db.Database.ExecuteSqlRaw("ALTER TABLE CapturedImages ADD COLUMN Tags TEXT NOT NULL DEFAULT '[]'"); } catch { }
+    try { db.Database.ExecuteSqlRaw("ALTER TABLE CapturedImages ADD COLUMN Notes TEXT NOT NULL DEFAULT ''"); } catch { }
 }
 
 app.UseCors();

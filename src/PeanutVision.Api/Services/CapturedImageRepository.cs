@@ -46,6 +46,16 @@ public sealed class CapturedImageRepository : ICapturedImageRepository
     public Task<CapturedImage?> GetByIdAsync(Guid id)
         => _db.CapturedImages.FindAsync(id).AsTask()!;
 
+    public async Task<CapturedImage?> UpdateAnnotationsAsync(Guid id, string tagsJson, string notes)
+    {
+        var image = await _db.CapturedImages.FindAsync(id);
+        if (image is null) return null;
+        image.Tags = tagsJson;
+        image.Notes = notes;
+        await _db.SaveChangesAsync();
+        return image;
+    }
+
     public async Task DeleteAsync(Guid id)
     {
         var image = await _db.CapturedImages.FindAsync(id)
