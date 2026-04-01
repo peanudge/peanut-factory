@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Box from "@mui/material/Box";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
@@ -13,9 +13,25 @@ import CalibrationActions from "../components/CalibrationActions";
 import ExposureControl from "../components/ExposureControl";
 import ImageViewer from "../components/ImageViewer";
 import CollapsiblePanel from "../components/CollapsiblePanel";
+import ErrorBoundary from "../components/ErrorBoundary";
+import KeyboardShortcutsHelp from "../components/KeyboardShortcutsHelp";
 import { useImageGallery } from "../hooks/useImageGallery";
 import { useAcquisitionActions } from "../hooks/useAcquisitionActions";
 import { useResizablePanel } from "../hooks/useResizablePanel";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+
+const SIDEBAR_TAB_KEY = "peanut-vision-sidebar-tab";
+
+function readSidebarTab(): number {
+  try {
+    const raw = localStorage.getItem(SIDEBAR_TAB_KEY);
+    if (raw === null) return 0;
+    const parsed = parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  } catch {
+    return 0;
+  }
+}
 
 interface Props {
   onSessionChange?: (name: string | null) => void;
@@ -39,7 +55,53 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
     max: 560,
   });
 
-  const [sidebarTab, setSidebarTab] = useState(0);
+  const [sidebarTab, setSidebarTab] = useState<number>(readSidebarTab);
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  const handleSidebarTabChange = useCallback((_: unknown, v: number) => {
+    setSidebarTab(v);
+    try { localStorage.setItem(SIDEBAR_TAB_KEY, String(v)); } catch { /* ignore */ }
+  }, []);
+
+  // Keyboard shortcut callbacks
+  const handlePrevImage = useCallback(() => {
+    const images = gallery.images;
+    if (images.length === 0) return;
+    const idx = images.findIndex((img) => img.id === gallery.selectedId);
+    const prev = idx <= 0 ? images[images.length - 1] : images[idx - 1];
+    gallery.setSelectedId(prev.id);
+  }, [gallery]);
+
+  const handleNextImage = useCallback(() => {
+    const images = gallery.images;
+    if (images.length === 0) return;
+    const idx = images.findIndex((img) => img.id === gallery.selectedId);
+    const next = idx < 0 || idx >= images.length - 1 ? images[0] : images[idx + 1];
+    gallery.setSelectedId(next.id);
+  }, [gallery]);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (gallery.selectedId) gallery.handleDelete(gallery.selectedId);
+  }, [gallery]);
+
+  const handleToggleContinuous = useCallback(() => {
+    if (acq.acquisitionStatus?.isActive) {
+      acq.handleStop();
+    } else {
+      acq.handleStart();
+    }
+  }, [acq]);
+
+  useKeyboardShortcuts({
+    onCapture: acq.handleCapture,
+    onToggleContinuous: handleToggleContinuous,
+    onDeleteSelected: handleDeleteSelected,
+    onPrevImage: handlePrevImage,
+    onNextImage: handleNextImage,
+    onReturnToLive: () => gallery.setSelectedId(null),
+    onShowHelp: () => setHelpOpen(true),
+    isActive: acq.acquisitionStatus?.isActive,
+  });
 
   // Show live preview during active acquisition; show selected historical image otherwise
   const isLive = acq.acquisitionStatus?.isActive ?? !gallery.selectedId;
@@ -77,7 +139,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
             mb: 2,
           }}
         >
-          <Tabs value={sidebarTab} onChange={(_, v) => setSidebarTab(v)} variant="fullWidth">
+          <Tabs value={sidebarTab} onChange={handleSidebarTabChange} variant="fullWidth">
             <Tab label="Capture" />
             <Tab label="Camera" />
             <Tab label="Settings" />
@@ -85,6 +147,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
         </Box>
 
         {/* Tab 0: Capture */}
+        <ErrorBoundary label="Sidebar">
         <Box sx={{ display: sidebarTab === 0 ? "flex" : "none", flexDirection: "column", gap: 2 }}>
           <PresetSelector
             profileId={acq.selectedProfile}
@@ -155,6 +218,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
           <ImageSaveSettingsPanel />
           <SessionSelector onSessionChange={onSessionChange} />
         </Box>
+        </ErrorBoundary>
       </Box>
 
       {/* LEFT SIDEBAR DRAG HANDLE */}
@@ -173,15 +237,17 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
       {/* MAIN CANVAS */}
       <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <Box sx={{ flexGrow: 1, minHeight: 0, p: 1.5, display: "flex", flexDirection: "column" }}>
-          <ImageViewer
-            url={viewerUrl}
-            filename={gallery.selectedImage?.filename}
-            errorMessage={acq.acquisitionStatus?.lastError}
-            savedPath={gallery.selectedImage?.filePath}
-            isLive={isLive}
-            capturedAt={gallery.selectedImage ? new Date(gallery.selectedImage.capturedAt) : null}
-            onReturnToLive={() => gallery.setSelectedId(null)}
-          />
+          <ErrorBoundary label="Image Viewer">
+            <ImageViewer
+              url={viewerUrl}
+              filename={gallery.selectedImage?.filename}
+              errorMessage={acq.acquisitionStatus?.lastError}
+              savedPath={gallery.selectedImage?.filePath}
+              isLive={isLive}
+              capturedAt={gallery.selectedImage ? new Date(gallery.selectedImage.capturedAt) : null}
+              onReturnToLive={() => gallery.setSelectedId(null)}
+            />
+          </ErrorBoundary>
         </Box>
       </Box>
 
@@ -210,23 +276,29 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
         }}
       >
         <CollapsiblePanel label="Captures" count={gallery.totalCount} defaultOpen={true}>
-          <ImageGallery
-            images={gallery.images}
-            selectedId={gallery.selectedId}
-            onSelect={gallery.setSelectedId}
-            onDelete={gallery.handleDelete}
-            page={gallery.page}
-            totalPages={gallery.totalPages}
-            onPageChange={gallery.setPage}
-            filterSessionId={gallery.filterSessionId}
-            onFilterChange={gallery.setFilterSessionId}
-            isLoading={gallery.isLoading}
-          />
+          <ErrorBoundary label="Image Gallery">
+            <ImageGallery
+              images={gallery.images}
+              selectedId={gallery.selectedId}
+              onSelect={gallery.setSelectedId}
+              onDelete={gallery.handleDelete}
+              page={gallery.page}
+              totalPages={gallery.totalPages}
+              onPageChange={gallery.setPage}
+              filterSessionId={gallery.filterSessionId}
+              onFilterChange={gallery.setFilterSessionId}
+              isLoading={gallery.isLoading}
+            />
+          </ErrorBoundary>
         </CollapsiblePanel>
         <CollapsiblePanel label="Event Log" defaultOpen={false}>
-          <EventLog events={acq.acquisitionStatus?.recentEvents} />
+          <ErrorBoundary label="Event Log">
+            <EventLog events={acq.acquisitionStatus?.recentEvents} />
+          </ErrorBoundary>
         </CollapsiblePanel>
       </Box>
+
+      <KeyboardShortcutsHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
     </Box>
   );
 }

@@ -42,7 +42,7 @@ export default function ImageGallery({
 }: Props) {
   const { data: sessions } = useQuery({
     queryKey: queryKeys.sessions,
-    queryFn: getSessions,
+    queryFn: () => getSessions(),
   });
 
   return (
