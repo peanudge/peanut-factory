@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using Microsoft.AspNetCore.Mvc;
 using PeanutVision.Api.Services;
 
@@ -57,6 +58,66 @@ public class ImagesController : ControllerBase
         return PhysicalFile(image.FilePath, mimeType, Path.GetFileName(image.FilePath));
     }
 
+    [HttpPost("export")]
+    public async Task<IActionResult> ExportZip([FromBody] ExportRequest request)
+    {
+        IReadOnlyList<CapturedImage> images;
+
+        if (request.Ids is { Count: > 0 })
+        {
+            var tasks = request.Ids.Select(id => _repo.GetByIdAsync(id));
+            var results = await Task.WhenAll(tasks);
+            images = results.Where(r => r is not null).Select(r => r!).ToList();
+        }
+        else
+        {
+            // Export all — paginate through everything
+            var allImages = new List<CapturedImage>();
+            int page = 1;
+            const int pageSize = 200;
+            while (true)
+            {
+                var (pageItems, total) = await _repo.GetPageAsync(page, pageSize);
+                allImages.AddRange(pageItems);
+                if (allImages.Count >= total) break;
+                page++;
+            }
+            images = allImages;
+        }
+
+        Response.ContentType = "application/zip";
+        Response.Headers.ContentDisposition = "attachment; filename=\"peanut-vision-export.zip\"";
+
+        using var zip = new ZipArchive(Response.BodyWriter.AsStream(leaveOpen: true), ZipArchiveMode.Create, leaveOpen: true);
+        var usedNames = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var img in images)
+        {
+            if (!System.IO.File.Exists(img.FilePath)) continue;
+
+            var baseName = Path.GetFileName(img.FilePath);
+            string entryName;
+            if (usedNames.TryGetValue(baseName, out int count))
+            {
+                usedNames[baseName] = count + 1;
+                var ext = Path.GetExtension(baseName);
+                entryName = Path.GetFileNameWithoutExtension(baseName) + $"_{count + 1}" + ext;
+            }
+            else
+            {
+                usedNames[baseName] = 1;
+                entryName = baseName;
+            }
+
+            var entry = zip.CreateEntry(entryName, CompressionLevel.NoCompression);
+            await using var entryStream = entry.Open();
+            await using var fileStream = System.IO.File.OpenRead(img.FilePath);
+            await fileStream.CopyToAsync(entryStream);
+        }
+
+        return new EmptyResult();
+    }
+
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
@@ -106,3 +167,5 @@ public record ImagePageDto(
     int Page,
     int PageSize,
     int TotalPages);
+
+public record ExportRequest(IReadOnlyList<Guid>? Ids);

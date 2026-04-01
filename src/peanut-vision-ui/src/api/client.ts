@@ -282,6 +282,16 @@ export function deleteImage(id: string): Promise<void> {
   });
 }
 
+export async function exportImagesZip(ids: string[]): Promise<Blob> {
+  const res = await rawFetch("/images/export", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids }),
+  });
+  if (!res.ok) await handleErrorResponse(res);
+  return res.blob();
+}
+
 export function thumbnailUrl(id: string): string {
   return `${API_BASE_URL}/images/${id}/thumbnail`;
 }
