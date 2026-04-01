@@ -11,6 +11,7 @@ import type {
   HistogramData,
   AcquisitionPreset,
   ImagePage,
+  CapturedImageRecord,
   LatencyRecord,
   LatencyStats,
 } from "./types";
@@ -274,6 +275,10 @@ export function listImages(params: {
   return request(`/images?${qs}`);
 }
 
+export function getImageHistogram(id: string): Promise<HistogramData> {
+  return request(`/images/${id}/histogram`);
+}
+
 export function deleteImage(id: string): Promise<void> {
   return rawFetch(`/images/${id}`, { method: "DELETE" }).then((res) => {
     if (!res.ok) return res.json().then((b) => {
@@ -290,6 +295,13 @@ export async function exportImagesZip(ids: string[]): Promise<Blob> {
   });
   if (!res.ok) await handleErrorResponse(res);
   return res.blob();
+}
+
+export function patchImageAnnotations(id: string, tags: string[], notes: string): Promise<CapturedImageRecord> {
+  return request(`/images/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ tags, notes }),
+  });
 }
 
 export function thumbnailUrl(id: string): string {
