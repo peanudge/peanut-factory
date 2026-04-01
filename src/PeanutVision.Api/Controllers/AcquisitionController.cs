@@ -12,31 +12,19 @@ public class AcquisitionController : ControllerBase
 {
     private readonly IAcquisitionService _acquisition;
     private readonly IImageSaveSettingsService _saveSettings;
-    private readonly FilenameGenerator _filenameGenerator;
     private readonly FrameSaveTracker _frameSaveTracker;
-    private readonly ICapturedImageRepository _imageRepository;
-    private readonly IThumbnailService _thumbnailService;
-    private readonly ISessionRepository _sessionRepository;
-    private readonly string _contentRootPath;
+    private readonly IImageCaptureService _imageCaptureService;
 
     public AcquisitionController(
         IAcquisitionService acquisition,
         IImageSaveSettingsService saveSettings,
-        FilenameGenerator filenameGenerator,
         FrameSaveTracker frameSaveTracker,
-        ICapturedImageRepository imageRepository,
-        IThumbnailService thumbnailService,
-        ISessionRepository sessionRepository,
-        IWebHostEnvironment environment)
+        IImageCaptureService imageCaptureService)
     {
         _acquisition = acquisition;
         _saveSettings = saveSettings;
-        _filenameGenerator = filenameGenerator;
         _frameSaveTracker = frameSaveTracker;
-        _imageRepository = imageRepository;
-        _thumbnailService = thumbnailService;
-        _sessionRepository = sessionRepository;
-        _contentRootPath = environment.ContentRootPath;
+        _imageCaptureService = imageCaptureService;
     }
 
     [HttpPost("start")]
@@ -114,8 +102,8 @@ public class AcquisitionController : ControllerBase
         var settings = _saveSettings.GetSettings();
         if (settings.AutoSave)
         {
-            var filePath = await SaveAndRecordAsync(
-                image, settings, _acquisition.ActiveProfileId?.Value);
+            var filePath = await _imageCaptureService.SaveAndRecordAsync(
+                image, _acquisition.ActiveProfileId?.Value);
             Response.Headers["X-Image-Path"] = filePath;
         }
 
@@ -137,8 +125,8 @@ public class AcquisitionController : ControllerBase
         var settings = _saveSettings.GetSettings();
         if (settings.AutoSave && _frameSaveTracker.ShouldSave(frame))
         {
-            var filePath = await SaveAndRecordAsync(
-                frame, settings, _acquisition.ActiveProfileId?.Value);
+            var filePath = await _imageCaptureService.SaveAndRecordAsync(
+                frame, _acquisition.ActiveProfileId?.Value);
             Response.Headers["X-Image-Path"] = filePath;
         }
 
@@ -187,7 +175,7 @@ public class AcquisitionController : ControllerBase
             var settings = _saveSettings.GetSettings();
             if (settings.AutoSave)
             {
-                var filePath = await SaveAndRecordAsync(image, settings, request.ProfileId);
+                var filePath = await _imageCaptureService.SaveAndRecordAsync(image, request.ProfileId);
                 Response.Headers["X-Image-Path"] = filePath;
             }
         }
@@ -198,32 +186,6 @@ public class AcquisitionController : ControllerBase
         stream.Position = 0;
 
         return File(stream, "image/png", "snapshot.png");
-    }
-
-    private async Task<string> SaveAndRecordAsync(
-        ImageData image, ImageSaveSettings settings, string? profileId)
-    {
-        var filePath = _filenameGenerator.Generate(settings, _contentRootPath, profileId);
-        new ImageWriter().Save(image, filePath);
-
-        var thumbPath = await _thumbnailService.GenerateAsync(filePath);
-        var activeSession = await _sessionRepository.GetActiveAsync();
-        var fileInfo = new FileInfo(filePath);
-
-        await _imageRepository.AddAsync(new CapturedImage
-        {
-            Id = Guid.NewGuid(),
-            FilePath = filePath,
-            ThumbnailPath = thumbPath,
-            Width = image.Width,
-            Height = image.Height,
-            FileSizeBytes = fileInfo.Exists ? fileInfo.Length : 0,
-            Format = settings.Format.ToString().ToLower(),
-            CapturedAt = DateTime.UtcNow,
-            SessionId = activeSession?.Id,
-        });
-
-        return filePath;
     }
 }
 

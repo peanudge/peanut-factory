@@ -17,15 +17,12 @@ public sealed class CapturedImageRepository : ICapturedImageRepository
 
     public async Task<(IReadOnlyList<CapturedImage> Items, int TotalCount)> GetPageAsync(
         int page, int pageSize,
-        Guid? sessionId = null,
         DateTime? dateFrom = null,
         DateTime? dateTo = null,
         string? format = null)
     {
         var query = _db.CapturedImages.AsNoTracking().AsQueryable();
 
-        if (sessionId.HasValue)
-            query = query.Where(c => c.SessionId == sessionId);
         if (dateFrom.HasValue)
             query = query.Where(c => c.CapturedAt >= dateFrom.Value);
         if (dateTo.HasValue)

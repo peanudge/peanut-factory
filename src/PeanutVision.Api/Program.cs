@@ -46,7 +46,6 @@ builder.Services.AddSingleton<FrameSaveTracker>();
 var dbPath = Path.Combine(builder.Environment.ContentRootPath, "peanut-vision.db");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
-builder.Services.AddScoped<ISessionRepository, SessionRepository>();
 builder.Services.AddScoped<ICapturedImageRepository, CapturedImageRepository>();
 builder.Services.AddSingleton<IThumbnailService, ThumbnailService>();
 
@@ -60,9 +59,8 @@ builder.Services.AddSingleton<ILatencyService, LatencyService>();
 
 builder.Services.AddSingleton<AcquisitionManager>();
 builder.Services.AddSingleton<IAcquisitionService>(sp => sp.GetRequiredService<AcquisitionManager>());
-builder.Services.AddSingleton<IChannelCalibration>(sp => sp.GetRequiredService<AcquisitionManager>());
 builder.Services.AddSingleton<IExposureControl>(sp => sp.GetRequiredService<AcquisitionManager>());
-builder.Services.AddSingleton<ICalibrationService, CalibrationManager>();
+builder.Services.AddScoped<IImageCaptureService, ImageCaptureService>();
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
@@ -100,13 +98,10 @@ using (var scope = app.Services.CreateScope())
             FileSizeBytes INTEGER NOT NULL DEFAULT 0,
             Format TEXT NOT NULL DEFAULT '',
             CapturedAt TEXT NOT NULL,
-            SessionId TEXT,
             Tags TEXT NOT NULL DEFAULT '[]',
-            Notes TEXT NOT NULL DEFAULT '',
-            FOREIGN KEY (SessionId) REFERENCES Sessions(Id) ON DELETE SET NULL
+            Notes TEXT NOT NULL DEFAULT ''
         );
         CREATE INDEX IF NOT EXISTS IX_CapturedImages_CapturedAt ON CapturedImages(CapturedAt);
-        CREATE INDEX IF NOT EXISTS IX_CapturedImages_SessionId ON CapturedImages(SessionId);
         """);
     // Add annotation columns to existing databases (no-op if already present)
     try { db.Database.ExecuteSqlRaw("ALTER TABLE CapturedImages ADD COLUMN Tags TEXT NOT NULL DEFAULT '[]'"); } catch { }
