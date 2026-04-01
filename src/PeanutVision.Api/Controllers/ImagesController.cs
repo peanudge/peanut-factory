@@ -17,10 +17,11 @@ public class ImagesController : ControllerBase
         [FromQuery] int pageSize = 20,
         [FromQuery] Guid? sessionId = null,
         [FromQuery] DateTime? dateFrom = null,
-        [FromQuery] DateTime? dateTo = null)
+        [FromQuery] DateTime? dateTo = null,
+        [FromQuery] string? format = null)
     {
         pageSize = Math.Clamp(pageSize, 1, 100);
-        var (items, total) = await _repo.GetPageAsync(page, pageSize, sessionId, dateFrom, dateTo);
+        var (items, total) = await _repo.GetPageAsync(page, pageSize, sessionId, dateFrom, dateTo, format);
         return Ok(new ImagePageDto(
             items.Select(ToDto).ToList(),
             total,

@@ -262,6 +262,7 @@ export function listImages(params: {
   sessionId?: string;
   dateFrom?: string;
   dateTo?: string;
+  format?: string;
 } = {}): Promise<ImagePage> {
   const qs = new URLSearchParams();
   if (params.page != null)      qs.set("page", String(params.page));
@@ -269,6 +270,7 @@ export function listImages(params: {
   if (params.sessionId)         qs.set("sessionId", params.sessionId);
   if (params.dateFrom)          qs.set("dateFrom", params.dateFrom);
   if (params.dateTo)            qs.set("dateTo", params.dateTo);
+  if (params.format)            qs.set("format", params.format);
   return request(`/images?${qs}`);
 }
 

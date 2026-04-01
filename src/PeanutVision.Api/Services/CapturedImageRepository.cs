@@ -19,7 +19,8 @@ public sealed class CapturedImageRepository : ICapturedImageRepository
         int page, int pageSize,
         Guid? sessionId = null,
         DateTime? dateFrom = null,
-        DateTime? dateTo = null)
+        DateTime? dateTo = null,
+        string? format = null)
     {
         var query = _db.CapturedImages.AsNoTracking().AsQueryable();
 
@@ -29,6 +30,8 @@ public sealed class CapturedImageRepository : ICapturedImageRepository
             query = query.Where(c => c.CapturedAt >= dateFrom.Value);
         if (dateTo.HasValue)
             query = query.Where(c => c.CapturedAt <= dateTo.Value);
+        if (!string.IsNullOrWhiteSpace(format))
+            query = query.Where(c => c.Format == format.ToLowerInvariant());
 
         var total = await query.CountAsync();
         var items = await query
