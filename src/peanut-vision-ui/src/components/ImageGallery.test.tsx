@@ -55,8 +55,6 @@ const defaultProps = {
   totalPages: 1,
   totalCount: 0,
   onPageChange: vi.fn(),
-  filterSessionId: null,
-  onFilterChange: vi.fn(),
   filterFromDate: null,
   onFromDateChange: vi.fn(),
   filterToDate: null,
@@ -129,15 +127,6 @@ describe("ImageGallery", () => {
       expect(screen.queryByRole("button", { name: /clear filters/i })).not.toBeInTheDocument();
     });
 
-    it("appears when filterSessionId is set", () => {
-      render(
-        <ImageGallery {...defaultProps} filterSessionId="sess-123" />,
-        { wrapper: makeWrapper() },
-      );
-
-      expect(screen.getByRole("button", { name: /clear filters/i })).toBeInTheDocument();
-    });
-
     it("appears when filterFormat is set", () => {
       render(
         <ImageGallery {...defaultProps} filterFormat="png" />,
@@ -165,8 +154,7 @@ describe("ImageGallery", () => {
       expect(screen.getByRole("button", { name: /clear filters/i })).toBeInTheDocument();
     });
 
-    it("calls all four clear callbacks when clicked", async () => {
-      const onFilterChange = vi.fn();
+    it("calls all three clear callbacks when clicked", async () => {
       const onFromDateChange = vi.fn();
       const onToDateChange = vi.fn();
       const onFormatChange = vi.fn();
@@ -175,7 +163,6 @@ describe("ImageGallery", () => {
         <ImageGallery
           {...defaultProps}
           filterFormat="bmp"
-          onFilterChange={onFilterChange}
           onFromDateChange={onFromDateChange}
           onToDateChange={onToDateChange}
           onFormatChange={onFormatChange}
@@ -185,7 +172,6 @@ describe("ImageGallery", () => {
 
       await userEvent.click(screen.getByRole("button", { name: /clear filters/i }));
 
-      expect(onFilterChange).toHaveBeenCalledWith(null);
       expect(onFromDateChange).toHaveBeenCalledWith(null);
       expect(onToDateChange).toHaveBeenCalledWith(null);
       expect(onFormatChange).toHaveBeenCalledWith(null);
@@ -203,10 +189,9 @@ describe("ImageGallery", () => {
     it("has PNG, BMP, and RAW options visible in the format select listbox", async () => {
       render(<ImageGallery {...defaultProps} />, { wrapper: makeWrapper() });
 
-      // Open the format select (second Select in the component)
+      // Open the format select (first and only Select in the component)
       const selects = screen.getAllByRole("combobox");
-      // The format select is the second one (after session select)
-      await userEvent.click(selects[1]);
+      await userEvent.click(selects[0]);
 
       expect(screen.getByRole("option", { name: "PNG" })).toBeInTheDocument();
       expect(screen.getByRole("option", { name: "BMP" })).toBeInTheDocument();
