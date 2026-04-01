@@ -2,6 +2,8 @@ import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 import ImageActionBar from "./ImageActionBar";
+import HistogramDisplay from "./HistogramDisplay";
+import AnnotationPanel from "./AnnotationPanel";
 import { formatTime } from "../utils/formatTimestamp";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -12,6 +14,9 @@ interface Props {
   savedPath?: string;
   isLive: boolean;
   capturedAt: Date | null;
+  imageId?: string | null;
+  tags?: string[];
+  notes?: string;
   onReturnToLive: () => void;
 }
 
@@ -22,7 +27,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-export default function ImageViewer({ url, filename, errorMessage, savedPath, isLive, capturedAt, onReturnToLive }: Props) {
+export default function ImageViewer({ url, filename, errorMessage, savedPath, isLive, capturedAt, imageId, tags, notes, onReturnToLive }: Props) {
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const isDragging = useRef(false);
@@ -203,6 +208,20 @@ export default function ImageViewer({ url, filename, errorMessage, savedPath, is
       <Box sx={{ flexShrink: 0 }}>
         <ImageActionBar url={url} filename={filename} savedPath={savedPath} />
       </Box>
+      {!isLive && imageId && (
+        <Box sx={{ flexShrink: 0, px: 0.5 }}>
+          <HistogramDisplay imageId={imageId} />
+        </Box>
+      )}
+      {!isLive && imageId && (
+        <Box sx={{ flexShrink: 0, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+          <AnnotationPanel
+            imageId={imageId}
+            initialTags={tags ?? []}
+            initialNotes={notes ?? ""}
+          />
+        </Box>
+      )}
     </Box>
   );
 }

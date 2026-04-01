@@ -1,6 +1,9 @@
 using System.IO.Compression;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using PeanutVision.Api.Services;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace PeanutVision.Api.Controllers;
 
@@ -118,6 +121,59 @@ public class ImagesController : ControllerBase
         return new EmptyResult();
     }
 
+    [HttpGet("{id:guid}/histogram")]
+    public async Task<IActionResult> GetHistogram(Guid id)
+    {
+        var image = await _repo.GetByIdAsync(id);
+        if (image is null) return NotFound();
+        if (!System.IO.File.Exists(image.FilePath))
+            return NotFound(new { error = "File not found on disk" });
+
+        int[] red = new int[256];
+        int[] green = new int[256];
+        int[] blue = new int[256];
+
+        using var img = await SixLabors.ImageSharp.Image.LoadAsync<Rgb24>(image.FilePath);
+        img.ProcessPixelRows(accessor =>
+        {
+            for (int y = 0; y < accessor.Height; y++)
+            {
+                var row = accessor.GetRowSpan(y);
+                foreach (ref readonly var px in row)
+                {
+                    red[px.R]++;
+                    green[px.G]++;
+                    blue[px.B]++;
+                }
+            }
+        });
+
+        // Normalize to 0–1 range
+        int maxCount = 1;
+        for (int i = 0; i < 256; i++)
+        {
+            if (red[i] > maxCount) maxCount = red[i];
+            if (green[i] > maxCount) maxCount = green[i];
+            if (blue[i] > maxCount) maxCount = blue[i];
+        }
+
+        double scale = 1.0 / maxCount;
+        var redNorm = red.Select(v => Math.Round(v * scale, 6)).ToArray();
+        var greenNorm = green.Select(v => Math.Round(v * scale, 6)).ToArray();
+        var blueNorm = blue.Select(v => Math.Round(v * scale, 6)).ToArray();
+
+        return Ok(new { red = redNorm, green = greenNorm, blue = blueNorm, bins = 256 });
+    }
+
+    [HttpPatch("{id:guid}")]
+    public async Task<ActionResult<CapturedImageDto>> PatchAnnotations(Guid id, [FromBody] PatchAnnotationsRequest request)
+    {
+        var tagsJson = JsonSerializer.Serialize(request.Tags ?? []);
+        var updated = await _repo.UpdateAnnotationsAsync(id, tagsJson, request.Notes ?? string.Empty);
+        if (updated is null) return NotFound();
+        return Ok(ToDto(updated));
+    }
+
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
@@ -136,17 +192,25 @@ public class ImagesController : ControllerBase
         return NoContent();
     }
 
-    private static CapturedImageDto ToDto(CapturedImage c) => new(
-        c.Id,
-        c.FilePath,
-        Path.GetFileName(c.FilePath),
-        c.ThumbnailPath is not null,
-        c.Width,
-        c.Height,
-        c.FileSizeBytes,
-        c.Format,
-        c.CapturedAt,
-        c.SessionId);
+    private static CapturedImageDto ToDto(CapturedImage c)
+    {
+        string[] tags;
+        try { tags = JsonSerializer.Deserialize<string[]>(c.Tags) ?? []; }
+        catch { tags = []; }
+        return new CapturedImageDto(
+            c.Id,
+            c.FilePath,
+            Path.GetFileName(c.FilePath),
+            c.ThumbnailPath is not null,
+            c.Width,
+            c.Height,
+            c.FileSizeBytes,
+            c.Format,
+            c.CapturedAt,
+            c.SessionId,
+            tags,
+            c.Notes);
+    }
 }
 
 public record CapturedImageDto(
@@ -159,7 +223,9 @@ public record CapturedImageDto(
     long FileSizeBytes,
     string Format,
     DateTime CapturedAt,
-    Guid? SessionId);
+    Guid? SessionId,
+    string[] Tags,
+    string Notes);
 
 public record ImagePageDto(
     IReadOnlyList<CapturedImageDto> Items,
@@ -169,3 +235,5 @@ public record ImagePageDto(
     int TotalPages);
 
 public record ExportRequest(IReadOnlyList<Guid>? Ids);
+
+public record PatchAnnotationsRequest(string[]? Tags, string? Notes);

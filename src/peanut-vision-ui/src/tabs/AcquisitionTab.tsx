@@ -245,6 +245,9 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
               savedPath={gallery.selectedImage?.filePath}
               isLive={isLive}
               capturedAt={gallery.selectedImage ? new Date(gallery.selectedImage.capturedAt) : null}
+              imageId={!isLive ? (gallery.selectedId ?? null) : null}
+              tags={gallery.selectedImage?.tags}
+              notes={gallery.selectedImage?.notes}
               onReturnToLive={() => gallery.setSelectedId(null)}
             />
           </ErrorBoundary>

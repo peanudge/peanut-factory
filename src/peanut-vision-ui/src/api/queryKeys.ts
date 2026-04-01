@@ -11,4 +11,5 @@ export const queryKeys = {
   imageSaveSettings: ["imageSaveSettings"]               as const,
   exposure:          ["exposure"]                        as const,
   images:            (params?: object) => params ? ["images", params] as const : ["images"] as const,
+  imageHistogram:    (id: string) => ["imageHistogram", id] as const,
 };
