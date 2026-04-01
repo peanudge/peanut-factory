@@ -19,13 +19,12 @@ public class ImagesController : ControllerBase
     public async Task<ActionResult<ImagePageDto>> GetImages(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
-        [FromQuery] Guid? sessionId = null,
         [FromQuery] DateTime? dateFrom = null,
         [FromQuery] DateTime? dateTo = null,
         [FromQuery] string? format = null)
     {
         pageSize = Math.Clamp(pageSize, 1, 100);
-        var (items, total) = await _repo.GetPageAsync(page, pageSize, sessionId, dateFrom, dateTo, format);
+        var (items, total) = await _repo.GetPageAsync(page, pageSize, dateFrom, dateTo, format);
         return Ok(new ImagePageDto(
             items.Select(ToDto).ToList(),
             total,
@@ -207,7 +206,6 @@ public class ImagesController : ControllerBase
             c.FileSizeBytes,
             c.Format,
             c.CapturedAt,
-            c.SessionId,
             tags,
             c.Notes);
     }
@@ -223,7 +221,6 @@ public record CapturedImageDto(
     long FileSizeBytes,
     string Format,
     DateTime CapturedAt,
-    Guid? SessionId,
     string[] Tags,
     string Notes);
 
