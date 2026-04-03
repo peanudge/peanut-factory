@@ -37,6 +37,7 @@ PeanutVision.Api    PeanutVision.Console (future)
 ```
 
 ### `PeanutVision.Capture` dependencies
+
 - `PeanutVision.MultiCamDriver`
 - `Microsoft.Extensions.Logging.Abstractions`
 - `Microsoft.Extensions.DependencyInjection.Abstractions`
@@ -87,6 +88,9 @@ public sealed class CaptureEngine : IDisposable
 }
 ```
 
+> **Camera status** is queried directly via `GrabService.GetBoardStatus()` by the host (API, Console, etc.).
+> `CaptureEngine` has no status responsibility — its scope is scheduling, async save, and event emission only.
+
 ---
 
 ## Async Save Pipeline
@@ -114,14 +118,15 @@ public sealed class CaptureEngine : IDisposable
 
 Only the internal wiring changes. The REST API surface, DB schema, and UI are untouched.
 
-| File | Change |
-|------|--------|
-| `AcquisitionManager.cs` | Replace direct `GrabService`/`GrabChannel` orchestration with `CaptureEngine` |
-| `ImageCaptureService.cs` | Subscribe to `CaptureEngine.FrameSaved`; write DB record + generate thumbnail |
-| `Program.cs` | Register `CaptureEngine` as singleton; wire `CaptureOptions` from config |
-| `PeanutVision.Api.csproj` | Add `<ProjectReference>` to `PeanutVision.Capture` |
+| File                      | Change                                                                        |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| `AcquisitionManager.cs`   | Replace direct `GrabService`/`GrabChannel` orchestration with `CaptureEngine` |
+| `ImageCaptureService.cs`  | Subscribe to `CaptureEngine.FrameSaved`; write DB record + generate thumbnail |
+| `Program.cs`              | Register `CaptureEngine` as singleton; wire `CaptureOptions` from config      |
+| `PeanutVision.Api.csproj` | Add `<ProjectReference>` to `PeanutVision.Capture`                            |
 
 **Unchanged:**
+
 - `ImagesController`, `LatencyController`, `SettingsController`, `PresetController`
 - All DB migrations and schema
 - `peanut-vision-ui` — zero changes
@@ -141,8 +146,9 @@ engine.StartPeriodic(TimeSpan.FromSeconds(2));
 
 await foreach (var line in ReadStdinAsync())
 {
-    if (line == "stop")   { await engine.StopAsync(); break; }
-    if (line == "capture") engine.TriggerOnce();
+    if (line == "stop")    { await engine.StopAsync(); break; }
+    if (line == "capture")   engine.TriggerOnce();
+    if (line == "status")  { var s = grabService.GetBoardStatus(0); Console.WriteLine(s); }
 }
 ```
 
