@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using PeanutVision.Api.Exceptions;
 using PeanutVision.MultiCamDriver;
 using PeanutVision.MultiCamDriver.Camera;
 using PeanutVision.MultiCamDriver.Imaging;
@@ -158,7 +159,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IExposureControl
         lock (_lock)
         {
             if ((_channelState != ChannelState.Idle && _channelState != ChannelState.Active) || _channel == null)
-                throw new InvalidOperationException("No channel exists. Create a channel first.");
+                throw new ChannelNotAvailableException();
             return _channel;
         }
     }
@@ -173,10 +174,10 @@ public sealed class AcquisitionManager : IAcquisitionService, IExposureControl
         lock (_lock)
         {
             if (_snapshotInProgress)
-                throw new InvalidOperationException("A snapshot is in progress. Wait for it to complete.");
+                throw new AcquisitionConflictException("A snapshot is in progress. Wait for it to complete.");
 
             if (_channelState != ChannelState.None)
-                throw new InvalidOperationException("A channel already exists. Release it first.");
+                throw new AcquisitionConflictException("A channel already exists. Release it first.");
 
             var camFile = _camFileService.GetByFileName(profileId.Value);
             var options = triggerMode.HasValue
@@ -197,7 +198,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IExposureControl
         lock (_lock)
         {
             if (_channelState == ChannelState.Active)
-                throw new InvalidOperationException("Cannot release an active channel. Stop acquisition first.");
+                throw new AcquisitionConflictException("Cannot release an active channel. Stop acquisition first.");
 
             if (_channelState == ChannelState.None)
                 return;
@@ -220,18 +221,18 @@ public sealed class AcquisitionManager : IAcquisitionService, IExposureControl
         const int minIntervalMs = 50;
 
         if (intervalMs.HasValue && intervalMs.Value > 0 && intervalMs.Value < minIntervalMs)
-            throw new ArgumentException($"intervalMs must be at least {minIntervalMs}ms, got {intervalMs.Value}ms.");
+            throw new InvalidParameterException($"intervalMs must be at least {minIntervalMs}ms, got {intervalMs.Value}ms.");
 
         lock (_lock)
         {
             if (_snapshotInProgress)
-                throw new InvalidOperationException("A snapshot is in progress. Wait for it to complete.");
+                throw new AcquisitionConflictException("A snapshot is in progress. Wait for it to complete.");
 
             if (_channelState == ChannelState.None)
-                throw new InvalidOperationException("No channel exists. Create a channel first.");
+                throw new ChannelNotAvailableException();
 
             if (_channelState == ChannelState.Active)
-                throw new InvalidOperationException("Acquisition is already active. Stop it first.");
+                throw new AcquisitionConflictException("Acquisition is already active. Stop it first.");
 
             _lastFrame = null;
             _lastError = null;
@@ -309,15 +310,15 @@ public sealed class AcquisitionManager : IAcquisitionService, IExposureControl
         lock (_lock)
         {
             if (_channel == null || !_channel.IsActive)
-                throw new InvalidOperationException("No active acquisition. Start acquisition first.");
+                throw new ChannelNotAvailableException();
 
             if (_triggerTcs != null)
-                throw new InvalidOperationException("A trigger is already pending. Wait for it to complete.");
+                throw new AcquisitionConflictException("A trigger is already pending. Wait for it to complete.");
 
             // Validate trigger mode — software trigger only works in SOFT or COMBINED mode
             if (!_channel.SupportsSoftwareTrigger)
             {
-                throw new InvalidOperationException(
+                throw new InvalidParameterException(
                     $"TriggerAndWaitAsync requires SOFT or COMBINED trigger mode, but channel is configured for {_channel.TriggerMode}. " +
                     "Use Start() with the correct trigger mode, or use the frame event for IMMEDIATE/HARD trigger modes.");
             }
@@ -344,7 +345,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IExposureControl
         lock (_lock)
         {
             if (_channelState == ChannelState.Active)
-                throw new InvalidOperationException("Acquisition is already active. Stop it first.");
+                throw new AcquisitionConflictException("Acquisition is already active. Stop it first.");
 
             _snapshotInProgress = true;
         }
@@ -362,11 +363,10 @@ public sealed class AcquisitionManager : IAcquisitionService, IExposureControl
                 options.TriggerMode != McTrigMode.MC_TrigMode_SOFT &&
                 options.TriggerMode != McTrigMode.MC_TrigMode_COMBINED)
             {
-                throw new ArgumentException(
+                throw new InvalidParameterException(
                     $"Snapshot requires SOFT or COMBINED trigger mode. " +
                     $"The requested mode '{options.TriggerMode}' is not software-triggerable. " +
-                    "Use a cam file or trigger mode that supports software triggering.",
-                    nameof(triggerMode));
+                    "Use a cam file or trigger mode that supports software triggering.");
             }
 
             // If no explicit trigger mode was requested, force SOFT for reliable snapshot behavior.

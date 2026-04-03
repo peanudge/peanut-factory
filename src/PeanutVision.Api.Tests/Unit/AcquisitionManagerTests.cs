@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using PeanutVision.Api.Exceptions;
 using PeanutVision.Api.Services;
 using PeanutVision.Api.Tests.Infrastructure;
 using PeanutVision.MultiCamDriver;
@@ -89,7 +90,7 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public async Task When_trigger_and_wait_then_throws()
         {
-            await Assert.ThrowsAsync<InvalidOperationException>(
+            await Assert.ThrowsAsync<ChannelNotAvailableException>(
                 () => _manager.TriggerAndWaitAsync());
         }
 
@@ -102,7 +103,7 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void When_start_without_channel_then_throws()
         {
-            Assert.Throws<InvalidOperationException>(() => _manager.Start());
+            Assert.Throws<ChannelNotAvailableException>(() => _manager.Start());
         }
 
         [Fact]
@@ -148,7 +149,7 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void When_create_channel_again_then_throws()
         {
-            Assert.Throws<InvalidOperationException>(() =>
+            Assert.Throws<AcquisitionConflictException>(() =>
                 _manager.CreateChannel("crevis-tc-a160k-softtrig-rgb8.cam"));
         }
 
@@ -217,20 +218,20 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void When_start_again_then_throws()
         {
-            Assert.Throws<InvalidOperationException>(() => _manager.Start());
+            Assert.Throws<AcquisitionConflictException>(() => _manager.Start());
         }
 
         [Fact]
         public void When_snapshot_then_throws()
         {
-            Assert.Throws<InvalidOperationException>(() =>
+            Assert.Throws<AcquisitionConflictException>(() =>
                 _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam"));
         }
 
         [Fact]
         public void When_release_channel_then_throws()
         {
-            Assert.Throws<InvalidOperationException>(() => _manager.ReleaseChannel());
+            Assert.Throws<AcquisitionConflictException>(() => _manager.ReleaseChannel());
         }
 
         [Fact]
@@ -527,16 +528,16 @@ public class AcquisitionManagerTests : IDisposable
     public class Snapshot_given_incompatible_trigger_mode : AcquisitionManagerTests
     {
         [Fact]
-        public void When_hard_trigger_mode_then_throws_ArgumentException()
+        public void When_hard_trigger_mode_then_throws_InvalidParameterException()
         {
-            Assert.Throws<ArgumentException>(() =>
+            Assert.Throws<InvalidParameterException>(() =>
                 _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam", TriggerMode.Hard));
         }
 
         [Fact]
-        public void When_immediate_trigger_mode_then_throws_ArgumentException()
+        public void When_immediate_trigger_mode_then_throws_InvalidParameterException()
         {
-            Assert.Throws<ArgumentException>(() =>
+            Assert.Throws<InvalidParameterException>(() =>
                 _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam", TriggerMode.Immediate));
         }
 
@@ -567,7 +568,7 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void Then_throws()
         {
-            Assert.Throws<InvalidOperationException>(() =>
+            Assert.Throws<AcquisitionConflictException>(() =>
                 _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam"));
         }
     }
@@ -695,10 +696,10 @@ public class AcquisitionManagerTests : IDisposable
     public class Given_intervalMs_validation : AcquisitionManagerTests
     {
         [Fact]
-        public void Then_intervalMs_below_minimum_throws_ArgumentException()
+        public void Then_intervalMs_below_minimum_throws_InvalidParameterException()
         {
             _manager.CreateChannel("crevis-tc-a160k-freerun-rgb8.cam");
-            Assert.Throws<ArgumentException>(() => _manager.Start(intervalMs: 1));
+            Assert.Throws<InvalidParameterException>(() => _manager.Start(intervalMs: 1));
         }
 
         [Fact]

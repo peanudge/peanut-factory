@@ -36,6 +36,15 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
                     errorCode, httpContext.Request.Method, httpContext.Request.Path);
                 break;
 
+            case KeyNotFoundException knf:
+                status = 404;
+                errorCode = "RESOURCE_NOT_FOUND";
+                message = knf.Message;
+                logger.LogWarning(exception,
+                    "[{ErrorCode}] {Method} {Path}: {Message}",
+                    errorCode, httpContext.Request.Method, httpContext.Request.Path, knf.Message);
+                break;
+
             case TimeoutException:
                 status = 504;
                 errorCode = "TIMEOUT";
