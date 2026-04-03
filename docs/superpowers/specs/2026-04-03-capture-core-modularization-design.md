@@ -1,7 +1,7 @@
 # Design: Capture Core Modularization
 
 **Date:** 2026-04-03  
-**Status:** Approved  
+**Status:** Superseded by `2026-04-03-solid-capture-redesign.md`  
 **Scope:** Extract `PeanutVision.Capture` class library; refactor API to use it; enable future Console/MCP hosts
 
 ---
