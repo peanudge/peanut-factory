@@ -495,3 +495,6 @@ CapturedImages/
 
 # Claude
 .mcp.json
+
+# Git worktrees
+.worktrees/
