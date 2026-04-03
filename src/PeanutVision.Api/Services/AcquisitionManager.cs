@@ -5,7 +5,7 @@ using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.Api.Services;
 
-public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibration, IExposureControl
+public sealed class AcquisitionManager : IAcquisitionService, IExposureControl
 {
     private readonly IGrabService _grabService;
     private readonly ICamFileService _camFileService;
@@ -113,19 +113,6 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
             };
         }
     }
-
-    // IChannelCalibration implementation
-
-    public bool IsCalibrationAvailable =>
-        ChannelState == ChannelState.Idle || ChannelState == ChannelState.Active;
-
-    public void PerformBlackCalibration() => GetRequiredChannel().PerformBlackCalibration();
-
-    public void PerformWhiteCalibration() => GetRequiredChannel().PerformWhiteCalibration();
-
-    public void PerformWhiteBalanceOnce() => GetRequiredChannel().PerformWhiteBalanceOnce();
-
-    public void SetFlatFieldCorrection(bool enable) => GetRequiredChannel().SetFlatFieldCorrection(enable);
 
     public ExposureInfo GetExposure()
     {

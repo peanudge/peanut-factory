@@ -95,15 +95,6 @@ export interface CapturedEvent {
   objectUrl: string | null;
 }
 
-export interface Session {
-  id: string;
-  name: string;
-  createdAt: string;
-  endedAt: string | null;
-  notes: string | null;
-  isActive: boolean;
-}
-
 export interface HistogramData {
   red: number[];
   green: number[];
@@ -163,7 +154,8 @@ export interface CapturedImageRecord {
   fileSizeBytes: number;
   format: string;
   capturedAt: string;
-  sessionId: string | null;
+  tags: string[];
+  notes: string;
 }
 
 export interface ImagePage {

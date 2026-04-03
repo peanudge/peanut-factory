@@ -28,7 +28,9 @@ public class AcquisitionManagerTests : IDisposable
 
         _grabService = new GrabService(_mockHal);
         _grabService.Initialize();
-        _manager = new AcquisitionManager(_grabService, TestCamFileHelper.GetOrCreate());
+        var latencyRepo = new LatencyRepository(Microsoft.Extensions.Options.Options.Create(new LatencyRepositoryOptions()));
+        var latencyService = new LatencyService(latencyRepo);
+        _manager = new AcquisitionManager(_grabService, TestCamFileHelper.GetOrCreate(), latencyService);
     }
 
     public void Dispose()

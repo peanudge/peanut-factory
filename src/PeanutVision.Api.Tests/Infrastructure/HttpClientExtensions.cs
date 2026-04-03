@@ -30,4 +30,12 @@ public static class HttpClientExtensions
         var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
         return await client.PutAsync(url, content);
     }
+
+    public static async Task<HttpResponseMessage> PatchJsonAsync(
+        this HttpClient client, string url, object payload)
+    {
+        var json = JsonSerializer.Serialize(payload, JsonOptions);
+        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+        return await client.PatchAsync(url, content);
+    }
 }

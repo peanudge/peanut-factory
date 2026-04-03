@@ -60,31 +60,31 @@ describe("useCaptureLog", () => {
     });
   });
 
-  describe("FIFO eviction at MAX_CAPTURES=50", () => {
-    it("does not evict when at exactly 50 items", () => {
+  describe("FIFO eviction at MAX_CAPTURES=30", () => {
+    it("does not evict when at exactly 30 items", () => {
       const { result } = renderHook(() => useCaptureLog());
-      addN(result, 50);
-      expect(result.current.events).toHaveLength(50);
+      addN(result, 30);
+      expect(result.current.events).toHaveLength(30);
       expect(revokeObjectURL).not.toHaveBeenCalled();
     });
 
-    it("evicts the oldest event when 51st is added", () => {
+    it("evicts the oldest event when 31st is added", () => {
       const { result } = renderHook(() => useCaptureLog());
-      addN(result, 50);
+      addN(result, 30);
       // The oldest item (added first) is at the tail
-      const oldestUrl = result.current.events[49].objectUrl;
+      const oldestUrl = result.current.events[29].objectUrl;
 
       act(() => result.current.addEvent("/new.png", "blob:mock/new"));
 
-      expect(result.current.events).toHaveLength(50);
+      expect(result.current.events).toHaveLength(30);
       expect(revokeObjectURL).toHaveBeenCalledWith(oldestUrl);
       expect(result.current.events[0].filePath).toBe("/new.png");
     });
 
     it("does not revoke null objectUrls during eviction", () => {
       const { result } = renderHook(() => useCaptureLog());
-      // Add 50 events with null objectUrl
-      for (let i = 0; i < 50; i++) {
+      // Add 30 events with null objectUrl
+      for (let i = 0; i < 30; i++) {
         act(() => result.current.addEvent(`/img${i}.png`, null));
       }
       act(() => result.current.addEvent("/new.png", "blob:mock/new"));
@@ -183,22 +183,22 @@ describe("useCaptureLog", () => {
     });
   });
 
-  describe("auto-select behaviour", () => {
-    it("auto-selects the first event added", () => {
+  describe("selection behaviour", () => {
+    it("selectedEventId starts as null before any manual selection", () => {
       const { result } = renderHook(() => useCaptureLog());
       act(() => result.current.addEvent("/a.png", "blob:a"));
-      expect(result.current.selectedEventId).toBe(result.current.events[0].id);
+      // No auto-select: selectedEventId remains null until selectEvent is called
+      expect(result.current.selectedEventId).toBeNull();
     });
 
-    it("auto-advances selection to the newest event when following live head", async () => {
+    it("selectEvent sets the selectedEventId", () => {
       const { result } = renderHook(() => useCaptureLog());
-      await act(async () => { result.current.addEvent("/a.png", "blob:a"); });
-      const firstId = result.current.events[0].id;
-      expect(result.current.selectedEventId).toBe(firstId);
+      act(() => result.current.addEvent("/a.png", "blob:a"));
+      const id = result.current.events[0].id;
 
-      await act(async () => { result.current.addEvent("/b.png", "blob:b"); });
-      // Was following head (a) → should advance to b
-      expect(result.current.selectedEventId).toBe(result.current.events[0].id);
+      act(() => result.current.selectEvent(id));
+
+      expect(result.current.selectedEventId).toBe(id);
     });
 
     it("preserves manual selection when a new event arrives", () => {

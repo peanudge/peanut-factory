@@ -10,7 +10,10 @@ public sealed class CapturedImage
     public long FileSizeBytes { get; set; }
     public string Format { get; set; } = string.Empty;  // "png", "bmp", "raw"
     public DateTime CapturedAt { get; set; }
-    public Guid? SessionId { get; set; }
 
-    public Session? Session { get; set; }
+    /// <summary>Tags stored as a JSON array string, e.g. "[\"defect\",\"blur\"]"</summary>
+    public string Tags { get; set; } = "[]";
+
+    /// <summary>Freeform annotation notes for this capture</summary>
+    public string Notes { get; set; } = string.Empty;
 }

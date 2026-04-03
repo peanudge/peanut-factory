@@ -4,11 +4,10 @@ export const queryKeys = {
   latestFrame:       ["latestFrame"]                     as const,
   boards:            ["boards"]                          as const,
   boardStatus:       (index: number) => ["boardStatus", index] as const,
-  sessions:          ["sessions"]                        as const,
-  activeSession:     ["activeSession"]                   as const,
   presets:           ["presets"]                         as const,
   histogram:         ["histogram"]                       as const,
   imageSaveSettings: ["imageSaveSettings"]               as const,
   exposure:          ["exposure"]                        as const,
   images:            (params?: object) => params ? ["images", params] as const : ["images"] as const,
+  imageHistogram:    (id: string) => ["imageHistogram", id] as const,
 };

@@ -12,18 +12,27 @@ export function useImageGallery() {
   const { toast } = useToast();
   const [page, setPage] = useState(1);
   const [filterSessionId, setFilterSessionId] = useState<string | null>(null);
+  const [filterFromDate, setFilterFromDate] = useState<string | null>(null);
+  const [filterToDate, setFilterToDate] = useState<string | null>(null);
+  const [filterFormat, setFilterFormat] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const queryParams = {
     page,
     pageSize: PAGE_SIZE,
     ...(filterSessionId ? { sessionId: filterSessionId } : {}),
+    ...(filterFromDate ? { dateFrom: filterFromDate } : {}),
+    ...(filterToDate ? { dateTo: filterToDate } : {}),
+    ...(filterFormat ? { format: filterFormat } : {}),
   };
 
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.images(queryParams),
     queryFn: () => listImages(queryParams),
   });
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setPage(1); }, [filterSessionId, filterFromDate, filterToDate, filterFormat]);
 
   // Auto-select the newest image when nothing is selected
   useEffect(() => {
@@ -60,6 +69,12 @@ export function useImageGallery() {
     isLoading,
     filterSessionId,
     setFilterSessionId,
+    filterFromDate,
+    setFilterFromDate,
+    filterToDate,
+    setFilterToDate,
+    filterFormat,
+    setFilterFormat,
     selectedId,
     setSelectedId,
     selectedImage,
