@@ -7,7 +7,6 @@ import type {
   ExposureInfo,
   ApiMessage,
   ImageSaveSettings,
-  Session,
   HistogramData,
   AcquisitionPreset,
   ImagePage,
@@ -196,43 +195,6 @@ export function updateImageSaveSettings(
   });
 }
 
-// ── Sessions ──
-
-export function getSessions(limit = 50): Promise<Session[]> {
-  return request(`/sessions?limit=${limit}`);
-}
-
-export function getActiveSession(): Promise<Session | null> {
-  return rawFetch("/sessions/active")
-    .then((res) => {
-      if (res.status === 204) return null;
-      if (!res.ok) return res.json().then((b) => {
-        throw new ApiError(b.error ?? `HTTP ${res.status}`, b.errorCode ?? "UNKNOWN_ERROR", res.status);
-      });
-      return res.json();
-    });
-}
-
-export function createSession(name: string, notes?: string): Promise<Session> {
-  return request("/sessions", {
-    method: "POST",
-    body: JSON.stringify({ name, notes }),
-  });
-}
-
-export function endSession(id: string): Promise<Session> {
-  return request(`/sessions/${id}/end`, { method: "POST" });
-}
-
-export function deleteSession(id: string): Promise<void> {
-  return rawFetch(`/sessions/${id}`, { method: "DELETE" })
-    .then((res) => {
-      if (!res.ok) return res.json().then((b) => {
-        throw new ApiError(b.error ?? `HTTP ${res.status}`, b.errorCode ?? "UNKNOWN_ERROR", res.status);
-      });
-    });
-}
-
 // ── Presets ──
 
 export function getPresets(): Promise<AcquisitionPreset[]> {
@@ -334,25 +296,6 @@ export function clearLatencyRecords(): Promise<ApiMessage> {
 }
 
 // ── Calibration ──
-
-export function blackCalibration(): Promise<ApiMessage> {
-  return request("/calibration/black", { method: "POST" });
-}
-
-export function whiteCalibration(): Promise<ApiMessage> {
-  return request("/calibration/white", { method: "POST" });
-}
-
-export function whiteBalance(): Promise<ApiMessage> {
-  return request("/calibration/white-balance", { method: "POST" });
-}
-
-export function setFfc(enable: boolean): Promise<ApiMessage> {
-  return request("/calibration/ffc", {
-    method: "POST",
-    body: JSON.stringify({ enable }),
-  });
-}
 
 export function getExposure(): Promise<ExposureInfo> {
   return request("/calibration/exposure");
