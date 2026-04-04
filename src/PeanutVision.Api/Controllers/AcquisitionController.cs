@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using PeanutVision.Api.Exceptions;
 using PeanutVision.Api.Services;
+using PeanutVision.Api.Services.Camera;
 using PeanutVision.MultiCamDriver;
-using PeanutVision.MultiCamDriver.Imaging;
 using PeanutVision.MultiCamDriver.Imaging.Encoders;
 
 namespace PeanutVision.Api.Controllers;
@@ -11,59 +11,65 @@ namespace PeanutVision.Api.Controllers;
 [Route("api/[controller]")]
 public class AcquisitionController : ControllerBase
 {
-    private readonly IAcquisitionSession _session;
-    private readonly IExposureController _exposure;
-    private readonly ISnapshotCapture    _snapshot;
-    private readonly IAutoSaveService    _autoSave;
+    // The legacy /api/acquisition/... endpoints delegate to the "cam-1" actor.
+    // This controller is intentionally temporary — it will be deleted in Stage 4.
+    private const string DefaultCameraId = "cam-1";
+
+    private readonly CameraRegistry  _registry;
+    private readonly ISnapshotCapture _snapshot;
+    private readonly IAutoSaveService _autoSave;
 
     public AcquisitionController(
-        IAcquisitionSession session,
-        IExposureController exposure,
+        CameraRegistry registry,
         ISnapshotCapture snapshot,
         IAutoSaveService autoSave)
     {
-        _session  = session;
-        _exposure = exposure;
+        _registry = registry;
         _snapshot = snapshot;
         _autoSave = autoSave;
     }
 
+    private ICameraActor DefaultActor =>
+        _registry.TryGet(DefaultCameraId)
+        ?? throw new InvalidOperationException($"Default camera '{DefaultCameraId}' is not registered.");
+
     [HttpPost("start")]
-    public ActionResult Start([FromBody] StartAcquisitionRequest request)
+    public async Task<ActionResult> Start([FromBody] StartAcquisitionRequest request)
     {
         var profileId   = new ProfileId(request.ProfileId);
         var triggerMode = request.TriggerMode is not null ? TriggerMode.Parse(request.TriggerMode) : (TriggerMode?)null;
-        _session.Start(profileId, triggerMode, request.FrameCount, request.IntervalMs);
+        await DefaultActor.StartAsync(profileId, triggerMode, request.FrameCount, request.IntervalMs);
         return Ok(new { message = "Acquisition started", profileId = profileId.Value });
     }
 
     [HttpPost("stop")]
-    public ActionResult Stop()
+    public async Task<ActionResult> Stop()
     {
-        _session.Stop();
+        await DefaultActor.StopAsync();
         return Ok(new { message = "Acquisition stopped" });
     }
 
     [HttpDelete]
-    public ActionResult ReleaseChannel()
+    public async Task<ActionResult> ReleaseChannel()
     {
-        _session.Stop();
+        await DefaultActor.StopAsync();
         return Ok(new { message = "Channel released" });
     }
 
     [HttpGet("status")]
-    public ActionResult GetStatus()
+    public async Task<ActionResult> GetStatus()
     {
-        var stats = _session.GetStatistics();
+        var s     = await DefaultActor.GetStatusAsync();
+        var stats = s.Statistics;
         return Ok(new
         {
-            isActive     = _session.IsActive,
-            channelState = _session.ChannelState.ToString().ToLowerInvariant(),
-            profileId    = _session.ActiveProfileId?.Value,
-            hasFrame     = _session.HasFrame,
-            lastError    = _session.LastError,
-            allowedActions = _session.GetAllowedActions(),
-            statistics   = stats.HasValue ? new
+            isActive       = s.IsActive,
+            channelState   = s.ChannelState.ToString().ToLowerInvariant(),
+            profileId      = s.ActiveProfileId,
+            hasFrame       = s.HasFrame,
+            lastError      = s.LastError,
+            allowedActions = s.AllowedActions,
+            statistics     = stats.HasValue ? new
             {
                 frameCount              = stats.Value.FrameCount,
                 droppedFrameCount       = stats.Value.DroppedFrameCount,
@@ -75,8 +81,8 @@ public class AcquisitionController : ControllerBase
                 averageFrameIntervalMs  = Math.Round(stats.Value.AverageFrameIntervalMs, 2),
                 copyDropCount           = stats.Value.CopyDropCount,
                 clusterUnavailableCount = stats.Value.ClusterUnavailableCount,
-            } : null,
-            recentEvents = _session.GetRecentEvents(50).Select(e => new
+            } : (object?)null,
+            recentEvents = s.RecentEvents.Select(e => new
             {
                 timestamp = e.Timestamp,
                 type      = e.Type.ToString(),
@@ -88,8 +94,8 @@ public class AcquisitionController : ControllerBase
     [HttpPost("trigger")]
     public async Task<ActionResult> Trigger()
     {
-        var image   = await _session.TriggerAndWaitAsync(5000);
-        var path    = await _autoSave.TrySaveAsync(image);
+        var image = await DefaultActor.TriggerAsync(5000, HttpContext.RequestAborted);
+        var path  = await _autoSave.TrySaveAsync(image);
         if (path is not null)
             Response.Headers["X-Image-Path"] = path;
 
@@ -103,35 +109,38 @@ public class AcquisitionController : ControllerBase
     [HttpGet("latest-frame")]
     public async Task<ActionResult> GetLatestFrame()
     {
-        var frame = _session.GetLatestFrame();
-        if (frame is null)
-            return NoContent();
+        var result = await DefaultActor.GetLatestFrameAsync();
+        if (result.Frame is null) return NoContent();
 
-        var path = await _autoSave.TrySaveNewAsync(frame);
-        if (path is not null)
-            Response.Headers["X-Image-Path"] = path;
+        if (result.IsNew)
+        {
+            var path = await _autoSave.TrySaveAsync(result.Frame);
+            if (path is not null)
+                Response.Headers["X-Image-Path"] = path;
+        }
 
         var encoder = new PngEncoder();
         var stream  = new MemoryStream();
-        encoder.Encode(frame, stream);
+        encoder.Encode(result.Frame, stream);
         stream.Position = 0;
         return File(stream, "image/png", "latest.png");
     }
 
     [HttpGet("latest-frame/histogram")]
-    public ActionResult GetHistogram()
+    public async Task<ActionResult> GetHistogram()
     {
-        var frame = _session.GetLatestFrame();
-        if (frame is null) return NoContent();
+        var result = await DefaultActor.GetLatestFrameAsync();
+        if (result.Frame is null) return NoContent();
 
-        var histogram = HistogramService.Compute(frame);
+        var histogram = HistogramService.Compute(result.Frame);
         return Ok(new { red = histogram.Red, green = histogram.Green, blue = histogram.Blue, bins = 256 });
     }
 
     [HttpPost("snapshot")]
     public async Task<ActionResult> Snapshot([FromBody] SnapshotRequest request)
     {
-        if (_session.IsActive)
+        var status = await DefaultActor.GetStatusAsync();
+        if (status.IsActive)
             throw new AcquisitionConflictException("Cannot snapshot while acquisition is active.");
 
         var profileId   = new ProfileId(request.ProfileId);
@@ -140,9 +149,11 @@ public class AcquisitionController : ControllerBase
         string filePath;
         if (!string.IsNullOrWhiteSpace(request.OutputPath))
         {
-            // Custom output path: bypass DB recording
-            var image = await CaptureRawAsync(profileId, triggerMode);
-            new ImageWriter().Save(image, request.OutputPath);
+            await DefaultActor.StartAsync(profileId, triggerMode, frameCount: 1);
+            PeanutVision.MultiCamDriver.Imaging.ImageData rawImage;
+            try { rawImage = await DefaultActor.TriggerAsync(5000, HttpContext.RequestAborted); }
+            finally { await DefaultActor.StopAsync(); }
+            new PeanutVision.MultiCamDriver.Imaging.ImageWriter().Save(rawImage, request.OutputPath);
             filePath = request.OutputPath;
         }
         else
@@ -152,7 +163,6 @@ public class AcquisitionController : ControllerBase
 
         Response.Headers["X-Image-Path"] = filePath;
 
-        // Re-read the saved file to return PNG preview
         var savedImage = LoadImageFromFile(filePath);
         var encoder    = new PngEncoder();
         var stream     = new MemoryStream();
@@ -162,36 +172,29 @@ public class AcquisitionController : ControllerBase
     }
 
     [HttpGet("exposure")]
-    public ActionResult GetExposure() => Ok(_exposure.GetExposure());
+    public async Task<ActionResult> GetExposure()
+        => Ok(await DefaultActor.GetExposureAsync());
 
     [HttpPut("exposure")]
-    public ActionResult SetExposure([FromBody] SetExposureRequest request)
-        => Ok(_exposure.SetExposure(request.ExposureUs));
+    public async Task<ActionResult> SetExposure([FromBody] SetExposureRequest request)
+        => Ok(await DefaultActor.SetExposureAsync(request.ExposureUs));
 
-    // --- helpers ---
-
-    private async Task<ImageData> CaptureRawAsync(ProfileId profileId, TriggerMode? triggerMode)
-    {
-        _session.Start(profileId, triggerMode, frameCount: 1);
-        try { return await _session.TriggerAndWaitAsync(5000); }
-        finally { _session.Stop(); }
-    }
-
-    private static ImageData LoadImageFromFile(string filePath)
+    private static PeanutVision.MultiCamDriver.Imaging.ImageData LoadImageFromFile(string filePath)
     {
         using var img = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgb24>(filePath);
         var pixels = new byte[img.Width * img.Height * 3];
         img.CopyPixelDataTo(pixels);
-        return new ImageData(pixels, img.Width, img.Height, img.Width * 3);
+        return new PeanutVision.MultiCamDriver.Imaging.ImageData(pixels, img.Width, img.Height, img.Width * 3);
     }
 }
 
+// Request DTOs remain here (same as before)
 public class StartAcquisitionRequest
 {
-    public required string ProfileId  { get; set; }
-    public string? TriggerMode        { get; set; }
-    public int?    FrameCount         { get; set; }
-    public int?    IntervalMs         { get; set; }
+    public required string ProfileId { get; set; }
+    public string? TriggerMode       { get; set; }
+    public int?    FrameCount        { get; set; }
+    public int?    IntervalMs        { get; set; }
 }
 
 public class SnapshotRequest
