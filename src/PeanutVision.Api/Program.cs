@@ -43,7 +43,6 @@ else
 
 var saveSettingsPath = Path.Combine(builder.Environment.ContentRootPath, "image-save-settings.json");
 builder.Services.AddSingleton<IImageSaveSettingsService>(new ImageSaveSettingsService(saveSettingsPath));
-builder.Services.AddSingleton<IFrameQueue>(_ => new PeanutVision.Capture.BoundedFrameQueue(capacity: 32));
 builder.Services.AddSingleton<IFrameWriter>(_ => new PeanutVision.Capture.ImageFileWriter(new PeanutVision.MultiCamDriver.Imaging.ImageWriter()));
 
 var dbPath = Path.Combine(builder.Environment.ContentRootPath, "peanut-vision.db");
@@ -60,17 +59,11 @@ builder.Services.Configure<LatencyRepositoryOptions>(
 builder.Services.AddSingleton<ILatencyRepository, LatencyRepository>();
 builder.Services.AddSingleton<ILatencyService, LatencyService>();
 
-builder.Services.AddSingleton<AcquisitionSession>();
-builder.Services.AddSingleton<IAcquisitionSession>(sp => sp.GetRequiredService<AcquisitionSession>());
-builder.Services.AddSingleton<IExposureSource>(sp => sp.GetRequiredService<AcquisitionSession>());
-builder.Services.AddSingleton<IExposureController, ExposureController>();
 builder.Services.AddScoped<ISnapshotCapture, SnapshotCapture>();
 builder.Services.AddScoped<FrameSavedHandler>();
-builder.Services.AddSingleton<FrameSaveTracker>();
 builder.Services.AddScoped<IAutoSaveService, AutoSaveService>();
-builder.Services.AddHostedService<FrameWriterBackgroundService>();
 
-// Multi-camera actor system (alongside legacy AcquisitionSession for now)
+// Multi-camera actor system
 builder.Services.AddSingleton<CameraRegistry>(sp =>
 {
     var registry = new CameraRegistry();

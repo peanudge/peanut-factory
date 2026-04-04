@@ -11,10 +11,4 @@ public interface IAutoSaveService
     /// Saves the image if AutoSave is enabled. Returns the file path, or null if AutoSave is off.
     /// </summary>
     Task<string?> TrySaveAsync(ImageData image);
-
-    /// <summary>
-    /// Saves the image if AutoSave is enabled AND the frame is new (deduplication for polling).
-    /// Returns the file path, or null if skipped.
-    /// </summary>
-    Task<string?> TrySaveNewAsync(ImageData image);
 }
