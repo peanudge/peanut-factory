@@ -341,7 +341,7 @@ public sealed class CameraActor : ICameraActor
         _eventLog.Add(new ChannelEvent(DateTime.UtcNow, eventType, command.Message));
 
         if (command.Signal == McSignal.MC_SIG_UNRECOVERABLE_OVERRUN)
-            _ = Task.Run(() => StopAsync());
+            HandleStop(new StopCmd(new TaskCompletionSource<bool>()));
     }
 
     private void HandleSetExposure(SetExposureCmd command)
