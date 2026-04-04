@@ -51,7 +51,8 @@ public sealed class FrameWriterBackgroundService : BackgroundService
                     CapturedAt:  DateTimeOffset.UtcNow,
                     Width:       frame.Width,
                     Height:      frame.Height,
-                    FileSizeBytes: fileInfo.Exists ? fileInfo.Length : 0);
+                    FileSizeBytes: fileInfo.Exists ? fileInfo.Length : 0,
+                    Format:      settings.Format.ToString().ToLower());
 
                 // FrameSavedHandler uses scoped DbContext — create a scope per frame
                 await using var scope   = _scopeFactory.CreateAsyncScope();

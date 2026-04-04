@@ -5,5 +5,6 @@ public sealed record FrameSavedEvent(
     DateTimeOffset CapturedAt,
     int Width,
     int Height,
-    long FileSizeBytes
+    long FileSizeBytes,
+    string Format
 );

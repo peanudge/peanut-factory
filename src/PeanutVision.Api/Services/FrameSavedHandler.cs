@@ -7,22 +7,18 @@ public sealed class FrameSavedHandler
 {
     private readonly ICapturedImageRepository _imageRepository;
     private readonly IThumbnailService _thumbnailService;
-    private readonly IImageSaveSettingsService _saveSettings;
 
     public FrameSavedHandler(
         ICapturedImageRepository imageRepository,
-        IThumbnailService thumbnailService,
-        IImageSaveSettingsService saveSettings)
+        IThumbnailService thumbnailService)
     {
         _imageRepository = imageRepository;
         _thumbnailService = thumbnailService;
-        _saveSettings = saveSettings;
     }
 
     public async Task HandleAsync(FrameSavedEvent e)
     {
         var thumbPath = await _thumbnailService.GenerateAsync(e.FilePath);
-        var format    = _saveSettings.GetSettings().Format.ToString().ToLower();
 
         await _imageRepository.AddAsync(new CapturedImage
         {
@@ -32,7 +28,7 @@ public sealed class FrameSavedHandler
             Width         = e.Width,
             Height        = e.Height,
             FileSizeBytes = e.FileSizeBytes,
-            Format        = format,
+            Format        = e.Format,
             CapturedAt    = e.CapturedAt.UtcDateTime,
         });
     }
