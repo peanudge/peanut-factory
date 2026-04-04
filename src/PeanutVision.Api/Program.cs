@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using PeanutVision.Api.Middleware;
 using PeanutVision.Api.Services;
+using PeanutVision.Capture;
 using PeanutVision.FakeCamDriver;
 using PeanutVision.MultiCamDriver;
 
@@ -40,8 +41,8 @@ else
 
 var saveSettingsPath = Path.Combine(builder.Environment.ContentRootPath, "image-save-settings.json");
 builder.Services.AddSingleton<IImageSaveSettingsService>(new ImageSaveSettingsService(saveSettingsPath));
-builder.Services.AddSingleton<FilenameGenerator>();
-builder.Services.AddSingleton<FrameSaveTracker>();
+builder.Services.AddSingleton<IFrameQueue>(_ => new PeanutVision.Capture.BoundedFrameQueue(capacity: 32));
+builder.Services.AddSingleton<IFrameWriter>(_ => new PeanutVision.Capture.ImageFileWriter(new PeanutVision.MultiCamDriver.Imaging.ImageWriter()));
 
 var dbPath = Path.Combine(builder.Environment.ContentRootPath, "peanut-vision.db");
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -57,10 +58,13 @@ builder.Services.Configure<LatencyRepositoryOptions>(
 builder.Services.AddSingleton<ILatencyRepository, LatencyRepository>();
 builder.Services.AddSingleton<ILatencyService, LatencyService>();
 
-builder.Services.AddSingleton<AcquisitionManager>();
-builder.Services.AddSingleton<IAcquisitionService>(sp => sp.GetRequiredService<AcquisitionManager>());
-builder.Services.AddSingleton<IExposureControl>(sp => sp.GetRequiredService<AcquisitionManager>());
-builder.Services.AddScoped<IImageCaptureService, ImageCaptureService>();
+builder.Services.AddSingleton<AcquisitionSession>();
+builder.Services.AddSingleton<IAcquisitionSession>(sp => sp.GetRequiredService<AcquisitionSession>());
+builder.Services.AddSingleton<IExposureSource>(sp => sp.GetRequiredService<AcquisitionSession>());
+builder.Services.AddSingleton<IExposureController, ExposureController>();
+builder.Services.AddScoped<ISnapshotCapture, SnapshotCapture>();
+builder.Services.AddScoped<FrameSavedHandler>();
+builder.Services.AddHostedService<FrameWriterBackgroundService>();
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
