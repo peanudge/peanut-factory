@@ -221,7 +221,11 @@ public sealed class AcquisitionSession : IAcquisitionSession, IExposureSource
         if (_triggerTimestamps.TryDequeue(out var triggerAt))
             _latencyService.Record(triggerAt, frameAt, frameIndex, profileId);
 
-        _frameQueue.TryEnqueue(e.Image);
+        // Only enqueue stream frames. Triggered frames (tcs != null) are saved
+        // directly by the controller via IAutoSaveService, avoiding a double-write.
+        if (tcs == null)
+            _frameQueue.TryEnqueue(e.Image);
+
         FrameAcquired?.Invoke(e.Image);
         tcs?.TrySetResult(e.Image);
     }

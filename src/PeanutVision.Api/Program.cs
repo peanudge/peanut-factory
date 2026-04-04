@@ -64,6 +64,8 @@ builder.Services.AddSingleton<IExposureSource>(sp => sp.GetRequiredService<Acqui
 builder.Services.AddSingleton<IExposureController, ExposureController>();
 builder.Services.AddScoped<ISnapshotCapture, SnapshotCapture>();
 builder.Services.AddScoped<FrameSavedHandler>();
+builder.Services.AddSingleton<FrameSaveTracker>();
+builder.Services.AddScoped<IAutoSaveService, AutoSaveService>();
 builder.Services.AddHostedService<FrameWriterBackgroundService>();
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
