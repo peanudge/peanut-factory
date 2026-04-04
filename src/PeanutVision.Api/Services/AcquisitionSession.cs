@@ -24,7 +24,7 @@ public sealed class AcquisitionSession : IAcquisitionSession, IExposureSource
     private TaskCompletionSource<ImageData>? _triggerTcs;
     private ChannelState _state = ChannelState.None;
     private ProfileId? _activeProfileId;
-    private bool _disposed;
+    private int _disposed;  // 0 = live, 1 = disposed; use Interlocked to avoid race
 
     public event Action<ImageData>? FrameAcquired;
 
@@ -257,8 +257,7 @@ public sealed class AcquisitionSession : IAcquisitionSession, IExposureSource
 
     public void Dispose()
     {
-        if (_disposed) return;
-        _disposed = true;
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         Stop();
     }
 }
