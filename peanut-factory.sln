@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PeanutVision.Api.Tests", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PeanutVision.FakeCamDriver", "src\PeanutVision.FakeCamDriver\PeanutVision.FakeCamDriver.csproj", "{88900197-C607-4E89-954D-A663DBC6AD63}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PeanutVision.Capture", "src\PeanutVision.Capture\PeanutVision.Capture.csproj", "{D7970282-8E85-4A6B-9B7A-E7F9B27CA2BE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,6 +101,18 @@ Global
 		{88900197-C607-4E89-954D-A663DBC6AD63}.Release|x64.Build.0 = Release|Any CPU
 		{88900197-C607-4E89-954D-A663DBC6AD63}.Release|x86.ActiveCfg = Release|Any CPU
 		{88900197-C607-4E89-954D-A663DBC6AD63}.Release|x86.Build.0 = Release|Any CPU
+		{D7970282-8E85-4A6B-9B7A-E7F9B27CA2BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7970282-8E85-4A6B-9B7A-E7F9B27CA2BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7970282-8E85-4A6B-9B7A-E7F9B27CA2BE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D7970282-8E85-4A6B-9B7A-E7F9B27CA2BE}.Debug|x64.Build.0 = Debug|Any CPU
+		{D7970282-8E85-4A6B-9B7A-E7F9B27CA2BE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D7970282-8E85-4A6B-9B7A-E7F9B27CA2BE}.Debug|x86.Build.0 = Debug|Any CPU
+		{D7970282-8E85-4A6B-9B7A-E7F9B27CA2BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7970282-8E85-4A6B-9B7A-E7F9B27CA2BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D7970282-8E85-4A6B-9B7A-E7F9B27CA2BE}.Release|x64.ActiveCfg = Release|Any CPU
+		{D7970282-8E85-4A6B-9B7A-E7F9B27CA2BE}.Release|x64.Build.0 = Release|Any CPU
+		{D7970282-8E85-4A6B-9B7A-E7F9B27CA2BE}.Release|x86.ActiveCfg = Release|Any CPU
+		{D7970282-8E85-4A6B-9B7A-E7F9B27CA2BE}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -110,5 +124,6 @@ Global
 		{405D2189-4DC3-4B3A-BB46-C04F8979E505} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{B45842E1-A107-4270-B6C7-E8615FFD4C1E} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{88900197-C607-4E89-954D-A663DBC6AD63} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{D7970282-8E85-4A6B-9B7A-E7F9B27CA2BE} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal
