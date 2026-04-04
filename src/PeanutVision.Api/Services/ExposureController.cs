@@ -3,7 +3,7 @@ namespace PeanutVision.Api.Services;
 /// <summary>
 /// Manages exposure settings, caching the desired value when no channel is active.
 /// </summary>
-internal sealed class ExposureController : IExposureControl
+internal sealed class ExposureController : IExposureController
 {
     private const double DEFAULT_EXPOSURE_US = 10_000.0;
 
