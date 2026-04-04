@@ -45,6 +45,7 @@ public sealed class CameraActor : ICameraActor
     private ProfileId? _activeProfileId;
     private readonly ChannelEventLog _eventLog = new();
     private double _desiredExposureUs = 10_000.0;
+    private readonly SemaphoreSlim _saveConcurrency = new(initialCount: 8, maxCount: 8);
 
     public string CameraId => _cameraId;
 
@@ -440,6 +441,13 @@ public sealed class CameraActor : ICameraActor
         var settings = _saveSettings.GetSettings();
         if (!settings.AutoSave) return;
 
+        if (!await _saveConcurrency.WaitAsync(0).ConfigureAwait(false))
+        {
+            _logger.LogWarning("Stream frame dropped for {CameraId}: save concurrency limit reached", _cameraId);
+            _statistics?.RecordDroppedFrame();
+            return;
+        }
+
         try
         {
             var opts     = settings.ToWriterOptions(_contentRootPath);
@@ -462,6 +470,10 @@ public sealed class CameraActor : ICameraActor
         {
             _logger.LogError(ex, "Failed to save stream frame for camera {CameraId}", _cameraId);
         }
+        finally
+        {
+            _saveConcurrency.Release();
+        }
     }
 
     // ---- dispose ----
@@ -476,5 +488,6 @@ public sealed class CameraActor : ICameraActor
         _cts.Cancel();
         try { await _loopTask.ConfigureAwait(false); } catch { /* loop already exited */ }
         _cts.Dispose();
+        _saveConcurrency.Dispose();
     }
 }
