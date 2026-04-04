@@ -14,7 +14,6 @@ public class CameraStatusSpec : IClassFixture<PeanutVisionApiFactory>, IAsyncLif
     public async Task DisposeAsync()
     {
         await _client.PostAsync($"/api/cameras/{CamId}/stop", null);
-        await _client.DeleteAsync("/api/acquisition");
     }
 
     [Fact]
