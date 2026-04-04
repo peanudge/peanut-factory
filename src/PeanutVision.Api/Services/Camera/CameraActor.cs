@@ -155,6 +155,7 @@ public sealed class CameraActor : ICameraActor
                         case GetStatusCmd c:        c.Tcs.TrySetResult(BuildStatus()); break;
                         case GetExposureCmd c:      c.Tcs.TrySetResult(BuildExposureInfo()); break;
                         case SetExposureCmd c:      HandleSetExposure(c);      break;
+                        case AcquisitionEndedCmd:   HandleStop(new StopCmd(new TaskCompletionSource<bool>())); break;
                     }
                 }
                 catch (Exception ex)
@@ -373,7 +374,7 @@ public sealed class CameraActor : ICameraActor
         => _mailbox.Writer.TryWrite(new AcquisitionErrorCmd(e.Message, e.Signal));
 
     private void OnAcquisitionEnded(object? sender, EventArgs e)
-        => _mailbox.Writer.TryWrite(new StopCmd(new TaskCompletionSource<bool>()));
+        => _mailbox.Writer.TryWrite(new AcquisitionEndedCmd());
 
     // ---- helpers ----
 
@@ -467,8 +468,9 @@ public sealed class CameraActor : ICameraActor
 
     public async ValueTask DisposeAsync()
     {
-        if (_state == ChannelState.Active)
-            await StopAsync().ConfigureAwait(false);
+        // Always send StopCmd — HandleStop is a no-op if not active.
+        // Avoids reading _state from outside the actor loop (data race).
+        await StopAsync().ConfigureAwait(false);
 
         _mailbox.Writer.TryComplete();
         _cts.Cancel();

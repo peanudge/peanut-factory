@@ -38,3 +38,5 @@ public sealed record GetExposureCmd(
 public sealed record SetExposureCmd(
     double? ExposureUs,
     TaskCompletionSource<ExposureInfo> Tcs) : ICameraCommand;
+
+public sealed record AcquisitionEndedCmd : ICameraCommand;
