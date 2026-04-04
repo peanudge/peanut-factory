@@ -2,9 +2,11 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using PeanutVision.Api.Middleware;
 using PeanutVision.Api.Services;
+using PeanutVision.Api.Services.Camera;
 using PeanutVision.Capture;
 using PeanutVision.FakeCamDriver;
 using PeanutVision.MultiCamDriver;
+using PeanutVision.MultiCamDriver.Camera;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,6 +69,23 @@ builder.Services.AddScoped<FrameSavedHandler>();
 builder.Services.AddSingleton<FrameSaveTracker>();
 builder.Services.AddScoped<IAutoSaveService, AutoSaveService>();
 builder.Services.AddHostedService<FrameWriterBackgroundService>();
+
+// Multi-camera actor system (alongside legacy AcquisitionSession for now)
+builder.Services.AddSingleton<CameraRegistry>(sp =>
+{
+    var registry = new CameraRegistry();
+    registry.Register(new CameraActor(
+        cameraId:        "cam-1",
+        grabService:     sp.GetRequiredService<IGrabService>(),
+        camFileService:  sp.GetRequiredService<ICamFileService>(),
+        latencyService:  sp.GetRequiredService<ILatencyService>(),
+        scopeFactory:    sp.GetRequiredService<IServiceScopeFactory>(),
+        frameWriter:     sp.GetRequiredService<IFrameWriter>(),
+        saveSettings:    sp.GetRequiredService<IImageSaveSettingsService>(),
+        contentRootPath: builder.Environment.ContentRootPath,
+        logger:          sp.GetRequiredService<ILogger<CameraActor>>()));
+    return registry;
+});
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
