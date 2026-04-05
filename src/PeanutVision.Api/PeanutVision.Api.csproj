@@ -32,13 +32,13 @@
     To trigger: first run `npm run build` in src/peanut-vision-ui/, then `dotnet publish`.
     The dist/ files are not checked into git (they're build artifacts).
   -->
-  <Target Name="CopyReactBuild" AfterTargets="Build" Condition="Exists('$(MSBuildProjectDirectory)\..\peanut-vision-ui\dist')">
+  <Target Name="CopyReactBuild" AfterTargets="Build" Condition="Exists('$(MSBuildProjectDirectory)/../peanut-vision-ui/dist')">
     <ItemGroup>
-      <ReactDistFiles Include="$(MSBuildProjectDirectory)\..\peanut-vision-ui\dist\**\*" />
+      <ReactDistFiles Include="$(MSBuildProjectDirectory)/../peanut-vision-ui/dist/**/*" />
     </ItemGroup>
     <Copy
       SourceFiles="@(ReactDistFiles)"
-      DestinationFiles="@(ReactDistFiles->'$(MSBuildProjectDirectory)\wwwroot\%(RecursiveDir)%(Filename)%(Extension)')"
+      DestinationFiles="@(ReactDistFiles->'$(MSBuildProjectDirectory)/wwwroot/%(RecursiveDir)%(Filename)%(Extension)')"
     />
   </Target>
 

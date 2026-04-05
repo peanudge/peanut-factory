@@ -81,9 +81,9 @@ builder.Services.AddCors(options =>
 // Electron finds a free port and passes it so there are no port conflicts.
 // In development (dotnet run), this env var is not set and ASP.NET uses its default (from launchSettings.json).
 var electronPort = Environment.GetEnvironmentVariable("PEANUT_PORT");
-if (!string.IsNullOrEmpty(electronPort))
+if (!string.IsNullOrEmpty(electronPort) && int.TryParse(electronPort, out var parsedPort))
 {
-    builder.WebHost.UseUrls($"http://localhost:{electronPort}");
+    builder.WebHost.UseUrls($"http://localhost:{parsedPort}");
 }
 
 var app = builder.Build();
