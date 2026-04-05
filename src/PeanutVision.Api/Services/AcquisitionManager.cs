@@ -368,6 +368,8 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
             _snapshotInProgress = true;
         }
 
+        StatusChanged?.Invoke(this, EventArgs.Empty);
+
         try
         {
             var camFile = _camFileService.GetByFileName(profileId.Value);
@@ -428,6 +430,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
             {
                 _snapshotInProgress = false;
             }
+            StatusChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
