@@ -3,6 +3,8 @@ using PeanutVision.Api.Services;
 using PeanutVision.MultiCamDriver;
 using PeanutVision.MultiCamDriver.Imaging;
 using PeanutVision.MultiCamDriver.Imaging.Encoders;
+using System.Text.Json;
+using System.Threading.Channels;
 
 namespace PeanutVision.Api.Controllers;
 
@@ -106,6 +108,45 @@ public class AcquisitionController : ControllerBase
         });
     }
 
+    [HttpGet("events")]
+    public async Task GetEvents(CancellationToken ct)
+    {
+        Response.ContentType = "text/event-stream; charset=utf-8";
+        Response.Headers["Cache-Control"] = "no-cache";
+        Response.Headers["X-Accel-Buffering"] = "no";
+
+        var channel = Channel.CreateUnbounded<string>(
+            new UnboundedChannelOptions { SingleReader = true });
+
+        void OnFrameAcquired(object? _, EventArgs __) =>
+            channel.Writer.TryWrite("event: frame_ready\ndata: {}\n\n");
+
+        void OnStatusChanged(object? _, EventArgs __) =>
+            channel.Writer.TryWrite($"event: status_changed\ndata: {BuildStatusJson()}\n\n");
+
+        _acquisition.FrameAcquired += OnFrameAcquired;
+        _acquisition.StatusChanged += OnStatusChanged;
+
+        // Send current status immediately so client has initial state
+        channel.Writer.TryWrite($"event: status_changed\ndata: {BuildStatusJson()}\n\n");
+
+        try
+        {
+            await foreach (var text in channel.Reader.ReadAllAsync(ct))
+            {
+                await Response.WriteAsync(text, ct);
+                await Response.Body.FlushAsync(ct);
+            }
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _acquisition.FrameAcquired -= OnFrameAcquired;
+            _acquisition.StatusChanged -= OnStatusChanged;
+            channel.Writer.TryComplete();
+        }
+    }
+
     [HttpPost("trigger")]
     public async Task<ActionResult> Trigger()
     {
@@ -166,6 +207,44 @@ public class AcquisitionController : ControllerBase
             bins = 256,
         });
     }
+
+    private string BuildStatusJson()
+    {
+        var stats = _acquisition.GetStatistics();
+        var payload = new
+        {
+            isActive = _acquisition.IsActive,
+            channelState = _acquisition.ChannelState.ToString().ToLowerInvariant(),
+            profileId = _acquisition.ActiveProfileId?.Value,
+            hasFrame = _acquisition.HasFrame,
+            lastError = _acquisition.LastError,
+            allowedActions = _acquisition.GetAllowedActions()
+                .Select(a => a.ToString().ToLowerInvariant()).ToArray(),
+            statistics = stats.HasValue
+                ? (object)new
+                {
+                    frameCount = stats.Value.FrameCount,
+                    droppedFrameCount = stats.Value.DroppedFrameCount,
+                    errorCount = stats.Value.ErrorCount,
+                    elapsedMs = stats.Value.ElapsedTime.TotalMilliseconds,
+                    averageFps = Math.Round(stats.Value.AverageFps, 2),
+                    minFrameIntervalMs = Math.Round(stats.Value.MinFrameIntervalMs, 2),
+                    maxFrameIntervalMs = Math.Round(stats.Value.MaxFrameIntervalMs, 2),
+                    averageFrameIntervalMs = Math.Round(stats.Value.AverageFrameIntervalMs, 2),
+                    copyDropCount = stats.Value.CopyDropCount,
+                    clusterUnavailableCount = stats.Value.ClusterUnavailableCount,
+                }
+                : null,
+            recentEvents = _acquisition.GetRecentEvents(50).Select(e => new
+            {
+                timestamp = e.Timestamp,
+                type = e.Type.ToString(),
+                message = e.Message,
+            }),
+        };
+        return JsonSerializer.Serialize(payload);
+    }
+
 
     private async Task<string> SaveAndRecordAsync(
         ImageData image, ImageSaveSettings settings, string? profileId)
