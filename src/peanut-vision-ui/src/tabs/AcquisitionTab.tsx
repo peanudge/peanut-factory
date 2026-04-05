@@ -173,7 +173,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
             errorMessage={acq.acquisitionStatus?.lastError}
             isLive={live.isActive}
             capturedAt={null}
-            onReturnToLive={() => {}}
+            onClose={() => {}}
           />
         </Box>
       </Box>
@@ -211,7 +211,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
                 savedPath={gallery.selectedImage?.filePath}
                 isLive={false}
                 capturedAt={gallery.selectedImage ? new Date(gallery.selectedImage.capturedAt) : null}
-                onReturnToLive={() => gallery.setSelectedId(null)}
+                onClose={() => gallery.setSelectedId(null)}
               />
             </Box>
           )}

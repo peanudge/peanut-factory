@@ -11,10 +11,10 @@ interface Props {
   savedPath?: string;
   isLive: boolean;
   capturedAt: Date | null;
-  onReturnToLive: () => void;
+  onClose: () => void;
 }
 
-export default function ImageViewer({ url, filename, errorMessage, savedPath, isLive, capturedAt, onReturnToLive }: Props) {
+export default function ImageViewer({ url, filename, errorMessage, savedPath, isLive, capturedAt, onClose }: Props) {
   if (!url) {
     return (
       <Box
@@ -89,8 +89,8 @@ export default function ImageViewer({ url, filename, errorMessage, savedPath, is
               {capturedAt !== null && (
                 <Chip
                   size="small"
-                  label="Return to Live"
-                  onClick={onReturnToLive}
+                  label="Close"
+                  onClick={onClose}
                   variant="outlined"
                   color="primary"
                   sx={{ fontWeight: 600, fontSize: "0.65rem", cursor: "pointer", bgcolor: "rgba(0,0,0,0.4)" }}
