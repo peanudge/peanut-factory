@@ -11,6 +11,7 @@ import FolderIcon from "@mui/icons-material/Folder";
 import CameraIcon from "@mui/icons-material/CameraAlt";
 import SystemTab from "./tabs/SystemTab";
 import AcquisitionTab from "./tabs/AcquisitionTab";
+import GalleryTab from "./tabs/GalleryTab";
 import LatencyTab from "./tabs/LatencyTab";
 
 export default function App() {
@@ -45,6 +46,7 @@ export default function App() {
         >
           <Tab label="System" />
           <Tab label="Acquisition" />
+          <Tab label="Gallery" />
           <Tab label="Latency" />
         </Tabs>
       </AppBar>
@@ -55,7 +57,10 @@ export default function App() {
       <Box sx={{ flexGrow: 1, overflow: "hidden", display: tab === 1 ? "flex" : "none" }}>
         <AcquisitionTab onSessionChange={setSessionName} />
       </Box>
-      <Box sx={{ flexGrow: 1, overflow: "auto", display: tab === 2 ? "block" : "none" }}>
+      <Box sx={{ flexGrow: 1, overflow: "hidden", display: tab === 2 ? "flex" : "none" }}>
+        <GalleryTab />
+      </Box>
+      <Box sx={{ flexGrow: 1, overflow: "auto", display: tab === 3 ? "block" : "none" }}>
         <LatencyTab />
       </Box>
     </Box>
