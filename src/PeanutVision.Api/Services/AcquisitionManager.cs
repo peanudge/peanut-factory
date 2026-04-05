@@ -409,14 +409,19 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
                 var snapshotFrameAt = DateTimeOffset.UtcNow;
                 _latencyService.Record(snapshotTriggerAt, snapshotFrameAt, 1, profileId.Value);
 
+                ImageData image;
                 try
                 {
-                    return ImageData.FromSurface(surface);
+                    image = ImageData.FromSurface(surface);
                 }
                 finally
                 {
                     channel.ReleaseSurface(surface);
                 }
+
+                lock (_lock) { _lastFrame = image; }
+                FrameAcquired?.Invoke(this, EventArgs.Empty);
+                return image;
             }
             finally
             {
