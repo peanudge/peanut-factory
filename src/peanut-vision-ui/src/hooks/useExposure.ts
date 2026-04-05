@@ -38,7 +38,9 @@ export function useExposure({ onStartSuccess: _onStartSuccess }: UseExposurePara
   const applyExposureMutation = useMutation({
     mutationFn: () => setExposure(exposureValue),
     onSuccess: (result) => {
-      toast(result.message, "success");
+      setExposureState(result);
+      setExposureValue(result.exposureUs);
+      toast("노출이 적용되었습니다", "success");
     },
     onError: handleError,
   });

@@ -124,28 +124,30 @@ export function getCameras(): Promise<CamFileInfo[]> {
 
 // ── Acquisition ──
 
+const DEFAULT_CAMERA_ID = "cam-1";
+
 export function startAcquisition(
   profileId: string,
   triggerMode?: string,
   frameCount?: number | null,
   intervalMs?: number | null,
-): Promise<ApiMessage & { profileId: string }> {
-  return request("/acquisition/start", {
+): Promise<ApiMessage> {
+  return request(`/cameras/${DEFAULT_CAMERA_ID}/start`, {
     method: "POST",
     body: JSON.stringify({ profileId, triggerMode, frameCount, intervalMs }),
   });
 }
 
 export function stopAcquisition(): Promise<ApiMessage> {
-  return request("/acquisition/stop", { method: "POST" });
+  return request(`/cameras/${DEFAULT_CAMERA_ID}/stop`, { method: "POST" });
 }
 
 export function getAcquisitionStatus(): Promise<AcquisitionStatus> {
-  return request("/acquisition/status");
+  return request(`/cameras/${DEFAULT_CAMERA_ID}/status`);
 }
 
 export async function triggerAndCapture(): Promise<CaptureResult> {
-  const res = await rawFetch("/acquisition/trigger", { method: "POST" });
+  const res = await rawFetch(`/cameras/${DEFAULT_CAMERA_ID}/trigger`, { method: "POST" });
   if (!res.ok) await handleErrorResponse(res);
   const savedPath = res.headers.get("X-Image-Path") ?? undefined;
   return { blob: await res.blob(), savedPath };
@@ -155,7 +157,7 @@ export async function snapshot(
   profileId: string,
   triggerMode?: string,
 ): Promise<CaptureResult> {
-  const res = await rawFetch("/acquisition/snapshot", {
+  const res = await rawFetch(`/cameras/${DEFAULT_CAMERA_ID}/snapshot`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ profileId, triggerMode }),
@@ -166,7 +168,7 @@ export async function snapshot(
 }
 
 export async function getLatestFrame(): Promise<CaptureResult | null> {
-  const res = await rawFetch("/acquisition/latest-frame");
+  const res = await rawFetch(`/cameras/${DEFAULT_CAMERA_ID}/latest-frame`);
   if (res.status === 204) return null;
   if (!res.ok) await handleErrorResponse(res);
   const savedPath = res.headers.get("X-Image-Path") ?? undefined;
@@ -174,7 +176,7 @@ export async function getLatestFrame(): Promise<CaptureResult | null> {
 }
 
 export async function getHistogram(): Promise<HistogramData | null> {
-  const res = await rawFetch("/acquisition/latest-frame/histogram");
+  const res = await rawFetch(`/cameras/${DEFAULT_CAMERA_ID}/latest-frame/histogram`);
   if (res.status === 204) return null;
   if (!res.ok) await handleErrorResponse(res);
   return res.json();
@@ -298,13 +300,13 @@ export function clearLatencyRecords(): Promise<ApiMessage> {
 // ── Calibration ──
 
 export function getExposure(): Promise<ExposureInfo> {
-  return request("/calibration/exposure");
+  return request(`/cameras/${DEFAULT_CAMERA_ID}/exposure`);
 }
 
 export function setExposure(
   exposureUs?: number,
-): Promise<ApiMessage & { exposureUs: number }> {
-  return request("/calibration/exposure", {
+): Promise<ExposureInfo> {
+  return request(`/cameras/${DEFAULT_CAMERA_ID}/exposure`, {
     method: "PUT",
     body: JSON.stringify({ exposureUs }),
   });
