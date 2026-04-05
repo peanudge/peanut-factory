@@ -18,13 +18,13 @@ public sealed record CamFileInfo(
     string TapConfiguration)
 {
     /// <summary>
-    /// Creates GrabChannelOptions from this cam file info.
+    /// Creates AcquisitionChannelOptions from this cam file info.
     /// </summary>
-    public GrabChannelOptions ToChannelOptions(int driverIndex = 0, string connector = "M",
+    public AcquisitionChannelOptions ToChannelOptions(int driverIndex = 0, string connector = "M",
         int surfaceCount = 4, bool useCallback = true)
     {
         var trigMode = ParseTrigMode(TrigMode);
-        return new GrabChannelOptions
+        return new AcquisitionChannelOptions
         {
             DriverIndex = driverIndex,
             Connector = connector,
@@ -37,9 +37,9 @@ public sealed record CamFileInfo(
     }
 
     /// <summary>
-    /// Creates GrabChannelOptions with a custom trigger mode override.
+    /// Creates AcquisitionChannelOptions with a custom trigger mode override.
     /// </summary>
-    public GrabChannelOptions ToChannelOptions(McTrigMode triggerMode, int driverIndex = 0,
+    public AcquisitionChannelOptions ToChannelOptions(McTrigMode triggerMode, int driverIndex = 0,
         string connector = "M", int surfaceCount = 4, bool useCallback = true)
     {
         var options = ToChannelOptions(driverIndex, connector, surfaceCount, useCallback);

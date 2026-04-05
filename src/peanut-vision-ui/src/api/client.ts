@@ -102,7 +102,7 @@ export async function snapshot(
   profileId: string,
   triggerMode?: string,
 ): Promise<CaptureResult> {
-  const res = await fetch(`${API_BASE_URL}/acquisition/snapshot`, {
+  const res = await fetch(`${API_BASE_URL}/acquisition/capture-once`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ profileId, triggerMode }),

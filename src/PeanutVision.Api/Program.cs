@@ -28,14 +28,14 @@ var useMock = builder.Configuration.GetValue<bool>("UseMockHardware");
 
 if (useMock)
 {
-    builder.Services.AddFakeGrabService(config =>
+    builder.Services.AddFakeAcquisitionChannelManager(config =>
     {
         builder.Configuration.GetSection("FakeHal").Bind(config);
     });
 }
 else
 {
-    builder.Services.AddGrabService(autoInitialize: true);
+    builder.Services.AddAcquisitionChannelManager(autoInitialize: true);
 }
 
 var saveSettingsPath = Path.Combine(builder.Environment.ContentRootPath, "image-save-settings.json");
@@ -58,10 +58,12 @@ builder.Services.Configure<LatencyRepositoryOptions>(
 builder.Services.AddSingleton<ILatencyRepository, LatencyRepository>();
 builder.Services.AddSingleton<ILatencyService, LatencyService>();
 
-builder.Services.AddSingleton<AcquisitionManager>();
-builder.Services.AddSingleton<IAcquisitionService>(sp => sp.GetRequiredService<AcquisitionManager>());
-builder.Services.AddSingleton<IChannelCalibration>(sp => sp.GetRequiredService<AcquisitionManager>());
-builder.Services.AddSingleton<IExposureControl>(sp => sp.GetRequiredService<AcquisitionManager>());
+builder.Services.AddSingleton<AcquisitionOperationGate>();
+builder.Services.AddSingleton<AcquisitionService>();
+builder.Services.AddSingleton<IAcquisitionService>(sp => sp.GetRequiredService<AcquisitionService>());
+builder.Services.AddSingleton<IChannelCalibration>(sp => sp.GetRequiredService<AcquisitionService>());
+builder.Services.AddSingleton<IExposureControl>(sp => sp.GetRequiredService<AcquisitionService>());
+builder.Services.AddSingleton<ICaptureOnceService, CaptureOnceService>();
 builder.Services.AddSingleton<ICalibrationService, CalibrationManager>();
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

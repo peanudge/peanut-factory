@@ -4,14 +4,13 @@ using PeanutVision.MultiCamDriver.Hal;
 namespace PeanutVision.MultiCamDriver;
 
 /// <summary>
-/// Thread-safe service for managing MultiCam driver and grab channels.
-/// Implements IDisposable for proper resource cleanup.
+/// Thread-safe manager for the MultiCam driver lifecycle and AcquisitionChannel creation.
 /// Suitable for ASP.NET Core Dependency Injection as a Singleton.
 /// </summary>
-public sealed class GrabService : IGrabService
+public sealed class AcquisitionChannelManager : IAcquisitionChannelManager
 {
     private readonly object _lock = new();
-    private readonly ConcurrentDictionary<uint, GrabChannel> _channels = new();
+    private readonly ConcurrentDictionary<uint, AcquisitionChannel> _channels = new();
     private readonly IMultiCamHAL _hal;
     private bool _initialized;
     private bool _disposed;
@@ -22,24 +21,24 @@ public sealed class GrabService : IGrabService
     public int BoardCount => _boardCount;
 
     /// <summary>
-    /// Creates a new GrabService using the real HAL.
+    /// Creates a new AcquisitionChannelManager using the real HAL.
     /// </summary>
-    public GrabService() : this(MultiCamHAL.Instance)
+    public AcquisitionChannelManager() : this(MultiCamHAL.Instance)
     {
     }
 
     /// <summary>
-    /// Creates a new GrabService with the specified HAL.
+    /// Creates a new AcquisitionChannelManager with the specified HAL.
     /// Use this constructor for testing with MockMultiCamHal.
     /// </summary>
-    public GrabService(IMultiCamHAL hal)
+    public AcquisitionChannelManager(IMultiCamHAL hal)
     {
         ArgumentNullException.ThrowIfNull(hal);
         _hal = hal;
     }
 
     /// <summary>
-    /// Gets the HAL instance used by this service.
+    /// Gets the HAL instance used by this manager.
     /// Useful for testing and simulation scenarios.
     /// </summary>
     public IMultiCamHAL Hal => _hal;
@@ -108,16 +107,16 @@ public sealed class GrabService : IGrabService
     }
 
     /// <summary>
-    /// Creates a new grab channel with the specified options.
+    /// Creates a new acquisition channel with the specified options.
     /// </summary>
-    public GrabChannel CreateChannel(GrabChannelOptions options)
+    public AcquisitionChannel CreateChannel(AcquisitionChannelOptions options)
     {
         lock (_lock)
         {
             ThrowIfDisposed();
             EnsureInitialized();
 
-            var channel = new GrabChannel(options, _hal);
+            var channel = new AcquisitionChannel(options, _hal);
             _channels.TryAdd(channel.Handle, channel);
 
             return channel;
@@ -127,7 +126,7 @@ public sealed class GrabService : IGrabService
     /// <summary>
     /// Releases a channel previously created by <see cref="CreateChannel"/>.
     /// </summary>
-    public void ReleaseChannel(GrabChannel channel)
+    public void ReleaseChannel(AcquisitionChannel channel)
     {
         ArgumentNullException.ThrowIfNull(channel);
         _channels.TryRemove(channel.Handle, out _);
@@ -273,7 +272,7 @@ public sealed class GrabService : IGrabService
         if (!_initialized)
         {
             throw new InvalidOperationException(
-                "GrabService is not initialized. Call Initialize() first.");
+                "AcquisitionChannelManager is not initialized. Call Initialize() first.");
         }
     }
 
@@ -281,7 +280,7 @@ public sealed class GrabService : IGrabService
     {
         if (_disposed)
         {
-            throw new ObjectDisposedException(nameof(GrabService));
+            throw new ObjectDisposedException(nameof(AcquisitionChannelManager));
         }
     }
 

@@ -7,42 +7,42 @@ using PeanutVision.MultiCamDriver.Camera;
 namespace PeanutVision.MultiCamDriver;
 
 /// <summary>
-/// Extension methods for registering GrabService with ASP.NET Core Dependency Injection.
+/// Extension methods for registering AcquisitionChannelManager with ASP.NET Core Dependency Injection.
 /// </summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds the IGrabService to the service collection as a singleton.
-    /// The service must be initialized by calling Initialize() after resolution.
+    /// Adds the IAcquisitionChannelManager to the service collection as a singleton.
+    /// The manager must be initialized by calling Initialize() after resolution.
     /// </summary>
     /// <param name="services">The service collection</param>
     /// <returns>The service collection for chaining</returns>
     /// <example>
     /// <code>
     /// // In Program.cs or Startup.cs
-    /// builder.Services.AddGrabService();
+    /// builder.Services.AddAcquisitionChannelManager();
     ///
     /// // In your service/controller
     /// public class VisionController : ControllerBase
     /// {
-    ///     private readonly IGrabService _grabService;
+    ///     private readonly IAcquisitionChannelManager _channelManager;
     ///
-    ///     public VisionController(IGrabService grabService)
+    ///     public VisionController(IAcquisitionChannelManager channelManager)
     ///     {
-    ///         _grabService = grabService;
-    ///         _grabService.Initialize(); // Initialize on first use
+    ///         _channelManager = channelManager;
+    ///         _channelManager.Initialize(); // Initialize on first use
     ///     }
     /// }
     /// </code>
     /// </example>
-    public static IServiceCollection AddGrabService(this IServiceCollection services)
+    public static IServiceCollection AddAcquisitionChannelManager(this IServiceCollection services)
     {
-        services.TryAddSingleton<IGrabService, GrabService>();
+        services.TryAddSingleton<IAcquisitionChannelManager, AcquisitionChannelManager>();
         return services;
     }
 
     /// <summary>
-    /// Adds the IGrabService to the service collection as a singleton with auto-initialization.
+    /// Adds the IAcquisitionChannelManager to the service collection as a singleton with auto-initialization.
     /// </summary>
     /// <param name="services">The service collection</param>
     /// <param name="autoInitialize">If true, Initialize() is called immediately upon service creation</param>
@@ -50,21 +50,21 @@ public static class ServiceCollectionExtensions
     /// <example>
     /// <code>
     /// // In Program.cs
-    /// builder.Services.AddGrabService(autoInitialize: true);
+    /// builder.Services.AddAcquisitionChannelManager(autoInitialize: true);
     /// </code>
     /// </example>
-    public static IServiceCollection AddGrabService(this IServiceCollection services, bool autoInitialize)
+    public static IServiceCollection AddAcquisitionChannelManager(this IServiceCollection services, bool autoInitialize)
     {
         if (!autoInitialize)
         {
-            return services.AddGrabService();
+            return services.AddAcquisitionChannelManager();
         }
 
-        services.TryAddSingleton<IGrabService>(sp =>
+        services.TryAddSingleton<IAcquisitionChannelManager>(sp =>
         {
-            var service = new GrabService();
-            service.Initialize();
-            return service;
+            var manager = new AcquisitionChannelManager();
+            manager.Initialize();
+            return manager;
         });
 
         return services;
@@ -104,29 +104,29 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Adds the IGrabService with a custom configuration action.
+    /// Adds the IAcquisitionChannelManager with a custom configuration action.
     /// </summary>
     /// <param name="services">The service collection</param>
     /// <param name="configure">Configuration action to run after initialization</param>
     /// <returns>The service collection for chaining</returns>
     /// <example>
     /// <code>
-    /// builder.Services.AddGrabService(service =>
+    /// builder.Services.AddAcquisitionChannelManager(service =>
     /// {
     ///     Console.WriteLine($"Boards detected: {service.BoardCount}");
     /// });
     /// </code>
     /// </example>
-    public static IServiceCollection AddGrabService(
+    public static IServiceCollection AddAcquisitionChannelManager(
         this IServiceCollection services,
-        Action<IGrabService> configure)
+        Action<IAcquisitionChannelManager> configure)
     {
-        services.TryAddSingleton<IGrabService>(sp =>
+        services.TryAddSingleton<IAcquisitionChannelManager>(sp =>
         {
-            var service = new GrabService();
-            service.Initialize();
-            configure(service);
-            return service;
+            var manager = new AcquisitionChannelManager();
+            manager.Initialize();
+            configure(manager);
+            return manager;
         });
 
         return services;

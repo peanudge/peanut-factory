@@ -15,13 +15,13 @@ namespace PeanutVision.MultiCamDriver.IntegrationTests;
 [Trait("Category", "Hardware")]
 public class HardwareTests : IDisposable
 {
-    private readonly GrabService _service;
+    private readonly AcquisitionChannelManager _service;
     private readonly ICamFileService _camFileService;
     private bool _hardwareAvailable;
 
     public HardwareTests()
     {
-        _service = new GrabService();
+        _service = new AcquisitionChannelManager();
         _camFileService = new CamFileService(
             Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "PeanutVision.Api", "CamFiles"));
 
@@ -173,7 +173,7 @@ public class HardwareTests : IDisposable
 
         var camPath = _camFileService.GetByFileName("TC-A160K-SEM_freerun_RGB8.cam").FilePath;
 
-        using var channel = _service.CreateChannel(new GrabChannelOptions
+        using var channel = _service.CreateChannel(new AcquisitionChannelOptions
         {
             DriverIndex = 0,
             Connector = "M",

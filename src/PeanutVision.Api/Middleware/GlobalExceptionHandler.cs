@@ -45,6 +45,33 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
                     errorCode, httpContext.Request.Method, httpContext.Request.Path);
                 break;
 
+            case InvalidOperationException:
+                status = 409;
+                errorCode = "ACQUISITION_CONFLICT";
+                message = exception.Message;
+                logger.LogWarning(exception,
+                    "[{ErrorCode}] {Method} {Path}: {Message}",
+                    errorCode, httpContext.Request.Method, httpContext.Request.Path, message);
+                break;
+
+            case KeyNotFoundException:
+                status = 404;
+                errorCode = "RESOURCE_NOT_FOUND";
+                message = exception.Message;
+                logger.LogWarning(exception,
+                    "[{ErrorCode}] {Method} {Path}: {Message}",
+                    errorCode, httpContext.Request.Method, httpContext.Request.Path, message);
+                break;
+
+            case ArgumentException:
+                status = 400;
+                errorCode = "INVALID_PARAMETER";
+                message = exception.Message;
+                logger.LogWarning(exception,
+                    "[{ErrorCode}] {Method} {Path}: {Message}",
+                    errorCode, httpContext.Request.Method, httpContext.Request.Path, message);
+                break;
+
             default:
                 status = 500;
                 errorCode = "INTERNAL_SERVER_ERROR";

@@ -8,14 +8,15 @@ using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.Api.Tests.Unit;
 
-public class AcquisitionManagerTests : IDisposable
+public class AcquisitionServiceTests : IDisposable
 {
     protected readonly MockMultiCamHAL _mockHal;
-    protected readonly GrabService _grabService;
-    protected readonly AcquisitionManager _manager;
+    protected readonly AcquisitionChannelManager _channelManager;
+    protected readonly AcquisitionService _manager;
+    protected readonly CaptureOnceService _captureOnce;
     private readonly IntPtr _surfaceMemory;
 
-    public AcquisitionManagerTests()
+    public AcquisitionServiceTests()
     {
         _mockHal = new MockMultiCamHAL();
 
@@ -26,25 +27,28 @@ public class AcquisitionManagerTests : IDisposable
         Marshal.Copy(zeros, 0, _surfaceMemory, bufferSize);
         _mockHal.Configuration.SimulatedSurfaceAddress = _surfaceMemory;
 
-        _grabService = new GrabService(_mockHal);
-        _grabService.Initialize();
-        _manager = new AcquisitionManager(_grabService, TestCamFileHelper.GetOrCreate());
+        _channelManager = new AcquisitionChannelManager(_mockHal);
+        _channelManager.Initialize();
+        var gate = new AcquisitionOperationGate();
+        var latency = new NullLatencyService();
+        _manager = new AcquisitionService(_channelManager, TestCamFileHelper.GetOrCreate(), latency, gate);
+        _captureOnce = new CaptureOnceService(_channelManager, TestCamFileHelper.GetOrCreate(), latency, gate, _manager);
     }
 
     public void Dispose()
     {
         _manager.Dispose();
-        _grabService.Dispose();
+        _channelManager.Dispose();
         if (_surfaceMemory != IntPtr.Zero)
             Marshal.FreeHGlobal(_surfaceMemory);
     }
 
-    public class Given_idle : AcquisitionManagerTests
+    public class Given_idle : AcquisitionServiceTests
     {
         [Fact]
         public void Then_channel_state_is_none()
         {
-            Assert.Equal(ChannelState.None, _manager.ChannelState);
+            Assert.Equal(ChannelState.NotAllocated, _manager.ChannelState);
         }
 
         [Fact]
@@ -108,11 +112,11 @@ public class AcquisitionManagerTests : IDisposable
         {
             var actions = _manager.GetAllowedActions();
             Assert.Contains(ChannelAction.Start, actions);
-            Assert.Contains(ChannelAction.Snapshot, actions);
+            Assert.Contains(ChannelAction.CaptureOnce, actions);
         }
     }
 
-    public class Given_channel_created : AcquisitionManagerTests
+    public class Given_channel_created : AcquisitionServiceTests
     {
         public Given_channel_created()
         {
@@ -155,12 +159,12 @@ public class AcquisitionManagerTests : IDisposable
         {
             var actions = _manager.GetAllowedActions();
             Assert.Contains(ChannelAction.Start, actions);
-            Assert.Contains(ChannelAction.Snapshot, actions);
+            Assert.Contains(ChannelAction.CaptureOnce, actions);
             Assert.DoesNotContain(ChannelAction.Stop, actions);
         }
     }
 
-    public class Given_started : AcquisitionManagerTests
+    public class Given_started : AcquisitionServiceTests
     {
         public Given_started()
         {
@@ -222,7 +226,7 @@ public class AcquisitionManagerTests : IDisposable
         public void When_snapshot_then_throws()
         {
             Assert.Throws<InvalidOperationException>(() =>
-                _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam"));
+                _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam"));
         }
 
         [Fact]
@@ -245,11 +249,11 @@ public class AcquisitionManagerTests : IDisposable
             Assert.Contains(ChannelAction.Stop, actions);
             Assert.Contains(ChannelAction.Trigger, actions);
             Assert.DoesNotContain(ChannelAction.Start, actions);
-            Assert.DoesNotContain(ChannelAction.Snapshot, actions);
+            Assert.DoesNotContain(ChannelAction.CaptureOnce, actions);
         }
     }
 
-    public class Given_started_with_trigger_mode : AcquisitionManagerTests
+    public class Given_started_with_trigger_mode : AcquisitionServiceTests
     {
         public Given_started_with_trigger_mode()
         {
@@ -270,7 +274,7 @@ public class AcquisitionManagerTests : IDisposable
         }
     }
 
-    public class Given_started_then_stopped : AcquisitionManagerTests
+    public class Given_started_then_stopped : AcquisitionServiceTests
     {
         public Given_started_then_stopped()
         {
@@ -317,12 +321,12 @@ public class AcquisitionManagerTests : IDisposable
         {
             _manager.ReleaseChannel();
 
-            Assert.Equal(ChannelState.None, _manager.ChannelState);
+            Assert.Equal(ChannelState.NotAllocated, _manager.ChannelState);
             Assert.Null(_manager.Channel);
         }
     }
 
-    public class Given_started_and_trigger_and_wait : AcquisitionManagerTests
+    public class Given_started_and_trigger_and_wait : AcquisitionServiceTests
     {
         public Given_started_and_trigger_and_wait()
         {
@@ -357,7 +361,7 @@ public class AcquisitionManagerTests : IDisposable
         }
     }
 
-    public class Given_started_and_trigger_timeout : AcquisitionManagerTests
+    public class Given_started_and_trigger_timeout : AcquisitionServiceTests
     {
         [Fact]
         public async Task Then_throws_TimeoutException()
@@ -371,7 +375,7 @@ public class AcquisitionManagerTests : IDisposable
         }
     }
 
-    public class Given_started_and_frame_acquired : AcquisitionManagerTests
+    public class Given_started_and_frame_acquired : AcquisitionServiceTests
     {
         [Fact]
         public async Task Then_last_frame_has_correct_dimensions()
@@ -410,12 +414,12 @@ public class AcquisitionManagerTests : IDisposable
         }
     }
 
-    public class Snapshot_given_idle : AcquisitionManagerTests
+    public class CaptureOnce_given_idle : AcquisitionServiceTests
     {
         [Fact]
         public void Then_returns_image_data()
         {
-            var image = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+            var image = _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam");
 
             Assert.NotNull(image);
             Assert.Equal(_mockHal.Configuration.DefaultImageWidth, image.Width);
@@ -427,7 +431,7 @@ public class AcquisitionManagerTests : IDisposable
         {
             _mockHal.CallLog.Reset();
 
-            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+            _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam");
 
             Assert.Equal(1, _mockHal.CallLog.SoftwareTriggerCount);
         }
@@ -437,7 +441,7 @@ public class AcquisitionManagerTests : IDisposable
         {
             _mockHal.CallLog.Reset();
 
-            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+            _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam");
 
             Assert.True(_mockHal.CallLog.AcquisitionStarted);
             Assert.True(_mockHal.CallLog.AcquisitionStopped);
@@ -446,7 +450,7 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void Then_does_not_leave_channel_active()
         {
-            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+            _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam");
 
             Assert.False(_manager.IsActive);
             Assert.Null(_manager.Channel);
@@ -455,9 +459,9 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void Then_channel_state_remains_none()
         {
-            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+            _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam");
 
-            Assert.Equal(ChannelState.None, _manager.ChannelState);
+            Assert.Equal(ChannelState.NotAllocated, _manager.ChannelState);
         }
 
         [Fact]
@@ -465,7 +469,7 @@ public class AcquisitionManagerTests : IDisposable
         {
             _mockHal.CallLog.Reset();
 
-            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+            _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam");
 
             Assert.Equal(1, _mockHal.CallLog.WaitSignalCalls);
             Assert.Equal(0, _mockHal.CallLog.RegisterCallbackCalls);
@@ -474,8 +478,8 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void Then_can_be_called_multiple_times()
         {
-            var image1 = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
-            var image2 = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+            var image1 = _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam");
+            var image2 = _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam");
 
             Assert.NotNull(image1);
             Assert.NotNull(image2);
@@ -484,7 +488,7 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void When_unknown_profile_then_throws()
         {
-            Assert.Throws<KeyNotFoundException>(() => _manager.Snapshot("nonexistent"));
+            Assert.Throws<KeyNotFoundException>(() => _captureOnce.CaptureOnce("nonexistent"));
         }
 
         [Fact]
@@ -492,7 +496,7 @@ public class AcquisitionManagerTests : IDisposable
         {
             _mockHal.CallLog.Reset();
 
-            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+            _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam");
 
             // Snapshot creates and releases a temp channel (1 create + 1 delete)
             Assert.Equal(1, _mockHal.CallLog.CreateCalls);
@@ -500,9 +504,9 @@ public class AcquisitionManagerTests : IDisposable
         }
     }
 
-    public class Snapshot_given_channel_idle : AcquisitionManagerTests
+    public class CaptureOnce_given_channel_idle : AcquisitionServiceTests
     {
-        public Snapshot_given_channel_idle()
+        public CaptureOnce_given_channel_idle()
         {
             _manager.CreateChannel("crevis-tc-a160k-freerun-rgb8.cam");
         }
@@ -510,38 +514,38 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void Then_snapshot_succeeds()
         {
-            var image = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+            var image = _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam");
             Assert.NotNull(image);
         }
 
         [Fact]
         public void Then_channel_state_remains_idle_after_snapshot()
         {
-            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+            _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam");
             Assert.Equal(ChannelState.Idle, _manager.ChannelState);
         }
     }
 
-    public class Snapshot_given_incompatible_trigger_mode : AcquisitionManagerTests
+    public class CaptureOnce_given_incompatible_trigger_mode : AcquisitionServiceTests
     {
         [Fact]
         public void When_hard_trigger_mode_then_throws_ArgumentException()
         {
             Assert.Throws<ArgumentException>(() =>
-                _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam", TriggerMode.Hard));
+                _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam", TriggerMode.Hard));
         }
 
         [Fact]
         public void When_immediate_trigger_mode_then_throws_ArgumentException()
         {
             Assert.Throws<ArgumentException>(() =>
-                _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam", TriggerMode.Immediate));
+                _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam", TriggerMode.Immediate));
         }
 
         [Fact]
         public void When_soft_trigger_mode_then_succeeds()
         {
-            var image = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam", TriggerMode.Soft);
+            var image = _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam", TriggerMode.Soft);
             Assert.NotNull(image);
         }
 
@@ -549,14 +553,14 @@ public class AcquisitionManagerTests : IDisposable
         public void When_no_trigger_mode_and_freerun_cam_then_succeeds()
         {
             // No trigger mode passed — Snapshot silently forces SOFT; this should never throw
-            var image = _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+            var image = _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam");
             Assert.NotNull(image);
         }
     }
 
-    public class Snapshot_given_active : AcquisitionManagerTests
+    public class CaptureOnce_given_active : AcquisitionServiceTests
     {
-        public Snapshot_given_active()
+        public CaptureOnce_given_active()
         {
             _manager.CreateChannel("crevis-tc-a160k-freerun-rgb8.cam");
             _manager.Start();
@@ -566,13 +570,13 @@ public class AcquisitionManagerTests : IDisposable
         public void Then_throws()
         {
             Assert.Throws<InvalidOperationException>(() =>
-                _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam"));
+                _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam"));
         }
     }
 
-    public class Snapshot_given_timeout : AcquisitionManagerTests
+    public class CaptureOnce_given_timeout : AcquisitionServiceTests
     {
-        public Snapshot_given_timeout()
+        public CaptureOnce_given_timeout()
         {
             _mockHal.Configuration.WaitSignalFailure = (int)McStatus.MC_TIMEOUT;
         }
@@ -581,11 +585,11 @@ public class AcquisitionManagerTests : IDisposable
         public void Then_throws_TimeoutException()
         {
             Assert.Throws<TimeoutException>(() =>
-                _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam"));
+                _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam"));
         }
     }
 
-    public class Given_copy_queue_full : AcquisitionManagerTests
+    public class Given_copy_queue_full : AcquisitionServiceTests
     {
         [Fact]
         public async Task Then_grab_channel_records_copy_drops()
@@ -610,7 +614,7 @@ public class AcquisitionManagerTests : IDisposable
         }
     }
 
-    public class Given_statistics_include_channel_diagnostics : AcquisitionManagerTests
+    public class Given_statistics_include_channel_diagnostics : AcquisitionServiceTests
     {
         [Fact]
         public void Then_statistics_contain_copy_drop_and_cluster_counts()
@@ -625,7 +629,7 @@ public class AcquisitionManagerTests : IDisposable
         }
     }
 
-    public class Given_event_log : AcquisitionManagerTests
+    public class Given_event_log : AcquisitionServiceTests
     {
         [Fact]
         public void Then_start_records_event()
@@ -666,12 +670,12 @@ public class AcquisitionManagerTests : IDisposable
         }
     }
 
-    public class Given_snapshot_in_progress : AcquisitionManagerTests
+    public class Given_capture_once_in_progress : AcquisitionServiceTests
     {
         [Fact]
         public void Then_snapshot_blocks_start()
         {
-            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+            _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam");
 
             // After snapshot completes, CreateChannel + Start should work
             _manager.CreateChannel("crevis-tc-a160k-freerun-rgb8.cam");
@@ -682,15 +686,15 @@ public class AcquisitionManagerTests : IDisposable
         [Fact]
         public void Then_allowed_actions_restored_after_snapshot()
         {
-            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+            _captureOnce.CaptureOnce("crevis-tc-a160k-freerun-rgb8.cam");
 
             var actions = _manager.GetAllowedActions();
             Assert.Contains(ChannelAction.Start, actions);
-            Assert.Contains(ChannelAction.Snapshot, actions);
+            Assert.Contains(ChannelAction.CaptureOnce, actions);
         }
     }
 
-    public class Given_intervalMs_validation : AcquisitionManagerTests
+    public class Given_intervalMs_validation : AcquisitionServiceTests
     {
         [Fact]
         public void Then_intervalMs_below_minimum_throws_ArgumentException()
@@ -719,7 +723,7 @@ public class AcquisitionManagerTests : IDisposable
         }
     }
 
-    public class Given_channel_start_stop_cycle_reuses_channel : AcquisitionManagerTests
+    public class Given_channel_start_stop_cycle_reuses_channel : AcquisitionServiceTests
     {
         [Fact]
         public void Then_McCreate_called_once_across_start_stop_start()
@@ -768,7 +772,7 @@ public class AcquisitionManagerTests : IDisposable
         }
     }
 
-    public class Given_channel_release_and_recreate : AcquisitionManagerTests
+    public class Given_channel_release_and_recreate : AcquisitionServiceTests
     {
         [Fact]
         public void Then_McCreate_and_McDelete_each_called_once()

@@ -1,10 +1,10 @@
 namespace PeanutVision.MultiCamDriver;
 
 /// <summary>
-/// Service interface for frame grabber operations.
+/// Manages the MultiCam driver lifecycle and creates AcquisitionChannel instances.
 /// Designed for ASP.NET Core Dependency Injection.
 /// </summary>
-public interface IGrabService : IDisposable
+public interface IAcquisitionChannelManager : IDisposable
 {
     /// <summary>
     /// Whether the driver is initialized and ready.
@@ -23,17 +23,17 @@ public interface IGrabService : IDisposable
     void Initialize();
 
     /// <summary>
-    /// Creates a new grab channel with the specified options.
+    /// Creates a new acquisition channel with the specified options.
     /// </summary>
     /// <param name="options">Channel configuration options</param>
-    /// <returns>Configured grab channel ready for acquisition</returns>
-    GrabChannel CreateChannel(GrabChannelOptions options);
+    /// <returns>Configured acquisition channel ready for use</returns>
+    AcquisitionChannel CreateChannel(AcquisitionChannelOptions options);
 
     /// <summary>
     /// Releases a channel previously created by <see cref="CreateChannel"/>.
     /// Stops any active acquisition, disposes the channel, and removes it from tracking.
     /// </summary>
-    void ReleaseChannel(GrabChannel channel);
+    void ReleaseChannel(AcquisitionChannel channel);
 
     /// <summary>
     /// Gets board information for the specified board index.

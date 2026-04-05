@@ -11,6 +11,7 @@ namespace PeanutVision.Api.Controllers;
 public class AcquisitionController : ControllerBase
 {
     private readonly IAcquisitionService _acquisition;
+    private readonly ICaptureOnceService _captureOnce;
     private readonly IImageSaveSettingsService _saveSettings;
     private readonly FilenameGenerator _filenameGenerator;
     private readonly FrameSaveTracker _frameSaveTracker;
@@ -21,6 +22,7 @@ public class AcquisitionController : ControllerBase
 
     public AcquisitionController(
         IAcquisitionService acquisition,
+        ICaptureOnceService captureOnce,
         IImageSaveSettingsService saveSettings,
         FilenameGenerator filenameGenerator,
         FrameSaveTracker frameSaveTracker,
@@ -30,6 +32,7 @@ public class AcquisitionController : ControllerBase
         IWebHostEnvironment environment)
     {
         _acquisition = acquisition;
+        _captureOnce = captureOnce;
         _saveSettings = saveSettings;
         _filenameGenerator = filenameGenerator;
         _frameSaveTracker = frameSaveTracker;
@@ -48,7 +51,7 @@ public class AcquisitionController : ControllerBase
             : (TriggerMode?)null;
 
         // Auto-release any idle channel so callers don't need explicit channel management
-        if (_acquisition.ChannelState != ChannelState.None && _acquisition.ChannelState != ChannelState.Active)
+        if (_acquisition.ChannelState != ChannelState.NotAllocated && _acquisition.ChannelState != ChannelState.Active)
             _acquisition.ReleaseChannel();
 
         _acquisition.CreateChannel(profileId, triggerMode);
@@ -167,15 +170,15 @@ public class AcquisitionController : ControllerBase
         });
     }
 
-    [HttpPost("snapshot")]
-    public async Task<ActionResult> Snapshot([FromBody] SnapshotRequest request)
+    [HttpPost("capture-once")]
+    public async Task<ActionResult> CaptureOnce([FromBody] CaptureOnceRequest request)
     {
         var profileId = new ProfileId(request.ProfileId);
         var triggerMode = request.TriggerMode is not null
             ? TriggerMode.Parse(request.TriggerMode)
             : (TriggerMode?)null;
 
-        var image = _acquisition.Snapshot(profileId, triggerMode);
+        var image = _captureOnce.CaptureOnce(profileId, triggerMode);
 
         if (!string.IsNullOrWhiteSpace(request.OutputPath))
         {
@@ -197,7 +200,7 @@ public class AcquisitionController : ControllerBase
         encoder.Encode(image, stream);
         stream.Position = 0;
 
-        return File(stream, "image/png", "snapshot.png");
+        return File(stream, "image/png", "capture-once.png");
     }
 
     private async Task<string> SaveAndRecordAsync(
@@ -235,7 +238,7 @@ public class StartAcquisitionRequest
     public int? IntervalMs { get; set; }
 }
 
-public class SnapshotRequest
+public class CaptureOnceRequest
 {
     public required string ProfileId { get; set; }
     public string? TriggerMode { get; set; }
