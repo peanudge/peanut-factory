@@ -40,10 +40,29 @@ const DEFAULT_SETTINGS: ImageSaveSettings = {
   autoSave: true,
 };
 
+// Characters not allowed in directory paths (Windows-compatible; allows / \ : as path separators)
+const INVALID_PATH_CHARS = /[<>"|?*\x00-\x1f]/;
+// Characters not allowed in file name prefixes (includes path separators)
+const INVALID_FILENAME_CHARS = /[<>:"/\\|?*\x00-\x1f]/;
+
+function validateOutputDirectory(value: string): string {
+  if (!value.trim()) return "Output directory is required";
+  if (INVALID_PATH_CHARS.test(value)) return 'Path contains invalid characters: < > " | ? *';
+  return "";
+}
+
+function validateFilenamePrefix(value: string): string {
+  if (!value.trim()) return "Filename prefix is required";
+  if (INVALID_FILENAME_CHARS.test(value)) return 'Prefix contains invalid characters: < > : " / \\ | ? *';
+  return "";
+}
+
 export default function ImageSaveSettingsPanel() {
   const queryClient = useQueryClient();
   const [localSettings, setLocalSettings] = useState<ImageSaveSettings>(DEFAULT_SETTINGS);
   const [saved, setSaved] = useState(false);
+  const [outputDirError, setOutputDirError] = useState("");
+  const [filenamePrefixError, setFilenamePrefixError] = useState("");
 
   const { data: serverSettings } = useQuery({
     queryKey: queryKeys.imageSaveSettings,
@@ -64,8 +83,13 @@ export default function ImageSaveSettingsPanel() {
     },
   });
 
-  const update = <K extends keyof ImageSaveSettings>(key: K, value: ImageSaveSettings[K]) =>
+  const update = <K extends keyof ImageSaveSettings>(key: K, value: ImageSaveSettings[K]) => {
     setLocalSettings((prev) => ({ ...prev, [key]: value }));
+    if (key === "outputDirectory") setOutputDirError(validateOutputDirectory(value as string));
+    if (key === "filenamePrefix") setFilenamePrefixError(validateFilenamePrefix(value as string));
+  };
+
+  const hasValidationErrors = outputDirError !== "" || filenamePrefixError !== "";
 
   const settings = localSettings;
 
@@ -93,7 +117,8 @@ export default function ImageSaveSettingsPanel() {
               size="small"
               value={settings.outputDirectory}
               onChange={(e) => update("outputDirectory", e.target.value)}
-              helperText="Relative to app root, or absolute path"
+              error={outputDirError !== ""}
+              helperText={outputDirError || "Relative to app root, or absolute path"}
               sx={{ flexGrow: 1, minWidth: 220 }}
             />
             <TextField
@@ -116,6 +141,8 @@ export default function ImageSaveSettingsPanel() {
               size="small"
               value={settings.filenamePrefix}
               onChange={(e) => update("filenamePrefix", e.target.value)}
+              error={filenamePrefixError !== ""}
+              helperText={filenamePrefixError || " "}
               sx={{ width: 160 }}
             />
             <TextField
@@ -172,7 +199,7 @@ export default function ImageSaveSettingsPanel() {
               size="small"
               variant="contained"
               onClick={() => saveMutation.mutate(localSettings)}
-              disabled={saveMutation.isPending}
+              disabled={saveMutation.isPending || hasValidationErrors}
             >
               Save Settings
             </Button>

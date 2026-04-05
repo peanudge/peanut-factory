@@ -10,6 +10,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import AcquisitionStatsTab from "../tabs/AcquisitionStatsTab";
 import LatencyTab from "../tabs/LatencyTab";
 import SystemTab from "../tabs/SystemTab";
 
@@ -38,6 +39,7 @@ export default function BackofficePage() {
         >
           <Tab label="Latency" />
           <Tab label="System" />
+          <Tab label="취득 통계" />
         </Tabs>
       </AppBar>
 
@@ -47,6 +49,9 @@ export default function BackofficePage() {
       <Container maxWidth="lg" sx={{ py: 3, flexGrow: 1, display: tab === 1 ? undefined : "none" }}>
         <SystemTab />
       </Container>
+      <Box sx={{ flexGrow: 1, overflow: "auto", display: tab === 2 ? "block" : "none" }}>
+        <AcquisitionStatsTab />
+      </Box>
     </Box>
   );
 }

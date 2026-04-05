@@ -77,13 +77,19 @@ export function useCapture({ onImageCaptured }: UseCaptureParams) {
       lastCapturedPathRef.current = latestFrame.savedPath;
       const objectUrl = latestFrame.blob ? URL.createObjectURL(latestFrame.blob) : null;
       onImageCaptured(latestFrame.savedPath, objectUrl);
+      // 연속 취득 중 새 프레임이 저장될 때마다 오늘 건수를 갱신한다.
+      queryClient.invalidateQueries({ queryKey: queryKeys.todayCount });
     }
-  }, [latestFrame, onImageCaptured]);
+  }, [latestFrame, onImageCaptured, queryClient]);
 
   // ── Mutations ──
 
   const invalidateStatus = () =>
     queryClient.invalidateQueries({ queryKey: queryKeys.acquisitionStatus });
+
+  /** 취득 완료 시 오늘 총 건수를 즉시 갱신한다. */
+  const invalidateTodayCount = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.todayCount });
 
   const startMutation = useMutation({
     mutationFn: () =>
@@ -120,6 +126,7 @@ export function useCapture({ onImageCaptured }: UseCaptureParams) {
         URL.revokeObjectURL(objectUrl);
       }
       invalidateStatus();
+      invalidateTodayCount();
       toast("프레임이 촬영되었습니다", "success");
     },
     onError: handleError,
@@ -136,6 +143,7 @@ export function useCapture({ onImageCaptured }: UseCaptureParams) {
         URL.revokeObjectURL(objectUrl);
       }
       invalidateStatus();
+      invalidateTodayCount();
       toast("스냅샷이 촬영되었습니다", "success");
     },
     onError: handleError,

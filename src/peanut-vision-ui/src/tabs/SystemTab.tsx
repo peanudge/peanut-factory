@@ -10,8 +10,11 @@ import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
 import StatusChip from "../components/StatusChip";
 import BoardRow from "../components/BoardRow";
+import DiskUsageBar from "../components/DiskUsageBar";
 import { getBoards, getCameras } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
 
@@ -34,6 +37,18 @@ export default function SystemTab() {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      {/* Disk Usage */}
+      <Box>
+        <Typography variant="h6" gutterBottom>
+          저장 드라이브 상태
+        </Typography>
+        <Card variant="outlined" sx={{ maxWidth: 480 }}>
+          <CardContent sx={{ py: 2, "&:last-child": { pb: 2 } }}>
+            <DiskUsageBar />
+          </CardContent>
+        </Card>
+      </Box>
+
       {/* Boards */}
       <Box>
         <Typography variant="h6" gutterBottom>

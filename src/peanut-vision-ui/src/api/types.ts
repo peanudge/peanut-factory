@@ -175,3 +175,34 @@ export interface ImageSaveSettings {
   subfolderStrategy: SubfolderStrategy;
   autoSave: boolean;
 }
+
+export interface DiskUsageDto {
+  totalBytes: number;
+  usedBytes: number;
+  freeBytes: number;
+  usagePercent: number;
+}
+
+// ── Hourly Acquisition Statistics ──
+
+/**
+ * Single hour bucket returned by GET /api/stats/hourly.
+ * `hourUtc` is an ISO-8601 UTC timestamp truncated to the hour boundary.
+ * `count` is the number of captured images in that hour.
+ */
+export interface CaptureStat {
+  /** ISO-8601 UTC string, e.g. "2026-04-05T14:00:00Z" */
+  hourUtc: string;
+  /** Number of images captured in this hour bucket. */
+  count: number;
+}
+
+/** Query parameters for the hourly stats endpoint. */
+export interface HourlyStatsParams {
+  /** Fetch the most recent N hours (default 24, max 168). Mutually exclusive with from/to. */
+  hours?: number;
+  /** Range start (UTC ISO-8601). When provided, activates range mode. */
+  from?: string;
+  /** Range end (UTC ISO-8601). Defaults to now when from is provided. */
+  to?: string;
+}

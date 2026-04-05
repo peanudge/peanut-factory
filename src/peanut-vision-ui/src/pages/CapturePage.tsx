@@ -12,6 +12,7 @@ import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AcquisitionControls from "../components/AcquisitionControls";
 import ContinuousSettings from "../components/ContinuousSettings";
+import DiskUsageBanner from "../components/DiskUsageBanner";
 import ErrorBoundary from "../components/ErrorBoundary";
 import EventLog from "../components/EventLog";
 import ExposureControl from "../components/ExposureControl";
@@ -19,6 +20,8 @@ import CollapsiblePanel from "../components/CollapsiblePanel";
 import ImageViewer from "../components/ImageViewer";
 import KeyboardShortcutsHelp from "../components/KeyboardShortcutsHelp";
 import PresetSelector from "../components/PresetSelector";
+import SavePathControl from "../components/SavePathControl";
+import TodayAcquisitionCount from "../components/TodayAcquisitionCount";
 import { useCapture } from "../hooks/useCapture";
 import { useExposure } from "../hooks/useExposure";
 import { useImageGallery } from "../hooks/useImageGallery";
@@ -90,12 +93,13 @@ export default function CapturePage() {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             PeanutVision
           </Typography>
+          <TodayAcquisitionCount />
           <Button
             component={Link}
             to="/gallery"
             color="inherit"
             startIcon={<PhotoLibraryIcon />}
-            sx={{ textTransform: "none", mr: 1 }}
+            sx={{ textTransform: "none", ml: 1, mr: 1 }}
           >
             갤러리
           </Button>
@@ -106,6 +110,9 @@ export default function CapturePage() {
           </Tooltip>
         </Toolbar>
       </AppBar>
+
+      {/* Disk usage warning banner — renders only when usage > 90% */}
+      <DiskUsageBanner />
 
       {/* Main content: left panel + right image viewer */}
       <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden" }}>
@@ -177,6 +184,8 @@ export default function CapturePage() {
               onLoad={exp.handleLoadExposure}
               onApply={exp.handleApplyExposure}
             />
+
+            <SavePathControl />
           </ErrorBoundary>
         </Box>
 

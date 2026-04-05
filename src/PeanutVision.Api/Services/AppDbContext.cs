@@ -5,6 +5,7 @@ namespace PeanutVision.Api.Services;
 public sealed class AppDbContext : DbContext
 {
     public DbSet<CapturedImage> CapturedImages => Set<CapturedImage>();
+    public DbSet<CaptureStat>   CaptureStats   => Set<CaptureStat>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -19,6 +20,13 @@ public sealed class AppDbContext : DbContext
             entity.Property(c => c.Tags).HasDefaultValue("[]").IsRequired();
             entity.Property(c => c.Notes).HasDefaultValue(string.Empty).IsRequired();
             entity.HasIndex(c => c.CapturedAt);
+        });
+
+        modelBuilder.Entity<CaptureStat>(entity =>
+        {
+            entity.HasKey(s => s.HourUtc);
+            entity.Property(s => s.HourUtc).IsRequired();
+            entity.Property(s => s.Count).IsRequired().HasDefaultValue(0);
         });
     }
 }

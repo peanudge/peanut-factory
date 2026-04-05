@@ -47,6 +47,8 @@ var dbPath = Path.Combine(builder.Environment.ContentRootPath, "peanut-vision.db
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
 builder.Services.AddScoped<ICapturedImageRepository, CapturedImageRepository>();
+builder.Services.AddScoped<ICaptureStatRepository, CaptureStatRepository>();
+builder.Services.AddScoped<ICaptureStatService, CaptureStatService>();
 builder.Services.AddSingleton<IThumbnailService, ThumbnailService>();
 
 var presetsPath = Path.Combine(builder.Environment.ContentRootPath, "acquisition-presets.json");
@@ -56,6 +58,12 @@ builder.Services.Configure<LatencyRepositoryOptions>(
     builder.Configuration.GetSection("LatencyRepository"));
 builder.Services.AddSingleton<ILatencyRepository, LatencyRepository>();
 builder.Services.AddSingleton<ILatencyService, LatencyService>();
+
+builder.Services.Configure<DiskUsageMonitorOptions>(
+    builder.Configuration.GetSection("DiskUsageMonitor"));
+builder.Services.AddSingleton<DiskUsageMonitor>();
+builder.Services.AddSingleton<IDiskUsageMonitor>(sp => sp.GetRequiredService<DiskUsageMonitor>());
+builder.Services.AddHostedService(sp => sp.GetRequiredService<DiskUsageMonitor>());
 
 builder.Services.AddSingleton<AcquisitionManager>();
 builder.Services.AddSingleton<IAcquisitionService>(sp => sp.GetRequiredService<AcquisitionManager>());
@@ -104,6 +112,10 @@ using (var scope = app.Services.CreateScope())
             Notes TEXT NOT NULL DEFAULT ''
         );
         CREATE INDEX IF NOT EXISTS IX_CapturedImages_CapturedAt ON CapturedImages(CapturedAt);
+        CREATE TABLE IF NOT EXISTS CaptureStats (
+            HourUtc TEXT NOT NULL PRIMARY KEY,
+            Count INTEGER NOT NULL DEFAULT 0
+        );
         """);
     // Add annotation columns to existing databases (no-op if already present)
     try { db.Database.ExecuteSqlRaw("ALTER TABLE CapturedImages ADD COLUMN Tags TEXT NOT NULL DEFAULT '[]'"); } catch { }

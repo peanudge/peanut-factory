@@ -7,7 +7,10 @@ export const queryKeys = {
   presets:           ["presets"]                         as const,
   histogram:         ["histogram"]                       as const,
   imageSaveSettings: ["imageSaveSettings"]               as const,
+  diskUsage:         ["diskUsage"]                       as const,
   exposure:          ["exposure"]                        as const,
   images:            (params?: object) => params ? ["images", params] as const : ["images"] as const,
   imageHistogram:    (id: string) => ["imageHistogram", id] as const,
+  hourlyStats:       (params?: object) => params ? ["hourlyStats", params] as const : ["hourlyStats"] as const,
+  todayCount:        ["todayCount"]                          as const,
 };
