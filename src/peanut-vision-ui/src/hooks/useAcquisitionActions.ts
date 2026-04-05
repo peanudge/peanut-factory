@@ -25,7 +25,7 @@ import {
 } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
 import { useToast } from "../contexts/ToastContext";
-import { DEFAULT_CONTINUOUS_INTERVAL_MS, POLL_INTERVAL_ACTIVE_MS, POLL_INTERVAL_IDLE_MS } from "../constants";
+import { DEFAULT_CONTINUOUS_INTERVAL_MS } from "../constants";
 
 export function useAcquisitionActions() {
   const queryClient = useQueryClient();
@@ -68,8 +68,6 @@ export function useAcquisitionActions() {
   const { data: acquisitionStatus } = useQuery<AcquisitionStatus>({
     queryKey: queryKeys.acquisitionStatus,
     queryFn: getAcquisitionStatus,
-    refetchInterval: (query) =>
-      query.state.data?.isActive ? POLL_INTERVAL_ACTIVE_MS : POLL_INTERVAL_IDLE_MS,
   });
 
   // ── Mutations ──
@@ -106,7 +104,6 @@ export function useAcquisitionActions() {
   const triggerMutation = useMutation({
     mutationFn: triggerAndCapture,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.latestFrame });
       invalidateStatus();
       toast("프레임이 촬영되었습니다", "success");
     },
@@ -116,7 +113,6 @@ export function useAcquisitionActions() {
   const snapshotMutation = useMutation({
     mutationFn: () => snapshot(selectedProfile),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.latestFrame });
       invalidateStatus();
       toast("스냅샷이 촬영되었습니다", "success");
     },
