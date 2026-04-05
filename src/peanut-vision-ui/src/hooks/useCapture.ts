@@ -194,7 +194,7 @@ export function useCapture({ onImageCaptured }: UseCaptureParams) {
   );
 
   const previewUrl = previewTimestamp > 0
-    ? `${API_BASE_URL}/acquisition/latest-frame?_t=${previewTimestamp}`
+    ? `${API_BASE_URL}/cameras/cam-1/latest-frame?_t=${previewTimestamp}`
     : null;
 
   return {
