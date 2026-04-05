@@ -20,7 +20,7 @@ export function useLivePreview(acquisitionStatus: AcquisitionStatus | null) {
       latestFrame
         ? `${API_BASE_URL}/acquisition/latest-frame?_t=${Date.now()}`
         : null,
-    [latestFrame] // eslint-disable-line react-hooks/exhaustive-deps
+    [latestFrame] // Date.now() is intentionally excluded — it's not a React value, not a dep
   );
 
   return {

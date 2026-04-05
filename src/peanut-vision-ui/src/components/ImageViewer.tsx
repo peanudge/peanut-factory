@@ -86,14 +86,16 @@ export default function ImageViewer({ url, filename, errorMessage, savedPath, is
                   color: "#fff",
                 }}
               />
-              <Chip
-                size="small"
-                label="Return to Live"
-                onClick={onReturnToLive}
-                variant="outlined"
-                color="primary"
-                sx={{ fontWeight: 600, fontSize: "0.65rem", cursor: "pointer", bgcolor: "rgba(0,0,0,0.4)" }}
-              />
+              {capturedAt !== null && (
+                <Chip
+                  size="small"
+                  label="Return to Live"
+                  onClick={onReturnToLive}
+                  variant="outlined"
+                  color="primary"
+                  sx={{ fontWeight: 600, fontSize: "0.65rem", cursor: "pointer", bgcolor: "rgba(0,0,0,0.4)" }}
+                />
+              )}
             </>
           )}
         </Box>

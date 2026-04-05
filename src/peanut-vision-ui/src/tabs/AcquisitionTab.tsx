@@ -204,7 +204,7 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
       >
         <CollapsiblePanel label="Captures" count={gallery.totalCount} defaultOpen={true}>
           {gallery.selectedImageUrl && (
-            <Box sx={{ mb: 1 }}>
+            <Box sx={{ mb: 1, maxHeight: 240, overflow: "hidden" }}>
               <ImageViewer
                 url={gallery.selectedImageUrl}
                 filename={gallery.selectedImage?.filename}
