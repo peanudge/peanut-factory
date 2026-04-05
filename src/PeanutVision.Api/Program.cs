@@ -50,7 +50,10 @@ var appDataDir = Path.Combine(
 Directory.CreateDirectory(appDataDir);  // 첫 실행 시 폴더 자동 생성
 
 var saveSettingsPath = Path.Combine(appDataDir, "image-save-settings.json");
-builder.Services.AddSingleton<IImageSaveSettingsService>(new ImageSaveSettingsService(saveSettingsPath));
+// Use the default OutputDirectory from appsettings.json if no saved settings file exists yet.
+var defaultOutputDir = builder.Configuration["ImageSave:OutputDirectory"] ?? "CapturedImages";
+builder.Services.AddSingleton<IImageSaveSettingsService>(
+    new ImageSaveSettingsService(saveSettingsPath, new ImageSaveSettings { OutputDirectory = defaultOutputDir }));
 builder.Services.AddSingleton<IFrameWriter>(_ => new PeanutVision.Capture.ImageFileWriter(new PeanutVision.MultiCamDriver.Imaging.ImageWriter()));
 
 var dbPath = Path.Combine(appDataDir, "peanut-vision.db");
@@ -58,9 +61,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
 builder.Services.AddScoped<ICapturedImageRepository, CapturedImageRepository>();
 builder.Services.AddSingleton<IThumbnailService, ThumbnailService>();
-
-var presetsPath = Path.Combine(appDataDir, "acquisition-presets.json");
-builder.Services.AddSingleton<IAcquisitionPresetService>(new AcquisitionPresetService(presetsPath));
 
 builder.Services.Configure<LatencyRepositoryOptions>(
     builder.Configuration.GetSection("LatencyRepository"));

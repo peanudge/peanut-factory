@@ -439,7 +439,6 @@ public sealed class CameraActor : ICameraActor
     private async Task SaveStreamFrameAsync(ImageData image)
     {
         var settings = _saveSettings.GetSettings();
-        if (!settings.AutoSave) return;
 
         if (!await _saveConcurrency.WaitAsync(0).ConfigureAwait(false))
         {
@@ -460,7 +459,7 @@ public sealed class CameraActor : ICameraActor
                 Width:         image.Width,
                 Height:        image.Height,
                 FileSizeBytes: fileInfo.Exists ? fileInfo.Length : 0,
-                Format:        settings.Format.ToString().ToLower());
+                Format:        "png");
 
             await using var scope   = _scopeFactory.CreateAsyncScope();
             var handler = scope.ServiceProvider.GetRequiredService<FrameSavedHandler>();

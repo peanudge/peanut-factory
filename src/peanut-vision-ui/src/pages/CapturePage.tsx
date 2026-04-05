@@ -18,7 +18,6 @@ import ExposureControl from "../components/ExposureControl";
 import CollapsiblePanel from "../components/CollapsiblePanel";
 import ImageViewer from "../components/ImageViewer";
 import KeyboardShortcutsHelp from "../components/KeyboardShortcutsHelp";
-import PresetSelector from "../components/PresetSelector";
 import { useCapture } from "../hooks/useCapture";
 import { useExposure } from "../hooks/useExposure";
 import { useImageGallery } from "../hooks/useImageGallery";
@@ -125,15 +124,6 @@ export default function CapturePage() {
           }}
         >
           <ErrorBoundary label="Capture Panel">
-            <PresetSelector
-              profileId={acq.selectedProfile}
-              triggerMode={acq.triggerMode}
-              frameCount={acq.frameCount}
-              intervalMs={acq.intervalMs}
-              onLoadPreset={acq.handleLoadPreset}
-              disabled={acq.acquisitionStatus?.isActive}
-            />
-
             <AcquisitionControls
               cameras={acq.cameras}
               selectedProfile={acq.selectedProfile}

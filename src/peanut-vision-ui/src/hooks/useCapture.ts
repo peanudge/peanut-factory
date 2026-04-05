@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
   AcquisitionMode,
-  AcquisitionPreset,
   AcquisitionStatus,
   ContinuousSubMode,
   TriggerModeOption,
@@ -173,16 +172,6 @@ export function useCapture({ onImageCaptured }: UseCaptureParams) {
   const handleTrigger = () => triggerMutation.mutate();
   const handleCapture = () => snapshotMutation.mutate();
 
-  const handleLoadPreset = useCallback((preset: AcquisitionPreset) => {
-    setSelectedProfile(preset.profileId);
-    setTriggerMode(preset.triggerMode ?? "soft");
-    setFrameCount(preset.frameCount ?? null);
-    setIntervalMs(preset.intervalMs ?? null);
-    if (preset.frameCount != null || preset.intervalMs != null) {
-      setMode("continuous");
-    }
-  }, []);
-
   const handleSetMode = useCallback(
     (next: AcquisitionMode) => {
       setMode(next);
@@ -222,6 +211,5 @@ export function useCapture({ onImageCaptured }: UseCaptureParams) {
     handleStop,
     handleTrigger,
     handleCapture,
-    handleLoadPreset,
   };
 }

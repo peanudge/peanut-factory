@@ -42,16 +42,6 @@ test("exposure_control_is_present", async ({ page }) => {
   await page.screenshot({ path: "test-results/capture-page-02-exposure-control.png" });
 });
 
-// ── Preset selector ───────────────────────────────────────────────────────────
-
-test("preset_selector_is_present", async ({ page }) => {
-  // PresetSelector renders "Save Preset" and "Load Preset" buttons
-  await expect(page.getByRole("button", { name: /save preset/i })).toBeVisible({ timeout: 10_000 });
-  await expect(page.getByRole("button", { name: /load preset/i })).toBeVisible({ timeout: 5_000 });
-
-  await page.screenshot({ path: "test-results/capture-page-03-preset-selector.png" });
-});
-
 // ── Snapshot ──────────────────────────────────────────────────────────────────
 
 test("single_snapshot_updates_viewer", async ({ page }) => {

@@ -111,14 +111,6 @@ export type ColorFormat =
   | "RGB24PL" | "RGB30PL" | "RGB36PL" | "RGB48PL"
   | (string & Record<never, never>); // allow unknown formats from server
 
-export interface AcquisitionPreset {
-  name: string;
-  profileId: string;
-  triggerMode?: TriggerModeOption | null;
-  frameCount?: number | null;
-  intervalMs?: number | null;
-}
-
 // ── Latency Analysis ──
 
 export interface LatencyRecord {
@@ -140,9 +132,6 @@ export interface LatencyStats {
   p99Ms: number;
   stdDevMs: number;
 }
-
-export type SaveImageFormat = "png" | "bmp" | "raw";
-export type SubfolderStrategy = "none" | "byDate" | "bySession" | "byProfile";
 
 export interface CapturedImageRecord {
   id: string;
@@ -168,10 +157,4 @@ export interface ImagePage {
 
 export interface ImageSaveSettings {
   outputDirectory: string;
-  format: SaveImageFormat;
-  filenamePrefix: string;
-  timestampFormat: string;
-  includeSequenceNumber: boolean;
-  subfolderStrategy: SubfolderStrategy;
-  autoSave: boolean;
 }

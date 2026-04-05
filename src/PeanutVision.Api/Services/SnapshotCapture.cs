@@ -83,7 +83,7 @@ public sealed class SnapshotCapture : ISnapshotCapture
                 Width = image.Width,
                 Height = image.Height,
                 FileSizeBytes = fileInfo.Exists ? fileInfo.Length : 0,
-                Format = settings.Format.ToString().ToLower(),
+                Format = "png",
                 CapturedAt = DateTime.UtcNow,
             });
 

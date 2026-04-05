@@ -13,12 +13,14 @@ public sealed class ImageSaveSettingsService : IImageSaveSettingsService
     private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
     private readonly string _filePath;
+    private readonly ImageSaveSettings _defaults;
     private volatile ImageSaveSettings _settings;
     private readonly SemaphoreSlim _writeLock = new(1, 1);
 
-    public ImageSaveSettingsService(string filePath)
+    public ImageSaveSettingsService(string filePath, ImageSaveSettings? defaults = null)
     {
         _filePath = filePath;
+        _defaults = defaults ?? new ImageSaveSettings();
         _settings = Load();
     }
 
@@ -41,15 +43,15 @@ public sealed class ImageSaveSettingsService : IImageSaveSettingsService
 
     private ImageSaveSettings Load()
     {
-        if (!File.Exists(_filePath)) return new ImageSaveSettings();
+        if (!File.Exists(_filePath)) return _defaults;
         try
         {
             var json = File.ReadAllText(_filePath);
-            return JsonSerializer.Deserialize<ImageSaveSettings>(json) ?? new ImageSaveSettings();
+            return JsonSerializer.Deserialize<ImageSaveSettings>(json) ?? _defaults;
         }
         catch
         {
-            return new ImageSaveSettings();
+            return _defaults;
         }
     }
 }

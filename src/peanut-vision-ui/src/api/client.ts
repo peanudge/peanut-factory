@@ -8,7 +8,6 @@ import type {
   ApiMessage,
   ImageSaveSettings,
   HistogramData,
-  AcquisitionPreset,
   ImagePage,
   CapturedImageRecord,
   LatencyRecord,
@@ -195,28 +194,6 @@ export function updateImageSaveSettings(
     method: "PUT",
     body: JSON.stringify(settings),
   });
-}
-
-// ── Presets ──
-
-export function getPresets(): Promise<AcquisitionPreset[]> {
-  return request("/presets");
-}
-
-export function savePreset(preset: AcquisitionPreset): Promise<AcquisitionPreset> {
-  return request("/presets", {
-    method: "PUT",
-    body: JSON.stringify(preset),
-  });
-}
-
-export function deletePreset(name: string): Promise<void> {
-  return rawFetch(`/presets/${encodeURIComponent(name)}`, { method: "DELETE" })
-    .then((res) => {
-      if (!res.ok) return res.json().then((b) => {
-        throw new ApiError(b.error ?? `HTTP ${res.status}`, b.errorCode ?? "UNKNOWN_ERROR", res.status);
-      });
-    });
 }
 
 // ── Images ──

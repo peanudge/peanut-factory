@@ -28,8 +28,6 @@ public sealed class AutoSaveService : IAutoSaveService
     public async Task<string?> TrySaveAsync(ImageData image)
     {
         var settings = _saveSettings.GetSettings();
-        if (!settings.AutoSave) return null;
-
         var opts     = settings.ToWriterOptions(_contentRootPath);
         var filePath = _frameWriter.Write(image, opts);
         var fileInfo = new FileInfo(filePath);
@@ -40,7 +38,7 @@ public sealed class AutoSaveService : IAutoSaveService
             Width:         image.Width,
             Height:        image.Height,
             FileSizeBytes: fileInfo.Exists ? fileInfo.Length : 0,
-            Format:        settings.Format.ToString().ToLower());
+            Format:        "png");
 
         await _savedHandler.HandleAsync(evt);
         return filePath;
