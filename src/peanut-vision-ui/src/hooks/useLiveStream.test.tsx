@@ -11,7 +11,7 @@ const mockEs = {
   addEventListener: vi.fn(),
   close: vi.fn(),
 };
-vi.stubGlobal("EventSource", vi.fn(() => mockEs));
+vi.stubGlobal("EventSource", vi.fn(function () { return mockEs; }));
 
 vi.mock("../constants", () => ({
   API_BASE_URL: "http://localhost:5000/api",
