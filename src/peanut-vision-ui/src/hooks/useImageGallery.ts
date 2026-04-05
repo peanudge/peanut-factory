@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listImages, deleteImage, imageFileUrl } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
+import { GALLERY_POLL_INTERVAL_MS } from "../constants";
 import { useToast } from "../contexts/ToastContext";
 import type { CapturedImageRecord } from "../api/types";
 
@@ -23,7 +24,7 @@ export function useImageGallery() {
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.images(queryParams),
     queryFn: () => listImages(queryParams),
-    refetchInterval: 5000,
+    refetchInterval: GALLERY_POLL_INTERVAL_MS,
   });
 
   // Auto-select the newest image when nothing is selected
