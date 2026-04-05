@@ -15,6 +15,7 @@ import ImageViewer from "../components/ImageViewer";
 import CollapsiblePanel from "../components/CollapsiblePanel";
 import { useImageGallery } from "../hooks/useImageGallery";
 import { useAcquisitionActions } from "../hooks/useAcquisitionActions";
+import { useLivePreview } from "../hooks/useLivePreview";
 import { useResizablePanel } from "../hooks/useResizablePanel";
 
 interface Props {
@@ -23,8 +24,8 @@ interface Props {
 
 export default function AcquisitionTab({ onSessionChange }: Props = {}) {
   const gallery = useImageGallery();
-
-  const acq = useAcquisitionActions({ onEventCaptured: gallery.invalidate });
+  const acq = useAcquisitionActions();
+  const live = useLivePreview(acq.acquisitionStatus);
 
   const { panelRef: sidebarRef, onResizerMouseDown: onSidebarResizerMouseDown } = useResizablePanel({
     defaultWidth: 340,
@@ -40,12 +41,6 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
   });
 
   const [sidebarTab, setSidebarTab] = useState(0);
-
-  // Show live preview during active acquisition; show selected historical image otherwise
-  const isLive = acq.acquisitionStatus?.isActive ?? !gallery.selectedId;
-  const viewerUrl = acq.acquisitionStatus?.isActive
-    ? acq.previewUrl
-    : (gallery.selectedImageUrl ?? acq.previewUrl);
 
   return (
     <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden", height: "100%" }}>
@@ -174,13 +169,11 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
       <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <Box sx={{ flexGrow: 1, minHeight: 0, p: 1.5, display: "flex", flexDirection: "column" }}>
           <ImageViewer
-            url={viewerUrl}
-            filename={gallery.selectedImage?.filename}
+            url={live.previewUrl}
             errorMessage={acq.acquisitionStatus?.lastError}
-            savedPath={gallery.selectedImage?.filePath}
-            isLive={isLive}
-            capturedAt={gallery.selectedImage ? new Date(gallery.selectedImage.capturedAt) : null}
-            onReturnToLive={() => gallery.setSelectedId(null)}
+            isLive={live.isActive}
+            capturedAt={null}
+            onReturnToLive={() => {}}
           />
         </Box>
       </Box>
@@ -210,6 +203,18 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
         }}
       >
         <CollapsiblePanel label="Captures" count={gallery.totalCount} defaultOpen={true}>
+          {gallery.selectedImageUrl && (
+            <Box sx={{ mb: 1 }}>
+              <ImageViewer
+                url={gallery.selectedImageUrl}
+                filename={gallery.selectedImage?.filename}
+                savedPath={gallery.selectedImage?.filePath}
+                isLive={false}
+                capturedAt={gallery.selectedImage ? new Date(gallery.selectedImage.capturedAt) : null}
+                onReturnToLive={() => gallery.setSelectedId(null)}
+              />
+            </Box>
+          )}
           <ImageGallery
             images={gallery.images}
             selectedId={gallery.selectedId}
