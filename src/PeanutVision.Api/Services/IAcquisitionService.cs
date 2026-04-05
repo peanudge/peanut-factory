@@ -15,4 +15,10 @@ public interface IAcquisitionService : IChannelService, IDisposable
     Task<ImageData> TriggerAndWaitAsync(int timeoutMs = 5000);
     ImageData Snapshot(ProfileId profileId, TriggerMode? triggerMode = null);
     ImageData? GetLatestFrame();
+
+    /// <summary>Raised on the driver callback thread when a new frame is ready in <see cref="GetLatestFrame"/>.</summary>
+    event EventHandler FrameAcquired;
+
+    /// <summary>Raised after acquisition state changes (start, stop, error).</summary>
+    event EventHandler StatusChanged;
 }

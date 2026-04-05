@@ -28,6 +28,9 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
     private double _desiredExposureUs = 10000.0;
     private int? _targetFrameCount;
 
+    public event EventHandler? FrameAcquired;
+    public event EventHandler? StatusChanged;
+
     public AcquisitionManager(IGrabService grabService, ICamFileService camFileService, ILatencyService latencyService)
     {
         _grabService = grabService;
@@ -281,6 +284,8 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
                 (frameCount.HasValue ? $", frameCount={frameCount}" : "") +
                 (intervalMs.HasValue ? $", intervalMs={intervalMs}" : "")));
         }
+
+        StatusChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public void Stop()
@@ -313,6 +318,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
             "Acquisition stopped"));
 
         tcs?.TrySetCanceled();
+        StatusChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public async Task<ImageData> TriggerAndWaitAsync(int timeoutMs = 5000)
@@ -485,6 +491,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
             _latencyService.Record(triggerSentAt, frameReceivedAt, frameIndex, profileId);
 
         tcs?.TrySetResult(image);
+        FrameAcquired?.Invoke(this, EventArgs.Empty);
     }
 
     private void ProcessError(string message, McSignal signal)
