@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using PeanutVision.Api.Exceptions;
 using PeanutVision.MultiCamDriver;
 using PeanutVision.MultiCamDriver.Camera;
 using PeanutVision.MultiCamDriver.Imaging;
@@ -173,12 +174,14 @@ public sealed class AcquisitionManager : IAcquisitionService, IExposureControl
         lock (_lock)
         {
             if (_snapshotInProgress)
-                throw new InvalidOperationException("A snapshot is in progress. Wait for it to complete.");
+                throw new AcquisitionConflictException("A snapshot is in progress. Wait for it to complete.");
 
             if (_channelState != ChannelState.None)
-                throw new InvalidOperationException("A channel already exists. Release it first.");
+                throw new AcquisitionConflictException("A channel already exists. Release it first.");
 
-            var camFile = _camFileService.GetByFileName(profileId.Value);
+            if (!_camFileService.TryGetByFileName(profileId.Value, out var camFileResult))
+                throw new ResourceNotFoundException($"Camera profile not found: '{profileId.Value}'");
+            var camFile = camFileResult!;
             var options = triggerMode.HasValue
                 ? camFile.ToChannelOptions(triggerMode.Value.Mode)
                 : camFile.ToChannelOptions();
@@ -220,18 +223,18 @@ public sealed class AcquisitionManager : IAcquisitionService, IExposureControl
         const int minIntervalMs = 50;
 
         if (intervalMs.HasValue && intervalMs.Value > 0 && intervalMs.Value < minIntervalMs)
-            throw new ArgumentException($"intervalMs must be at least {minIntervalMs}ms, got {intervalMs.Value}ms.");
+            throw new InvalidParameterException($"intervalMs must be at least {minIntervalMs}ms, got {intervalMs.Value}ms.");
 
         lock (_lock)
         {
             if (_snapshotInProgress)
-                throw new InvalidOperationException("A snapshot is in progress. Wait for it to complete.");
+                throw new AcquisitionConflictException("A snapshot is in progress. Wait for it to complete.");
 
             if (_channelState == ChannelState.None)
-                throw new InvalidOperationException("No channel exists. Create a channel first.");
+                throw new ChannelNotAvailableException();
 
             if (_channelState == ChannelState.Active)
-                throw new InvalidOperationException("Acquisition is already active. Stop it first.");
+                throw new AcquisitionConflictException("Acquisition is already active. Stop it first.");
 
             _lastFrame = null;
             _lastError = null;
@@ -309,7 +312,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IExposureControl
         lock (_lock)
         {
             if (_channel == null || !_channel.IsActive)
-                throw new InvalidOperationException("No active acquisition. Start acquisition first.");
+                throw new ChannelNotAvailableException();
 
             if (_triggerTcs != null)
                 throw new InvalidOperationException("A trigger is already pending. Wait for it to complete.");
@@ -344,14 +347,16 @@ public sealed class AcquisitionManager : IAcquisitionService, IExposureControl
         lock (_lock)
         {
             if (_channelState == ChannelState.Active)
-                throw new InvalidOperationException("Acquisition is already active. Stop it first.");
+                throw new AcquisitionConflictException("Acquisition is already active. Stop it first.");
 
             _snapshotInProgress = true;
         }
 
         try
         {
-            var camFile = _camFileService.GetByFileName(profileId.Value);
+            if (!_camFileService.TryGetByFileName(profileId.Value, out var camFileResult))
+                throw new ResourceNotFoundException($"Camera profile not found: '{profileId.Value}'");
+            var camFile = camFileResult!;
             var options = triggerMode.HasValue
                 ? camFile.ToChannelOptions(triggerMode.Value.Mode, useCallback: false)
                 : camFile.ToChannelOptions(useCallback: false);
