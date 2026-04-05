@@ -8,18 +8,14 @@ using PeanutVision.MultiCamDriver.Imaging.Encoders;
 namespace PeanutVision.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-public class AcquisitionController : ControllerBase
+[Route("api/cameras")]
+public class CameraController : ControllerBase
 {
-    // The legacy /api/acquisition/... endpoints delegate to the "cam-1" actor.
-    // This controller is intentionally temporary — it will be deleted in Stage 4.
-    private const string DefaultCameraId = "cam-1";
-
     private readonly CameraRegistry  _registry;
     private readonly ISnapshotCapture _snapshot;
     private readonly IAutoSaveService _autoSave;
 
-    public AcquisitionController(
+    public CameraController(
         CameraRegistry registry,
         ISnapshotCapture snapshot,
         IAutoSaveService autoSave)
@@ -29,37 +25,42 @@ public class AcquisitionController : ControllerBase
         _autoSave = autoSave;
     }
 
-    private ICameraActor DefaultActor =>
-        _registry.TryGet(DefaultCameraId)
-        ?? throw new InvalidOperationException($"Default camera '{DefaultCameraId}' is not registered.");
+    // GET /api/cameras
+    [HttpGet]
+    public ActionResult ListCameras()
+        => Ok(new { cameras = _registry.GetAllIds().Select(id => new { id }) });
 
-    [HttpPost("start")]
-    public async Task<ActionResult> Start([FromBody] StartAcquisitionRequest request)
+    // POST /api/cameras/{cameraId}/start
+    [HttpPost("{cameraId}/start")]
+    public async Task<ActionResult> Start(string cameraId, [FromBody] StartAcquisitionRequest request)
     {
+        var actor = GetActorOrNotFound(cameraId);
+        if (actor is null) return NotFound(new { error = $"Camera '{cameraId}' not found." });
+
         var profileId   = new ProfileId(request.ProfileId);
         var triggerMode = request.TriggerMode is not null ? TriggerMode.Parse(request.TriggerMode) : (TriggerMode?)null;
-        await DefaultActor.StartAsync(profileId, triggerMode, request.FrameCount, request.IntervalMs);
+        await actor.StartAsync(profileId, triggerMode, request.FrameCount, request.IntervalMs);
         return Ok(new { message = "Acquisition started", profileId = profileId.Value });
     }
 
-    [HttpPost("stop")]
-    public async Task<ActionResult> Stop()
+    // POST /api/cameras/{cameraId}/stop
+    [HttpPost("{cameraId}/stop")]
+    public async Task<ActionResult> Stop(string cameraId)
     {
-        await DefaultActor.StopAsync();
+        var actor = GetActorOrNotFound(cameraId);
+        if (actor is null) return NotFound(new { error = $"Camera '{cameraId}' not found." });
+        await actor.StopAsync();
         return Ok(new { message = "Acquisition stopped" });
     }
 
-    [HttpDelete]
-    public async Task<ActionResult> ReleaseChannel()
+    // GET /api/cameras/{cameraId}/status
+    [HttpGet("{cameraId}/status")]
+    public async Task<ActionResult> GetStatus(string cameraId)
     {
-        await DefaultActor.StopAsync();
-        return Ok(new { message = "Channel released" });
-    }
+        var actor = GetActorOrNotFound(cameraId);
+        if (actor is null) return NotFound(new { error = $"Camera '{cameraId}' not found." });
 
-    [HttpGet("status")]
-    public async Task<ActionResult> GetStatus()
-    {
-        var s     = await DefaultActor.GetStatusAsync();
+        var s     = await actor.GetStatusAsync();
         var stats = s.Statistics;
         return Ok(new
         {
@@ -91,10 +92,14 @@ public class AcquisitionController : ControllerBase
         });
     }
 
-    [HttpPost("trigger")]
-    public async Task<ActionResult> Trigger()
+    // POST /api/cameras/{cameraId}/trigger
+    [HttpPost("{cameraId}/trigger")]
+    public async Task<ActionResult> Trigger(string cameraId)
     {
-        var image = await DefaultActor.TriggerAsync(5000, HttpContext.RequestAborted);
+        var actor = GetActorOrNotFound(cameraId);
+        if (actor is null) return NotFound(new { error = $"Camera '{cameraId}' not found." });
+
+        var image = await actor.TriggerAsync(5000, HttpContext.RequestAborted);
         var path  = await _autoSave.TrySaveAsync(image);
         if (path is not null)
             Response.Headers["X-Image-Path"] = path;
@@ -106,10 +111,14 @@ public class AcquisitionController : ControllerBase
         return File(stream, "image/png", "trigger.png");
     }
 
-    [HttpGet("latest-frame")]
-    public async Task<ActionResult> GetLatestFrame()
+    // GET /api/cameras/{cameraId}/latest-frame
+    [HttpGet("{cameraId}/latest-frame")]
+    public async Task<ActionResult> GetLatestFrame(string cameraId)
     {
-        var result = await DefaultActor.GetLatestFrameAsync();
+        var actor = GetActorOrNotFound(cameraId);
+        if (actor is null) return NotFound(new { error = $"Camera '{cameraId}' not found." });
+
+        var result = await actor.GetLatestFrameAsync();
         if (result.Frame is null) return NoContent();
 
         if (result.IsNew)
@@ -126,20 +135,28 @@ public class AcquisitionController : ControllerBase
         return File(stream, "image/png", "latest.png");
     }
 
-    [HttpGet("latest-frame/histogram")]
-    public async Task<ActionResult> GetHistogram()
+    // GET /api/cameras/{cameraId}/latest-frame/histogram
+    [HttpGet("{cameraId}/latest-frame/histogram")]
+    public async Task<ActionResult> GetHistogram(string cameraId)
     {
-        var result = await DefaultActor.GetLatestFrameAsync();
+        var actor = GetActorOrNotFound(cameraId);
+        if (actor is null) return NotFound(new { error = $"Camera '{cameraId}' not found." });
+
+        var result = await actor.GetLatestFrameAsync();
         if (result.Frame is null) return NoContent();
 
         var histogram = HistogramService.Compute(result.Frame);
         return Ok(new { red = histogram.Red, green = histogram.Green, blue = histogram.Blue, bins = 256 });
     }
 
-    [HttpPost("snapshot")]
-    public async Task<ActionResult> Snapshot([FromBody] SnapshotRequest request)
+    // POST /api/cameras/{cameraId}/snapshot
+    [HttpPost("{cameraId}/snapshot")]
+    public async Task<ActionResult> Snapshot(string cameraId, [FromBody] SnapshotRequest request)
     {
-        var status = await DefaultActor.GetStatusAsync();
+        var actor = GetActorOrNotFound(cameraId);
+        if (actor is null) return NotFound(new { error = $"Camera '{cameraId}' not found." });
+
+        var status = await actor.GetStatusAsync();
         if (status.IsActive)
             throw new AcquisitionConflictException("Cannot snapshot while acquisition is active.");
 
@@ -149,10 +166,10 @@ public class AcquisitionController : ControllerBase
         string filePath;
         if (!string.IsNullOrWhiteSpace(request.OutputPath))
         {
-            await DefaultActor.StartAsync(profileId, triggerMode, frameCount: 1);
+            await actor.StartAsync(profileId, triggerMode, frameCount: 1);
             PeanutVision.MultiCamDriver.Imaging.ImageData rawImage;
-            try { rawImage = await DefaultActor.TriggerAsync(5000, HttpContext.RequestAborted); }
-            finally { await DefaultActor.StopAsync(); }
+            try { rawImage = await actor.TriggerAsync(5000, HttpContext.RequestAborted); }
+            finally { await actor.StopAsync(); }
             new PeanutVision.MultiCamDriver.Imaging.ImageWriter().Save(rawImage, request.OutputPath);
             filePath = request.OutputPath;
         }
@@ -171,13 +188,26 @@ public class AcquisitionController : ControllerBase
         return File(stream, "image/png", "snapshot.png");
     }
 
-    [HttpGet("exposure")]
-    public async Task<ActionResult> GetExposure()
-        => Ok(await DefaultActor.GetExposureAsync());
+    // GET /api/cameras/{cameraId}/exposure
+    [HttpGet("{cameraId}/exposure")]
+    public async Task<ActionResult> GetExposure(string cameraId)
+    {
+        var actor = GetActorOrNotFound(cameraId);
+        if (actor is null) return NotFound(new { error = $"Camera '{cameraId}' not found." });
+        return Ok(await actor.GetExposureAsync());
+    }
 
-    [HttpPut("exposure")]
-    public async Task<ActionResult> SetExposure([FromBody] SetExposureRequest request)
-        => Ok(await DefaultActor.SetExposureAsync(request.ExposureUs));
+    // PUT /api/cameras/{cameraId}/exposure
+    [HttpPut("{cameraId}/exposure")]
+    public async Task<ActionResult> SetExposure(string cameraId, [FromBody] SetExposureRequest request)
+    {
+        var actor = GetActorOrNotFound(cameraId);
+        if (actor is null) return NotFound(new { error = $"Camera '{cameraId}' not found." });
+        return Ok(await actor.SetExposureAsync(request.ExposureUs));
+    }
+
+    private ICameraActor? GetActorOrNotFound(string cameraId)
+        => _registry.TryGet(cameraId);
 
     private static PeanutVision.MultiCamDriver.Imaging.ImageData LoadImageFromFile(string filePath)
     {
@@ -186,25 +216,4 @@ public class AcquisitionController : ControllerBase
         img.CopyPixelDataTo(pixels);
         return new PeanutVision.MultiCamDriver.Imaging.ImageData(pixels, img.Width, img.Height, img.Width * 3);
     }
-}
-
-// Request DTOs remain here (same as before)
-public class StartAcquisitionRequest
-{
-    public required string ProfileId { get; set; }
-    public string? TriggerMode       { get; set; }
-    public int?    FrameCount        { get; set; }
-    public int?    IntervalMs        { get; set; }
-}
-
-public class SnapshotRequest
-{
-    public required string ProfileId { get; set; }
-    public string? TriggerMode       { get; set; }
-    public string? OutputPath        { get; set; }
-}
-
-public class SetExposureRequest
-{
-    public double? ExposureUs { get; set; }
 }

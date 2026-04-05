@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\PeanutVision.MultiCamDriver\PeanutVision.MultiCamDriver.csproj" />
     <ProjectReference Include="..\PeanutVision.FakeCamDriver\PeanutVision.FakeCamDriver.csproj" />
+    <ProjectReference Include="..\PeanutVision.Capture\PeanutVision.Capture.csproj" />
   </ItemGroup>
 
   <ItemGroup>

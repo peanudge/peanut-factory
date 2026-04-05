@@ -383,3 +383,20 @@ McCloseDriver();
 - `/Services`: `VisionService.cs` (Channel control and image acquisition logic)
 - `/Calibration`: `CrevisController.cs` (FFC and white balance operations)
 - `/Models`: Surface data and signal info structs
+
+---
+
+## Architecture References
+
+### Multi-Camera Actor Architecture (승인됨, 2026-04-04)
+
+**`docs/superpowers/specs/2026-04-04-multi-camera-actor-design.md`**
+
+획득 세션, 카메라 액터, 동시성 접근 패턴과 관련된 작업을 할 때 반드시 참고.
+
+핵심 요약:
+- 싱글톤 공유 상태(`AcquisitionSession`, `ExposureController`, `FrameSaveTracker`, `IFrameQueue`) → 카메라별 `CameraActor`로 대체
+- `CameraActor`는 `System.Threading.Channels` mailbox로 모든 외부 접근을 직렬화 → lock 없이 thread-safe
+- `CameraRegistry` (singleton, 무상태) → `ConcurrentDictionary<CameraId, CameraActor>` 관리
+- API: `/api/acquisition/...` → `/api/cameras/{cameraId}/...`
+- 싱글톤 수: 10개 → 5개 (남은 5개 모두 무상태 또는 thread-safe)

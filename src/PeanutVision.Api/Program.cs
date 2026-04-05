@@ -2,8 +2,11 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using PeanutVision.Api.Middleware;
 using PeanutVision.Api.Services;
+using PeanutVision.Api.Services.Camera;
+using PeanutVision.Capture;
 using PeanutVision.FakeCamDriver;
 using PeanutVision.MultiCamDriver;
+using PeanutVision.MultiCamDriver.Camera;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,8 +43,7 @@ else
 
 var saveSettingsPath = Path.Combine(builder.Environment.ContentRootPath, "image-save-settings.json");
 builder.Services.AddSingleton<IImageSaveSettingsService>(new ImageSaveSettingsService(saveSettingsPath));
-builder.Services.AddSingleton<FilenameGenerator>();
-builder.Services.AddSingleton<FrameSaveTracker>();
+builder.Services.AddSingleton<IFrameWriter>(_ => new PeanutVision.Capture.ImageFileWriter(new PeanutVision.MultiCamDriver.Imaging.ImageWriter()));
 
 var dbPath = Path.Combine(builder.Environment.ContentRootPath, "peanut-vision.db");
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -57,10 +59,26 @@ builder.Services.Configure<LatencyRepositoryOptions>(
 builder.Services.AddSingleton<ILatencyRepository, LatencyRepository>();
 builder.Services.AddSingleton<ILatencyService, LatencyService>();
 
-builder.Services.AddSingleton<AcquisitionManager>();
-builder.Services.AddSingleton<IAcquisitionService>(sp => sp.GetRequiredService<AcquisitionManager>());
-builder.Services.AddSingleton<IExposureControl>(sp => sp.GetRequiredService<AcquisitionManager>());
-builder.Services.AddScoped<IImageCaptureService, ImageCaptureService>();
+builder.Services.AddScoped<ISnapshotCapture, SnapshotCapture>();
+builder.Services.AddScoped<FrameSavedHandler>();
+builder.Services.AddScoped<IAutoSaveService, AutoSaveService>();
+
+// Multi-camera actor system
+builder.Services.AddSingleton<CameraRegistry>(sp =>
+{
+    var registry = new CameraRegistry();
+    registry.Register(new CameraActor(
+        cameraId:        "cam-1",
+        grabService:     sp.GetRequiredService<IGrabService>(),
+        camFileService:  sp.GetRequiredService<ICamFileService>(),
+        latencyService:  sp.GetRequiredService<ILatencyService>(),
+        scopeFactory:    sp.GetRequiredService<IServiceScopeFactory>(),
+        frameWriter:     sp.GetRequiredService<IFrameWriter>(),
+        saveSettings:    sp.GetRequiredService<IImageSaveSettingsService>(),
+        contentRootPath: builder.Environment.ContentRootPath,
+        logger:          sp.GetRequiredService<ILogger<CameraActor>>()));
+    return registry;
+});
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
