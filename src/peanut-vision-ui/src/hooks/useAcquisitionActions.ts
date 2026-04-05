@@ -106,6 +106,7 @@ export function useAcquisitionActions() {
   const triggerMutation = useMutation({
     mutationFn: triggerAndCapture,
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.latestFrame });
       invalidateStatus();
       toast("프레임이 촬영되었습니다", "success");
     },
@@ -115,6 +116,7 @@ export function useAcquisitionActions() {
   const snapshotMutation = useMutation({
     mutationFn: () => snapshot(selectedProfile),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.latestFrame });
       invalidateStatus();
       toast("스냅샷이 촬영되었습니다", "success");
     },
