@@ -77,6 +77,15 @@ builder.Services.AddCors(options =>
     });
 });
 
+// When running inside Electron, the PEANUT_PORT env var tells us which port to use.
+// Electron finds a free port and passes it so there are no port conflicts.
+// In development (dotnet run), this env var is not set and ASP.NET uses its default (from launchSettings.json).
+var electronPort = Environment.GetEnvironmentVariable("PEANUT_PORT");
+if (!string.IsNullOrEmpty(electronPort))
+{
+    builder.WebHost.UseUrls($"http://localhost:{electronPort}");
+}
+
 var app = builder.Build();
 
 if (useMock)
@@ -121,7 +130,18 @@ app.UseSwaggerUI(options =>
     options.SwaggerEndpoint("/openapi/v1.json", "PeanutVision API");
 });
 
+// Serve React build output from wwwroot/.
+// UseStaticFiles serves files like /assets/index.js, /favicon.ico directly.
+app.UseDefaultFiles();   // serves index.html for "/"
+app.UseStaticFiles();
+
+app.MapGet("/health", () => Results.Ok("healthy"));
+
 app.MapControllers();
+
+// SPA fallback: for any route that doesn't match a file or API controller,
+// return index.html so React Router can handle client-side routing.
+app.MapFallbackToFile("index.html");
 
 app.Run();
 
