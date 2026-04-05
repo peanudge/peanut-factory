@@ -15,7 +15,7 @@ import ImageViewer from "../components/ImageViewer";
 import CollapsiblePanel from "../components/CollapsiblePanel";
 import { useImageGallery } from "../hooks/useImageGallery";
 import { useAcquisitionActions } from "../hooks/useAcquisitionActions";
-import { useLivePreview } from "../hooks/useLivePreview";
+import { useLiveStream } from "../hooks/useLiveStream";
 import { useResizablePanel } from "../hooks/useResizablePanel";
 
 interface Props {
@@ -25,7 +25,7 @@ interface Props {
 export default function AcquisitionTab({ onSessionChange }: Props = {}) {
   const gallery = useImageGallery();
   const acq = useAcquisitionActions();
-  const live = useLivePreview(acq.acquisitionStatus);
+  const live = useLiveStream();
 
   const { panelRef: sidebarRef, onResizerMouseDown: onSidebarResizerMouseDown } = useResizablePanel({
     defaultWidth: 340,
