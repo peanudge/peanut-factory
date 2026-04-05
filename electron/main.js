@@ -355,6 +355,20 @@ function createWindow() {
  *
  * async IIFE (즉시 실행 함수 표현식) 패턴을 사용하여 await를 활용합니다.
  */
+// ─── 단일 인스턴스 잠금 ───────────────────────────────────────────────────────
+// 사용자가 바로가기를 두 번 클릭하는 경우 앱이 두 개 실행되는 것을 막습니다.
+// 두 인스턴스가 동시에 실행되면 MultiCam 드라이버를 두 번 초기화하려다 충돌합니다.
+// requestSingleInstanceLock(): 이미 실행 중이면 false를 반환합니다.
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  // 두 번째 인스턴스: 즉시 종료 (첫 번째 인스턴스가 계속 실행됨)
+  dialog.showErrorBox(
+    'PeanutVision 이미 실행 중',
+    'PeanutVision이 이미 실행 중입니다.\n작업 표시줄에서 실행 중인 앱을 확인하세요.'
+  );
+  app.quit();
+}
+
 app.whenReady().then(async () => {
   let port;
 
@@ -377,7 +391,9 @@ app.whenReady().then(async () => {
 
     // 5단계: 백엔드가 HTTP 요청을 받을 준비가 될 때까지 대기
     console.log('[앱] 백엔드 준비 대기 중...');
-    await waitForBackend(port);
+    // 타임아웃을 30초로 설정: self-contained .NET 앱은 첫 실행 시
+    // 런타임 초기화 + DB 생성까지 포함해 저사양 PC에서 15초를 넘길 수 있습니다.
+    await waitForBackend(port, 30000);
     console.log('[앱] 백엔드 준비 완료');
 
     // 6단계: 실제 앱 URL 로드

@@ -41,17 +41,25 @@ else
     builder.Services.AddGrabService(autoInitialize: true);
 }
 
-var saveSettingsPath = Path.Combine(builder.Environment.ContentRootPath, "image-save-settings.json");
+// 사용자 데이터(DB, 설정 파일)는 %APPDATA%\PeanutVision\ 에 저장한다.
+// C:\Program Files\ 는 Windows에서 쓰기가 차단되므로 install 경로에 직접 쓰면 크래시가 발생한다.
+// %APPDATA% = C:\Users\{사용자}\AppData\Roaming  (항상 쓰기 가능)
+var appDataDir = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+    "PeanutVision");
+Directory.CreateDirectory(appDataDir);  // 첫 실행 시 폴더 자동 생성
+
+var saveSettingsPath = Path.Combine(appDataDir, "image-save-settings.json");
 builder.Services.AddSingleton<IImageSaveSettingsService>(new ImageSaveSettingsService(saveSettingsPath));
 builder.Services.AddSingleton<IFrameWriter>(_ => new PeanutVision.Capture.ImageFileWriter(new PeanutVision.MultiCamDriver.Imaging.ImageWriter()));
 
-var dbPath = Path.Combine(builder.Environment.ContentRootPath, "peanut-vision.db");
+var dbPath = Path.Combine(appDataDir, "peanut-vision.db");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
 builder.Services.AddScoped<ICapturedImageRepository, CapturedImageRepository>();
 builder.Services.AddSingleton<IThumbnailService, ThumbnailService>();
 
-var presetsPath = Path.Combine(builder.Environment.ContentRootPath, "acquisition-presets.json");
+var presetsPath = Path.Combine(appDataDir, "acquisition-presets.json");
 builder.Services.AddSingleton<IAcquisitionPresetService>(new AcquisitionPresetService(presetsPath));
 
 builder.Services.Configure<LatencyRepositoryOptions>(
