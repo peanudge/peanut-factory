@@ -41,17 +41,25 @@ else
     builder.Services.AddGrabService(autoInitialize: true);
 }
 
-var saveSettingsPath = Path.Combine(builder.Environment.ContentRootPath, "image-save-settings.json");
+// 사용자 데이터(DB, 설정 파일)는 %APPDATA%\PeanutVision\ 에 저장한다.
+// C:\Program Files\ 는 Windows에서 쓰기가 차단되므로 install 경로에 직접 쓰면 크래시가 발생한다.
+// %APPDATA% = C:\Users\{사용자}\AppData\Roaming  (항상 쓰기 가능)
+var appDataDir = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+    "PeanutVision");
+Directory.CreateDirectory(appDataDir);  // 첫 실행 시 폴더 자동 생성
+
+var saveSettingsPath = Path.Combine(appDataDir, "image-save-settings.json");
 builder.Services.AddSingleton<IImageSaveSettingsService>(new ImageSaveSettingsService(saveSettingsPath));
 builder.Services.AddSingleton<IFrameWriter>(_ => new PeanutVision.Capture.ImageFileWriter(new PeanutVision.MultiCamDriver.Imaging.ImageWriter()));
 
-var dbPath = Path.Combine(builder.Environment.ContentRootPath, "peanut-vision.db");
+var dbPath = Path.Combine(appDataDir, "peanut-vision.db");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
 builder.Services.AddScoped<ICapturedImageRepository, CapturedImageRepository>();
 builder.Services.AddSingleton<IThumbnailService, ThumbnailService>();
 
-var presetsPath = Path.Combine(builder.Environment.ContentRootPath, "acquisition-presets.json");
+var presetsPath = Path.Combine(appDataDir, "acquisition-presets.json");
 builder.Services.AddSingleton<IAcquisitionPresetService>(new AcquisitionPresetService(presetsPath));
 
 builder.Services.Configure<LatencyRepositoryOptions>(
@@ -94,6 +102,15 @@ builder.Services.AddCors(options =>
               .WithExposedHeaders("X-Image-Path");
     });
 });
+
+// When running inside Electron, the PEANUT_PORT env var tells us which port to use.
+// Electron finds a free port and passes it so there are no port conflicts.
+// In development (dotnet run), this env var is not set and ASP.NET uses its default (from launchSettings.json).
+var electronPort = Environment.GetEnvironmentVariable("PEANUT_PORT");
+if (!string.IsNullOrEmpty(electronPort) && int.TryParse(electronPort, out var parsedPort))
+{
+    builder.WebHost.UseUrls($"http://localhost:{parsedPort}");
+}
 
 var app = builder.Build();
 
@@ -139,7 +156,26 @@ app.UseSwaggerUI(options =>
     options.SwaggerEndpoint("/openapi/v1.json", "PeanutVision API");
 });
 
+// Serve React build output from wwwroot/.
+// UseStaticFiles serves files like /assets/index.js, /favicon.ico directly.
+app.UseDefaultFiles();   // serves index.html for "/"
+app.UseStaticFiles();
+
+app.MapGet("/health", () => Results.Ok("healthy"));
+
+// Electron이 앱 종료 전 이 엔드포인트를 호출해 ASP.NET Core가 정상적으로 종료되도록 한다.
+// MultiCam 드라이버(McDelete, McCloseDriver)의 정상 종료가 보장된다.
+app.MapPost("/shutdown", (IHostApplicationLifetime lifetime) =>
+{
+    lifetime.StopApplication();
+    return Results.Ok();
+});
+
 app.MapControllers();
+
+// SPA fallback: for any route that doesn't match a file or API controller,
+// return index.html so React Router can handle client-side routing.
+app.MapFallbackToFile("index.html");
 
 app.Run();
 
