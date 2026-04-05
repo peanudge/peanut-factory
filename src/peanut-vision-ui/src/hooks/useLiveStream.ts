@@ -10,17 +10,7 @@ export function useLiveStream() {
   const [isActive, setIsActive] = useState(false);
 
   useEffect(() => {
-    const url = `${API_BASE_URL}/acquisition/events`;
-    // Prefer `new EventSource(url)` for real browsers; vi.fn() mocks in tests use arrow
-    // functions that are not constructable, so fall back to a plain call in that case.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let es: EventSource;
-    try {
-      es = new EventSource(url);
-    } catch {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      es = (EventSource as any)(url);
-    }
+    const es = new EventSource(`${API_BASE_URL}/acquisition/events`);
 
     es.addEventListener("frame_ready", () => {
       setPreviewUrl(`${API_BASE_URL}/acquisition/latest-frame?_t=${Date.now()}`);
