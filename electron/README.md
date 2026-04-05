@@ -153,7 +153,7 @@ npm start
 `main.js`의 개발 경로 (`app.isPackaged === false` 분기)는 아래 기본값으로 설정되어 있습니다:
 
 ```
-src/PeanutVision.Api/bin/Debug/net8.0/win-x64/publish/PeanutVision.Api.exe
+src/PeanutVision.Api/bin/Debug/net10.0/win-x64/publish/PeanutVision.Api.exe
 ```
 
 위 2단계처럼 `electron/resources/PeanutVision.Api/`로 publish한 경우 경로가 다릅니다. 개발 시에는 `electron/resources/PeanutVision.Api/PeanutVision.Api.exe`를 직접 가리키도록 `main.js`의 개발 경로를 수정하거나, 2단계의 출력 경로를 그대로 사용하세요.
@@ -197,6 +197,9 @@ electron/dist/PeanutVision Setup {version}.exe
 
 ### 아이콘 파일 준비
 
+> **경고: 아이콘 파일이 없으면 `npm run dist`가 오류와 함께 실패합니다.**
+> 빌드를 시작하기 전에 반드시 아래 파일을 준비하세요.
+
 빌드 전에 다음 파일을 `electron/build-resources/`에 추가해야 합니다:
 
 | 파일 | 용도 |
@@ -205,6 +208,8 @@ electron/dist/PeanutVision Setup {version}.exe
 | `installer-icon.ico` | NSIS 인스톨러/언인스톨러 아이콘 |
 
 이 파일들은 git에 체크인되어 있지 않습니다 (`build-resources/.gitkeep`만 존재). 빌드 담당자가 직접 준비해야 합니다.
+
+**아이콘 파일 없이 `npm run dist`를 실행하면 electron-builder가 파일을 찾지 못해 빌드가 즉시 중단됩니다.** 트러블슈팅 섹션의 "빌드 중 icon.ico를 찾을 수 없음" 오류를 참고하세요.
 
 ---
 
