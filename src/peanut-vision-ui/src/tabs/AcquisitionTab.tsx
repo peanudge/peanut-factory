@@ -3,8 +3,6 @@ import Box from "@mui/material/Box";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import AcquisitionControls from "../components/AcquisitionControls";
-import EventLog from "../components/EventLog";
-import ImageGallery from "../components/ImageGallery";
 import ContinuousSettings from "../components/ContinuousSettings";
 import ImageSaveSettingsPanel from "../components/ImageSaveSettingsPanel";
 import SessionSelector from "../components/SessionSelector";
@@ -12,8 +10,6 @@ import PresetSelector from "../components/PresetSelector";
 import CalibrationActions from "../components/CalibrationActions";
 import ExposureControl from "../components/ExposureControl";
 import ImageViewer from "../components/ImageViewer";
-import CollapsiblePanel from "../components/CollapsiblePanel";
-import { useImageGallery } from "../hooks/useImageGallery";
 import { useAcquisitionActions } from "../hooks/useAcquisitionActions";
 import { useLiveStream } from "../hooks/useLiveStream";
 import { useResizablePanel } from "../hooks/useResizablePanel";
@@ -23,7 +19,6 @@ interface Props {
 }
 
 export default function AcquisitionTab({ onSessionChange }: Props = {}) {
-  const gallery = useImageGallery();
   const acq = useAcquisitionActions();
   const live = useLiveStream();
 
@@ -32,12 +27,6 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
     min: 260,
     max: 480,
     direction: "left",
-  });
-
-  const { panelRef: rightPanelRef, onResizerMouseDown: onRightResizerMouseDown } = useResizablePanel({
-    defaultWidth: 280,
-    min: 200,
-    max: 560,
   });
 
   const [sidebarTab, setSidebarTab] = useState(0);
@@ -178,60 +167,6 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
         </Box>
       </Box>
 
-      {/* RIGHT PANEL DRAG HANDLE */}
-      <Box
-        onMouseDown={onRightResizerMouseDown}
-        sx={{
-          width: 4,
-          flexShrink: 0,
-          cursor: "col-resize",
-          bgcolor: "divider",
-          transition: "background-color 0.15s",
-          "&:hover": { bgcolor: "primary.main" },
-        }}
-      />
-
-      {/* RIGHT PANEL */}
-      <Box
-        ref={rightPanelRef}
-        sx={{
-          width: 280,
-          flexShrink: 0,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
-        <CollapsiblePanel label="Captures" count={gallery.totalCount} defaultOpen={true}>
-          {gallery.selectedImageUrl && (
-            <Box sx={{ mb: 1, maxHeight: 240, overflow: "hidden" }}>
-              <ImageViewer
-                url={gallery.selectedImageUrl}
-                filename={gallery.selectedImage?.filename}
-                savedPath={gallery.selectedImage?.filePath}
-                isLive={false}
-                capturedAt={gallery.selectedImage ? new Date(gallery.selectedImage.capturedAt) : null}
-                onClose={() => gallery.setSelectedId(null)}
-              />
-            </Box>
-          )}
-          <ImageGallery
-            images={gallery.images}
-            selectedId={gallery.selectedId}
-            onSelect={gallery.setSelectedId}
-            onDelete={gallery.handleDelete}
-            page={gallery.page}
-            totalPages={gallery.totalPages}
-            onPageChange={gallery.setPage}
-            filterSessionId={gallery.filterSessionId}
-            onFilterChange={gallery.setFilterSessionId}
-            isLoading={gallery.isLoading}
-          />
-        </CollapsiblePanel>
-        <CollapsiblePanel label="Event Log" defaultOpen={false}>
-          <EventLog events={acq.acquisitionStatus?.recentEvents} />
-        </CollapsiblePanel>
-      </Box>
     </Box>
   );
 }
