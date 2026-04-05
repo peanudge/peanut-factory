@@ -86,6 +86,34 @@ try {
     Write-Section "PeanutVision 빌드 시작 ($(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'))"
 
     # ============================================================================
+    # Pre-flight: 빌드 전 필수 파일 확인
+    # ============================================================================
+    # 빌드 후반부에서 실패하면 시간이 낭비되므로 시작 전에 미리 검사합니다.
+    # ============================================================================
+    Write-Section "Pre-flight: 빌드 사전 조건 확인"
+
+    $iconPath = Join-Path $electronDir "build-resources" "icon.ico"
+    $installerIconPath = Join-Path $electronDir "build-resources" "installer-icon.ico"
+
+    if (-not (Test-Path $iconPath)) {
+        throw "아이콘 파일이 없습니다: $iconPath`n" +
+              "electron/build-resources/icon.ico 를 추가한 후 다시 빌드하세요.`n" +
+              "이 파일이 없으면 electron-builder(Step 4)가 실패합니다."
+    }
+    if (-not (Test-Path $installerIconPath)) {
+        throw "인스톨러 아이콘 파일이 없습니다: $installerIconPath`n" +
+              "electron/build-resources/installer-icon.ico 를 추가한 후 다시 빌드하세요."
+    }
+    Write-Success "필수 아이콘 파일 확인 완료"
+
+    # 이전 빌드 산출물 정리: 구버전 DLL이 남아 충돌하는 것을 방지합니다.
+    if (Test-Path $electronResourcesDir) {
+        Write-Status "이전 .NET publish 산출물 정리 중 ($electronResourcesDir)..."
+        Remove-Item -Recurse -Force $electronResourcesDir
+        Write-Success "정리 완료"
+    }
+
+    # ============================================================================
     # Step 1: React 프론트엔드 빌드
     # ============================================================================
     # React는 TypeScript로 작성되어 있으며, npm run build는 다음을 수행합니다:

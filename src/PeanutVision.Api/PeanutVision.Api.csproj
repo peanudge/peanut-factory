@@ -26,6 +26,21 @@
     <InternalsVisibleTo Include="PeanutVision.Api.Tests" />
   </ItemGroup>
 
+  <!--
+    카메라 설정 파일(.cam)을 publish 산출물의 CamFiles/ 폴더에 복사한다.
+    setup/camfiles/ 에 있는 파일들이 배포 패키지에 포함되어야 카메라 초기화가 가능하다.
+    AfterTargets="Publish" 로 지정해 dotnet publish 시에만 실행 (빌드 시에는 불필요).
+  -->
+  <Target Name="CopyCamFiles" AfterTargets="Publish">
+    <ItemGroup>
+      <CamFilesSource Include="$(MSBuildProjectDirectory)/../../setup/camfiles/**/*" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(CamFilesSource)"
+      DestinationFiles="@(CamFilesSource->'$(PublishDir)CamFiles/%(RecursiveDir)%(Filename)%(Extension)')"
+    />
+  </Target>
+
   <!-- React 빌드 산출물이 없을 때 경고 메시지를 출력한다. -->
   <!-- 이 경고는 'npm run build'를 먼저 실행하지 않은 경우 발생한다. -->
   <Target Name="WarnMissingReactBuild" AfterTargets="Build"
