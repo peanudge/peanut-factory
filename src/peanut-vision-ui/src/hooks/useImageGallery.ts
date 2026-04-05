@@ -23,6 +23,7 @@ export function useImageGallery() {
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.images(queryParams),
     queryFn: () => listImages(queryParams),
+    refetchInterval: 5000,
   });
 
   // Auto-select the newest image when nothing is selected
@@ -43,10 +44,6 @@ export function useImageGallery() {
       toast(e instanceof Error ? e.message : "삭제에 실패했습니다", "error"),
   });
 
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.images() });
-  };
-
   const images: CapturedImageRecord[] = data?.items ?? [];
   const selectedImage = images.find((i) => i.id === selectedId) ?? null;
   const selectedImageUrl = selectedId ? imageFileUrl(selectedId) : null;
@@ -65,6 +62,5 @@ export function useImageGallery() {
     selectedImage,
     selectedImageUrl,
     handleDelete: (id: string) => deleteMutation.mutate(id),
-    invalidate,
   };
 }
