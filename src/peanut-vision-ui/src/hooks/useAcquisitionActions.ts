@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
   AcquisitionMode,
@@ -15,7 +15,6 @@ import {
   getAcquisitionStatus,
   triggerAndCapture,
   snapshot,
-  getLatestFrame,
   blackCalibration,
   whiteCalibration,
   whiteBalance,
@@ -26,13 +25,9 @@ import {
 } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
 import { useToast } from "../contexts/ToastContext";
-import { API_BASE_URL, DEFAULT_CONTINUOUS_INTERVAL_MS, POLL_INTERVAL_ACTIVE_MS, POLL_INTERVAL_IDLE_MS } from "../constants";
+import { DEFAULT_CONTINUOUS_INTERVAL_MS, POLL_INTERVAL_ACTIVE_MS, POLL_INTERVAL_IDLE_MS } from "../constants";
 
-interface UseAcquisitionActionsParams {
-  onEventCaptured: (filePath: string, objectUrl: string | null) => void;
-}
-
-export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActionsParams) {
+export function useAcquisitionActions() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -45,8 +40,6 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
   const [exposure, setExposureState] = useState<ExposureInfo | null>(null);
   const [exposureValue, setExposureValue] = useState(1000);
   const [ffcEnabled, setFfcEnabled] = useState(false);
-  const [previewTimestamp, setPreviewTimestamp] = useState(0);
-  const lastCapturedPathRef = useRef<string | null>(null);
 
   const handleError = useCallback((e: unknown) => {
     toast(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Operation failed", "error");
@@ -78,22 +71,6 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     refetchInterval: (query) =>
       query.state.data?.isActive ? POLL_INTERVAL_ACTIVE_MS : POLL_INTERVAL_IDLE_MS,
   });
-
-  const { data: latestFrame } = useQuery({
-    queryKey: queryKeys.latestFrame,
-    queryFn: getLatestFrame,
-    refetchInterval: acquisitionStatus?.isActive && acquisitionStatus?.hasFrame ? 1000 : false,
-  });
-
-  useEffect(() => {
-    if (!latestFrame) return;
-    setPreviewTimestamp(Date.now());
-    if (latestFrame.savedPath && latestFrame.savedPath !== lastCapturedPathRef.current) {
-      lastCapturedPathRef.current = latestFrame.savedPath;
-      const objectUrl = latestFrame.blob ? URL.createObjectURL(latestFrame.blob) : null;
-      onEventCaptured(latestFrame.savedPath, objectUrl);
-    }
-  }, [latestFrame, onEventCaptured]);
 
   // ── Mutations ──
 
@@ -128,14 +105,7 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
 
   const triggerMutation = useMutation({
     mutationFn: triggerAndCapture,
-    onSuccess: (result) => {
-      setPreviewTimestamp(Date.now());
-      const objectUrl = result.blob ? URL.createObjectURL(result.blob) : null;
-      if (result.savedPath) {
-        onEventCaptured(result.savedPath, objectUrl);
-      } else if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
+    onSuccess: () => {
       invalidateStatus();
       toast("프레임이 촬영되었습니다", "success");
     },
@@ -144,14 +114,7 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
 
   const snapshotMutation = useMutation({
     mutationFn: () => snapshot(selectedProfile),
-    onSuccess: (result) => {
-      setPreviewTimestamp(Date.now());
-      const objectUrl = result.blob ? URL.createObjectURL(result.blob) : null;
-      if (result.savedPath) {
-        onEventCaptured(result.savedPath, objectUrl);
-      } else if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
+    onSuccess: () => {
       invalidateStatus();
       toast("스냅샷이 촬영되었습니다", "success");
     },
@@ -273,10 +236,6 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
   );
 
 
-  const previewUrl = previewTimestamp > 0
-    ? `${API_BASE_URL}/acquisition/latest-frame?_t=${previewTimestamp}`
-    : null;
-
   return {
     cameras,
     selectedProfile,
@@ -300,7 +259,6 @@ export function useAcquisitionActions({ onEventCaptured }: UseAcquisitionActions
     hasWarnings,
     hasErrors,
     refresh,
-    previewUrl,
     throttled: false,
     handleStart,
     handleStop,
