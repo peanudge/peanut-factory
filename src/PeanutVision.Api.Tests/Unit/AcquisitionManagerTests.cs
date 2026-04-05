@@ -28,7 +28,7 @@ public class AcquisitionManagerTests : IDisposable
 
         _grabService = new GrabService(_mockHal);
         _grabService.Initialize();
-        _manager = new AcquisitionManager(_grabService, TestCamFileHelper.GetOrCreate());
+        _manager = new AcquisitionManager(_grabService, TestCamFileHelper.GetOrCreate(), new NullLatencyService());
     }
 
     public void Dispose()
@@ -485,6 +485,31 @@ public class AcquisitionManagerTests : IDisposable
         public void When_unknown_profile_then_throws()
         {
             Assert.Throws<KeyNotFoundException>(() => _manager.Snapshot("nonexistent"));
+        }
+
+        // Regression: Snapshot must update _lastFrame so SSE frame_ready fires and live view updates.
+        // Bug: before fix, Snapshot returned image without storing it in _lastFrame → live view stayed blank.
+
+        [Fact]
+        public void Then_GetLatestFrame_returns_captured_image_after_snapshot()
+        {
+            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+
+            var frame = _manager.GetLatestFrame();
+            Assert.NotNull(frame);
+            Assert.Equal(_mockHal.Configuration.DefaultImageWidth, frame.Width);
+            Assert.Equal(_mockHal.Configuration.DefaultImageHeight, frame.Height);
+        }
+
+        [Fact]
+        public void Then_FrameAcquired_event_fires_after_snapshot()
+        {
+            bool fired = false;
+            _manager.FrameAcquired += (_, _) => fired = true;
+
+            _manager.Snapshot("crevis-tc-a160k-freerun-rgb8.cam");
+
+            Assert.True(fired);
         }
 
         [Fact]

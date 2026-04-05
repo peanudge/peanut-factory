@@ -27,8 +27,8 @@ public class CalibrationManagerTests : IDisposable
 
         _grabService = new GrabService(_mockHal);
         _grabService.Initialize();
-        _acquisitionManager = new AcquisitionManager(_grabService, TestCamFileHelper.GetOrCreate());
-        _calibrationManager = new CalibrationManager(_acquisitionManager);
+        _acquisitionManager = new AcquisitionManager(_grabService, TestCamFileHelper.GetOrCreate(), new NullLatencyService());
+        _calibrationManager = new CalibrationManager(_acquisitionManager, _acquisitionManager);
     }
 
     public void Dispose()

@@ -89,6 +89,20 @@ public class AcquisitionSnapshotSpec : IClassFixture<PeanutVisionApiFactory>, IA
         Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
     }
 
+    // Regression: after a snapshot, GET /latest-frame must return the captured image
+    // so the SSE-triggered live view update shows the result.
+    [Fact]
+    public async Task Snapshot_then_latest_frame_returns_png()
+    {
+        await _client.PostJsonAsync("/api/acquisition/snapshot",
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
+
+        var response = await _client.GetAsync("/api/acquisition/latest-frame");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("image/png", response.Content.Headers.ContentType?.MediaType);
+    }
+
     [Fact]
     public async Task Snapshot_does_not_affect_acquisition_status()
     {
