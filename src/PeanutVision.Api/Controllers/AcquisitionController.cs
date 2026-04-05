@@ -119,7 +119,7 @@ public class AcquisitionController : ControllerBase
             new UnboundedChannelOptions { SingleReader = true });
 
         void OnFrameAcquired(object? _, EventArgs __) =>
-            channel.Writer.TryWrite("event: frame_ready\ndata: {}\n\n");
+            channel.Writer.TryWrite($"event: frame_ready\ndata: {{\"timestamp\":\"{DateTimeOffset.UtcNow:O}\"}}\n\n");
 
         void OnStatusChanged(object? _, EventArgs __) =>
             channel.Writer.TryWrite($"event: status_changed\ndata: {BuildStatusJson()}\n\n");
