@@ -125,7 +125,7 @@ export default function AcquisitionActionBar({
       {status && (
         <StatusChip
           active={status.isActive}
-          label={status.isActive ? `Active (${status.profileId ?? ""})` : "Inactive"}
+          label={status.isActive ? `Active (${status.activeProfileId ?? ""})` : "Inactive"}
           hasWarnings={hasWarnings}
           hasErrors={hasErrors}
         />
