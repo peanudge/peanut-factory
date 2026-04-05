@@ -9,6 +9,7 @@ public sealed class ImageCaptureService : IImageCaptureService
     private readonly FrameSaveTracker _frameSaveTracker;
     private readonly ICapturedImageRepository _imageRepository;
     private readonly IThumbnailService _thumbnailService;
+    private readonly ICaptureStatService _captureStatService;
     private readonly string _contentRootPath;
 
     public ImageCaptureService(
@@ -17,6 +18,7 @@ public sealed class ImageCaptureService : IImageCaptureService
         FrameSaveTracker frameSaveTracker,
         ICapturedImageRepository imageRepository,
         IThumbnailService thumbnailService,
+        ICaptureStatService captureStatService,
         IWebHostEnvironment environment)
     {
         _saveSettings = saveSettings;
@@ -24,6 +26,7 @@ public sealed class ImageCaptureService : IImageCaptureService
         _frameSaveTracker = frameSaveTracker;
         _imageRepository = imageRepository;
         _thumbnailService = thumbnailService;
+        _captureStatService = captureStatService;
         _contentRootPath = environment.ContentRootPath;
     }
 
@@ -35,6 +38,7 @@ public sealed class ImageCaptureService : IImageCaptureService
 
         var thumbPath = await _thumbnailService.GenerateAsync(filePath);
         var fileInfo = new FileInfo(filePath);
+        var capturedAt = DateTime.UtcNow;
 
         await _imageRepository.AddAsync(new CapturedImage
         {
@@ -45,8 +49,10 @@ public sealed class ImageCaptureService : IImageCaptureService
             Height = image.Height,
             FileSizeBytes = fileInfo.Exists ? fileInfo.Length : 0,
             Format = settings.Format.ToString().ToLower(),
-            CapturedAt = DateTime.UtcNow,
+            CapturedAt = capturedAt,
         });
+
+        await _captureStatService.RecordCaptureAsync(capturedAt);
 
         return filePath;
     }

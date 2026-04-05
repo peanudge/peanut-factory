@@ -13,6 +13,9 @@ import type {
   CapturedImageRecord,
   LatencyRecord,
   LatencyStats,
+  DiskUsageDto,
+  CaptureStat,
+  HourlyStatsParams,
 } from "./types";
 
 export interface CaptureResult {
@@ -195,6 +198,21 @@ export function updateImageSaveSettings(
   });
 }
 
+/** Returns disk usage information for the configured output directory's drive. */
+export function getDiskUsage(): Promise<DiskUsageDto> {
+  return request("/settings/disk-usage");
+}
+
+/** Partially updates OutputDirectory and/or FilenamePrefix without touching other settings. */
+export function patchImageSaveSettings(
+  patch: { outputDirectory?: string; filenamePrefix?: string },
+): Promise<ImageSaveSettings> {
+  return request("/settings/image-save", {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
 // ── Presets ──
 
 export function getPresets(): Promise<AcquisitionPreset[]> {
@@ -293,6 +311,36 @@ export function getLatencyStats(): Promise<LatencyStats | null> {
 
 export function clearLatencyRecords(): Promise<ApiMessage> {
   return request("/latency/records", { method: "DELETE" });
+}
+
+// ── Hourly Acquisition Statistics ──
+
+/**
+ * Fetches today's total acquisition count (UTC midnight to now).
+ * Returns `{ count: number }`.
+ */
+export function getTodayCount(): Promise<{ count: number }> {
+  return request("/stats/today");
+}
+
+/**
+ * Fetches hourly acquisition statistics.
+ *
+ * - Mode 1 (default): pass `{ hours }` to get the most recent N hours.
+ * - Mode 2 (range):   pass `{ from, to? }` for a specific UTC time range.
+ *
+ * Hours with zero captures are omitted by the server.
+ */
+export function getHourlyStats(params: HourlyStatsParams = {}): Promise<CaptureStat[]> {
+  const qs = new URLSearchParams();
+  if (params.from != null) {
+    qs.set("from", params.from);
+    if (params.to != null) qs.set("to", params.to);
+  } else if (params.hours != null) {
+    qs.set("hours", String(params.hours));
+  }
+  const query = qs.toString();
+  return request(`/stats/hourly${query ? `?${query}` : ""}`);
 }
 
 // ── Calibration ──
