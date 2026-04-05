@@ -137,6 +137,14 @@ app.UseStaticFiles();
 
 app.MapGet("/health", () => Results.Ok("healthy"));
 
+// Electron이 앱 종료 전 이 엔드포인트를 호출해 ASP.NET Core가 정상적으로 종료되도록 한다.
+// MultiCam 드라이버(McDelete, McCloseDriver)의 정상 종료가 보장된다.
+app.MapPost("/shutdown", (IHostApplicationLifetime lifetime) =>
+{
+    lifetime.StopApplication();
+    return Results.Ok();
+});
+
 app.MapControllers();
 
 // SPA fallback: for any route that doesn't match a file or API controller,

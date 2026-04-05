@@ -25,8 +25,9 @@
  *   [React UI] ↔ [ASP.NET Core API] : HTTP 통신
  */
 
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, dialog } = require('electron');
 const { spawn } = require('child_process');
+const fs = require('fs');
 const net = require('net');
 const http = require('http');
 const path = require('path');
@@ -37,6 +38,7 @@ const path = require('path');
 let mainWindow = null;  // BrowserWindow 인스턴스
 let backendProcess = null;  // ASP.NET Core 자식 프로세스
 let isQuitting = false;  // 앱이 종료 중인지 추적 (중복 종료 방지)
+let backendPort = null;  // 백엔드가 리스닝하는 포트 (graceful shutdown에서 사용)
 
 // ─── 유틸리티: 사용 가능한 TCP 포트 찾기 ──────────────────────────────────────
 /**
@@ -183,6 +185,15 @@ function startBackend(port) {
       'win-x64',
       'publish',
       'PeanutVision.Api.exe'
+    );
+  }
+
+  // 실행 파일이 존재하는지 먼저 확인합니다.
+  // 개발 환경에서 dotnet publish 없이 실행하면 파일이 없어 spawn이 모호한 오류를 냅니다.
+  if (!fs.existsSync(exePath)) {
+    throw new Error(
+      `백엔드 실행 파일을 찾을 수 없습니다: ${exePath}\n` +
+      `먼저 dotnet publish를 실행하세요.`
     );
   }
 
@@ -350,6 +361,7 @@ app.whenReady().then(async () => {
   try {
     // 1단계: 사용 가능한 포트 확보
     port = await findFreePort();
+    backendPort = port;  // 모듈 스코프에 저장해 graceful shutdown에서 참조할 수 있게 합니다
     console.log(`[앱] 할당된 포트: ${port}`);
 
     // 2단계: 창 생성 (아직 표시하지 않음)
@@ -377,6 +389,12 @@ app.whenReady().then(async () => {
     // isQuitting이 true면 사용자가 로딩 중에 창을 닫은 것이므로 정상입니다.
     if (!isQuitting) {
       console.error('[앱] 시작 실패:', err.message);
+      // 사용자가 오류를 인지할 수 있도록 네이티브 에러 다이얼로그를 표시합니다.
+      dialog.showErrorBox(
+        'PeanutVision 시작 실패',
+        `PeanutVision을 시작하는 중 오류가 발생했습니다.\n\n${err.message}\n\n앱을 닫고 다시 시도하세요.`
+      );
+      app.quit();
     }
   }
 });
@@ -392,13 +410,42 @@ app.on('window-all-closed', () => {
 
 // before-quit: app.quit()이 호출된 후, 창들이 닫히기 전에 발생합니다.
 // 백엔드 프로세스를 정상적으로 종료할 마지막 기회입니다.
-app.on('before-quit', () => {
-  isQuitting = true;  // 폴링 루프와 프로세스 종료 핸들러에 종료 의도를 알립니다
+//
+// 왜 graceful HTTP shutdown이 중요한가요?
+// MultiCam 드라이버(McDelete, McCloseDriver)는 정상적인 종료 절차 없이 프로세스가
+// 강제 종료되면 드라이버 리소스가 해제되지 않아 다음 실행 시 초기화 실패가 발생할 수 있습니다.
+// /shutdown 엔드포인트를 통해 ASP.NET Core가 DI 컨테이너를 정상적으로 정리하도록 합니다.
+app.on('before-quit', async (event) => {
+  if (isQuitting) return;
+  isQuitting = true;
+  event.preventDefault(); // 정리 작업이 끝날 때까지 종료를 잠시 중단합니다
 
+  // 1단계: HTTP /shutdown 엔드포인트로 graceful shutdown 요청
+  try {
+    await fetch(`http://localhost:${backendPort}/shutdown`, { method: 'POST' });
+    // 최대 3초간 백엔드가 스스로 종료되길 기다립니다
+    await new Promise((resolve) => {
+      const timeout = setTimeout(resolve, 3000);
+      backendProcess.once('exit', () => { clearTimeout(timeout); resolve(); });
+    });
+  } catch (_) {
+    // 백엔드가 이미 종료됐거나 연결할 수 없는 경우 — 무시하고 강제 종료
+  }
+
+  // 2단계: 아직 살아있으면 강제 종료
   if (backendProcess && !backendProcess.killed) {
-    console.log('[앱] 백엔드 프로세스 종료 중...');
-    // SIGTERM 시그널로 프로세스를 정상 종료 요청합니다.
-    // Windows에서는 SIGTERM 지원이 제한적이므로 kill()을 사용합니다.
+    console.log('[앱] 백엔드 프로세스 강제 종료 중...');
+    backendProcess.kill();
+  }
+
+  app.quit(); // 이제 실제로 종료합니다
+});
+
+// 앱이 예기치 않게 종료될 때 백엔드 프로세스가 고아가 되지 않도록 함.
+// before-quit 이벤트는 정상 종료 시에만 발생하므로, 크래시 경우를 대비해 process.on('exit')도 사용.
+// 단, process.on('exit')는 동기 콜백만 실행할 수 있어 async 정리는 불가능.
+process.on('exit', () => {
+  if (backendProcess && !backendProcess.killed) {
     backendProcess.kill();
   }
 });

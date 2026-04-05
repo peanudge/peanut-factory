@@ -59,13 +59,11 @@
  * 이 파일은 미래 확장을 위한 구조적 토대입니다.
  */
 
-const { contextBridge } = require('electron');
-
 // ─── 향후 IPC 확장을 위한 구조 ─────────────────────────────────────────────────
 //
 // 현재는 아무것도 노출하지 않습니다.
 //
-// 나중에 메인 프로세스 기능이 필요해지면 아래와 같이 추가하세요:
+// 나중에 메인 프로세스 기능이 필요해지면 contextBridge를 import하고 아래와 같이 추가하세요:
 //
 // const { contextBridge, ipcRenderer } = require('electron');
 //
@@ -81,7 +79,3 @@ const { contextBridge } = require('electron');
 // 웹 페이지에서 window.electronAPI.getAppVersion() 으로 접근 가능합니다.
 // 단, 여기서 명시적으로 노출한 함수만 접근 가능하며,
 // Node.js 전체가 노출되는 것이 아닙니다.
-
-// 현재는 노출할 API가 없으므로 contextBridge를 import만 하고 사용하지 않습니다.
-// 린터 경고를 피하기 위해 아래와 같이 명시적으로 참조합니다.
-void contextBridge; // 향후 exposeInMainWorld() 호출 시 사용
