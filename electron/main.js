@@ -181,7 +181,7 @@ function startBackend(port) {
       'PeanutVision.Api',
       'bin',
       'Debug',
-      'net8.0',
+      'net10.0',
       'win-x64',
       'publish',
       'PeanutVision.Api.exe'
@@ -420,9 +420,23 @@ app.on('before-quit', async (event) => {
   isQuitting = true;
   event.preventDefault(); // 정리 작업이 끝날 때까지 종료를 잠시 중단합니다
 
+  // 백엔드가 아직 시작되지 않은 상태에서 앱이 종료됨 — 정리할 것이 없음
+  if (!backendPort) {
+    if (backendProcess && !backendProcess.killed) backendProcess.kill();
+    app.quit();
+    return;
+  }
+
   // 1단계: HTTP /shutdown 엔드포인트로 graceful shutdown 요청
   try {
-    await fetch(`http://localhost:${backendPort}/shutdown`, { method: 'POST' });
+    await new Promise((resolve, reject) => {
+      const req = http.request(
+        { host: 'localhost', port: backendPort, path: '/shutdown', method: 'POST' },
+        (res) => { res.resume(); resolve(); }
+      );
+      req.on('error', reject);
+      req.end();
+    });
     // 최대 3초간 백엔드가 스스로 종료되길 기다립니다
     await new Promise((resolve) => {
       const timeout = setTimeout(resolve, 3000);
