@@ -27,4 +27,20 @@
     <InternalsVisibleTo Include="PeanutVision.Api.Tests" />
   </ItemGroup>
 
+  <!--
+    Copies React build output into wwwroot/ so ASP.NET Core can serve it as static files.
+    This runs automatically during `dotnet build` or `dotnet publish`.
+    To trigger: first run `npm run build` in src/peanut-vision-ui/, then `dotnet publish`.
+    The dist/ files are not checked into git (they're build artifacts).
+  -->
+  <Target Name="CopyReactBuild" AfterTargets="Build" Condition="Exists('$(MSBuildProjectDirectory)\..\peanut-vision-ui\dist')">
+    <ItemGroup>
+      <ReactDistFiles Include="$(MSBuildProjectDirectory)\..\peanut-vision-ui\dist\**\*" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(ReactDistFiles)"
+      DestinationFiles="@(ReactDistFiles->'$(MSBuildProjectDirectory)\wwwroot\%(RecursiveDir)%(Filename)%(Extension)')"
+    />
+  </Target>
+
 </Project>
