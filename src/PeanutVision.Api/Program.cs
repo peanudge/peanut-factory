@@ -46,7 +46,6 @@ builder.Services.AddSingleton<FrameSaveTracker>();
 var dbPath = Path.Combine(builder.Environment.ContentRootPath, "peanut-vision.db");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
-builder.Services.AddScoped<ISessionRepository, SessionRepository>();
 builder.Services.AddScoped<ICapturedImageRepository, CapturedImageRepository>();
 builder.Services.AddSingleton<IThumbnailService, ThumbnailService>();
 
@@ -99,12 +98,9 @@ using (var scope = app.Services.CreateScope())
             Height INTEGER NOT NULL DEFAULT 0,
             FileSizeBytes INTEGER NOT NULL DEFAULT 0,
             Format TEXT NOT NULL DEFAULT '',
-            CapturedAt TEXT NOT NULL,
-            SessionId TEXT,
-            FOREIGN KEY (SessionId) REFERENCES Sessions(Id) ON DELETE SET NULL
+            CapturedAt TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS IX_CapturedImages_CapturedAt ON CapturedImages(CapturedAt);
-        CREATE INDEX IF NOT EXISTS IX_CapturedImages_SessionId ON CapturedImages(SessionId);
         """);
 }
 

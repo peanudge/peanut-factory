@@ -18,7 +18,6 @@ public class AcquisitionController : ControllerBase
     private readonly FrameSaveTracker _frameSaveTracker;
     private readonly ICapturedImageRepository _imageRepository;
     private readonly IThumbnailService _thumbnailService;
-    private readonly ISessionRepository _sessionRepository;
     private readonly string _contentRootPath;
 
     public AcquisitionController(
@@ -28,7 +27,6 @@ public class AcquisitionController : ControllerBase
         FrameSaveTracker frameSaveTracker,
         ICapturedImageRepository imageRepository,
         IThumbnailService thumbnailService,
-        ISessionRepository sessionRepository,
         IWebHostEnvironment environment)
     {
         _acquisition = acquisition;
@@ -37,7 +35,6 @@ public class AcquisitionController : ControllerBase
         _frameSaveTracker = frameSaveTracker;
         _imageRepository = imageRepository;
         _thumbnailService = thumbnailService;
-        _sessionRepository = sessionRepository;
         _contentRootPath = environment.ContentRootPath;
     }
 
@@ -253,7 +250,6 @@ public class AcquisitionController : ControllerBase
         new ImageWriter().Save(image, filePath);
 
         var thumbPath = await _thumbnailService.GenerateAsync(filePath);
-        var activeSession = await _sessionRepository.GetActiveAsync();
         var fileInfo = new FileInfo(filePath);
 
         await _imageRepository.AddAsync(new CapturedImage
@@ -266,7 +262,6 @@ public class AcquisitionController : ControllerBase
             FileSizeBytes = fileInfo.Exists ? fileInfo.Length : 0,
             Format = settings.Format.ToString().ToLower(),
             CapturedAt = DateTime.UtcNow,
-            SessionId = activeSession?.Id,
         });
 
         return filePath;
