@@ -17,9 +17,7 @@ public sealed class CapturedImageRepository : ICapturedImageRepository
 
     public async Task<(IReadOnlyList<CapturedImage> Items, int TotalCount)> GetPageAsync(
         int page, int pageSize,
-        DateOnly? date = null,
-        DateTime? dateFrom = null,
-        DateTime? dateTo = null)
+        DateOnly? date = null)
     {
         var query = _db.CapturedImages.AsNoTracking().AsQueryable();
 
@@ -28,13 +26,6 @@ public sealed class CapturedImageRepository : ICapturedImageRepository
             var from = date.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
             var to   = date.Value.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
             query = query.Where(c => c.CapturedAt >= from && c.CapturedAt < to);
-        }
-        else
-        {
-            if (dateFrom.HasValue)
-                query = query.Where(c => c.CapturedAt >= dateFrom.Value);
-            if (dateTo.HasValue)
-                query = query.Where(c => c.CapturedAt <= dateTo.Value);
         }
 
         var total = await query.CountAsync();

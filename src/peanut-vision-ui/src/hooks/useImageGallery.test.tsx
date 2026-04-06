@@ -39,4 +39,11 @@ describe("useImageGallery", () => {
     act(() => { result.current.setFilterDate(null); });
     expect(result.current.filterDate).toBeNull();
   });
+
+  it("setFilterDate resets page to 1", () => {
+    const { result } = renderHook(() => useImageGallery(), { wrapper });
+    act(() => { result.current.setPage(3); });
+    act(() => { result.current.setFilterDate("2026-04-06"); });
+    expect(result.current.page).toBe(1);
+  });
 });
