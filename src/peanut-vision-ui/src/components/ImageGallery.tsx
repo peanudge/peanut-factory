@@ -2,16 +2,12 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
 import Typography from "@mui/material/Typography";
 import Tooltip from "@mui/material/Tooltip";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { useQuery } from "@tanstack/react-query";
-import { getSessions, thumbnailUrl } from "../api/client";
-import { queryKeys } from "../api/queryKeys";
+import { thumbnailUrl } from "../api/client";
 import type { CapturedImageRecord } from "../api/types";
 import { formatTime } from "../utils/formatTimestamp";
 
@@ -23,8 +19,8 @@ interface Props {
   page: number;
   totalPages: number;
   onPageChange: (p: number) => void;
-  filterSessionId: string | null;
-  onFilterChange: (sessionId: string | null) => void;
+  filterDate: string | null;
+  onFilterDateChange: (date: string | null) => void;
   isLoading: boolean;
 }
 
@@ -36,34 +32,33 @@ export default function ImageGallery({
   page,
   totalPages,
   onPageChange,
-  filterSessionId,
-  onFilterChange,
+  filterDate,
+  onFilterDateChange,
   isLoading,
 }: Props) {
-  const { data: sessions } = useQuery({
-    queryKey: queryKeys.sessions,
-    queryFn: getSessions,
-  });
-
   return (
     <Box>
-      {/* Session filter */}
+      {/* Date filter */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-        <Select
-          size="small"
-          value={filterSessionId ?? ""}
-          onChange={(e) => onFilterChange(e.target.value || null)}
-          displayEmpty
-          IconComponent={ExpandMoreIcon}
-          sx={{ fontSize: "0.75rem", flex: 1, "& .MuiSelect-select": { py: 0.5 } }}
-        >
-          <MenuItem value=""><em>All sessions</em></MenuItem>
-          {sessions?.map((s) => (
-            <MenuItem key={s.id} value={s.id}>
-              <Typography variant="caption" noWrap>{s.name}</Typography>
-            </MenuItem>
-          ))}
-        </Select>
+        <input
+          type="date"
+          value={filterDate ?? ""}
+          onChange={(e) => onFilterDateChange(e.target.value || null)}
+          style={{
+            flex: 1,
+            padding: "4px 8px",
+            fontSize: "0.75rem",
+            border: "1px solid #ccc",
+            borderRadius: 4,
+            background: "transparent",
+            color: "inherit",
+          }}
+        />
+        {filterDate && (
+          <Button size="small" onClick={() => onFilterDateChange(null)}>
+            Clear
+          </Button>
+        )}
       </Box>
 
       {/* Loading state */}

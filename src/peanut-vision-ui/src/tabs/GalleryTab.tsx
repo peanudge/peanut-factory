@@ -42,8 +42,8 @@ export default function GalleryTab() {
           page={gallery.page}
           totalPages={gallery.totalPages}
           onPageChange={gallery.setPage}
-          filterSessionId={gallery.filterSessionId}
-          onFilterChange={gallery.setFilterSessionId}
+          filterDate={gallery.filterDate}
+          onFilterDateChange={gallery.setFilterDate}
           isLoading={gallery.isLoading}
         />
       </Box>
