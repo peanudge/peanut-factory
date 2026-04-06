@@ -15,7 +15,7 @@ public static class AcquisitionExample
         // Path to your camera configuration file
         const string camFilePath = @"C:\Program Files\Euresys\MultiCam\Cameras\TC-A160K-SEM_freerun_RGB8.cam";
 
-        using var service = new GrabService();
+        using var service = new AcquisitionChannelManager();
         service.Initialize();
 
         Console.WriteLine($"Boards Detected: {service.BoardCount}");
@@ -31,7 +31,7 @@ public static class AcquisitionExample
         Console.WriteLine($"Using board: {boardInfo.BoardName} (S/N: {boardInfo.SerialNumber})");
 
         // Create channel with the TC-A160K camera file
-        using var channel = service.CreateChannel(new GrabChannelOptions
+        using var channel = service.CreateChannel(new AcquisitionChannelOptions
         {
             DriverIndex = MultiCamApi.DefaultBoardIndex,
             Connector = "M",  // Medium connector for Camera Link Full
@@ -97,10 +97,10 @@ public static class AcquisitionExample
     {
         const string camFilePath = @"C:\Program Files\Euresys\MultiCam\Cameras\TC-A160K-SEM_freerun_RGB8.cam";
 
-        using var service = new GrabService();
+        using var service = new AcquisitionChannelManager();
         service.Initialize();
 
-        using var channel = service.CreateChannel(new GrabChannelOptions
+        using var channel = service.CreateChannel(new AcquisitionChannelOptions
         {
             DriverIndex = MultiCamApi.DefaultBoardIndex,
             Connector = "M",
@@ -149,10 +149,10 @@ public static class AcquisitionExample
     {
         const string camFilePath = @"C:\Program Files\Euresys\MultiCam\Cameras\TC-A160K-SEM_freerun_RGB8.cam";
 
-        using var service = new GrabService();
+        using var service = new AcquisitionChannelManager();
         service.Initialize();
 
-        using var channel = service.CreateChannel(new GrabChannelOptions
+        using var channel = service.CreateChannel(new AcquisitionChannelOptions
         {
             DriverIndex = MultiCamApi.DefaultBoardIndex,
             Connector = "M",

@@ -4,11 +4,11 @@ using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.MultiCamDriver.Tests;
 
-public class GrabChannelTests
+public class AcquisitionChannelTests
 {
     private readonly MockMultiCamHAL _mockHal;
 
-    public GrabChannelTests()
+    public AcquisitionChannelTests()
     {
         _mockHal = new MockMultiCamHAL();
     }
@@ -18,9 +18,9 @@ public class GrabChannelTests
     [Fact]
     public void Constructor_CreatesChannel()
     {
-        var options = new GrabChannelOptions();
+        var options = new AcquisitionChannelOptions();
 
-        using var channel = new GrabChannel(options, _mockHal);
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         Assert.True(channel.Handle > 0);
         Assert.Equal(1, _mockHal.CallLog.CreateCalls);
@@ -29,9 +29,9 @@ public class GrabChannelTests
     [Fact]
     public void Constructor_SetsDriverIndex()
     {
-        var options = new GrabChannelOptions { DriverIndex = 2 };
+        var options = new AcquisitionChannelOptions { DriverIndex = 2 };
 
-        using var channel = new GrabChannel(options, _mockHal);
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         Assert.True(_mockHal.CallLog.LastSetParams.ContainsKey(MultiCamApi.PN_DriverIndex));
         Assert.Equal(2, _mockHal.CallLog.LastSetParams[MultiCamApi.PN_DriverIndex]);
@@ -40,9 +40,9 @@ public class GrabChannelTests
     [Fact]
     public void Constructor_SetsConnector()
     {
-        var options = new GrabChannelOptions { Connector = "A" };
+        var options = new AcquisitionChannelOptions { Connector = "A" };
 
-        using var channel = new GrabChannel(options, _mockHal);
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         Assert.Equal("A", _mockHal.CallLog.LastSetParams[MultiCamApi.PN_Connector]);
     }
@@ -50,9 +50,9 @@ public class GrabChannelTests
     [Fact]
     public void Constructor_SetsCamFile_WhenProvided()
     {
-        var options = new GrabChannelOptions { CamFilePath = "test.cam" };
+        var options = new AcquisitionChannelOptions { CamFilePath = "test.cam" };
 
-        using var channel = new GrabChannel(options, _mockHal);
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         Assert.Equal("test.cam", _mockHal.CallLog.LastSetParams[MultiCamApi.PN_CamFile]);
     }
@@ -60,9 +60,9 @@ public class GrabChannelTests
     [Fact]
     public void Constructor_SetsSurfaceCount()
     {
-        var options = new GrabChannelOptions { SurfaceCount = 8 };
+        var options = new AcquisitionChannelOptions { SurfaceCount = 8 };
 
-        using var channel = new GrabChannel(options, _mockHal);
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         Assert.Equal(8, _mockHal.CallLog.LastSetParams[MultiCamApi.PN_SurfaceCount]);
     }
@@ -70,9 +70,9 @@ public class GrabChannelTests
     [Fact]
     public void Constructor_SetsTriggerMode_Immediate()
     {
-        var options = new GrabChannelOptions { TriggerMode = McTrigMode.MC_TrigMode_IMMEDIATE };
+        var options = new AcquisitionChannelOptions { TriggerMode = McTrigMode.MC_TrigMode_IMMEDIATE };
 
-        using var channel = new GrabChannel(options, _mockHal);
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         Assert.Equal(MultiCamApi.MC_TrigMode_IMMEDIATE_STR, _mockHal.CallLog.LastSetParams[MultiCamApi.PN_TrigMode]);
     }
@@ -80,9 +80,9 @@ public class GrabChannelTests
     [Fact]
     public void Constructor_SetsTriggerMode_Soft()
     {
-        var options = new GrabChannelOptions { TriggerMode = McTrigMode.MC_TrigMode_SOFT };
+        var options = new AcquisitionChannelOptions { TriggerMode = McTrigMode.MC_TrigMode_SOFT };
 
-        using var channel = new GrabChannel(options, _mockHal);
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         Assert.Equal(MultiCamApi.MC_TrigMode_SOFT_STR, _mockHal.CallLog.LastSetParams[MultiCamApi.PN_TrigMode]);
     }
@@ -90,9 +90,9 @@ public class GrabChannelTests
     [Fact]
     public void Constructor_RegistersCallback_WhenEnabled()
     {
-        var options = new GrabChannelOptions { UseCallback = true };
+        var options = new AcquisitionChannelOptions { UseCallback = true };
 
-        using var channel = new GrabChannel(options, _mockHal);
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         Assert.Equal(1, _mockHal.CallLog.RegisterCallbackCalls);
     }
@@ -100,9 +100,9 @@ public class GrabChannelTests
     [Fact]
     public void Constructor_DoesNotRegisterCallback_WhenDisabled()
     {
-        var options = new GrabChannelOptions { UseCallback = false };
+        var options = new AcquisitionChannelOptions { UseCallback = false };
 
-        using var channel = new GrabChannel(options, _mockHal);
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         Assert.Equal(0, _mockHal.CallLog.RegisterCallbackCalls);
     }
@@ -112,9 +112,9 @@ public class GrabChannelTests
     {
         _mockHal.Configuration.DefaultImageWidth = 1920;
         _mockHal.Configuration.DefaultImageHeight = 1080;
-        var options = new GrabChannelOptions();
+        var options = new AcquisitionChannelOptions();
 
-        using var channel = new GrabChannel(options, _mockHal);
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         Assert.Equal(1920, channel.ImageWidth);
         Assert.Equal(1080, channel.ImageHeight);
@@ -124,9 +124,9 @@ public class GrabChannelTests
     public void Constructor_WhenCreateFails_ThrowsException()
     {
         _mockHal.Configuration.CreateFailure = (int)McStatus.MC_INTERNAL_ERROR;
-        var options = new GrabChannelOptions();
+        var options = new AcquisitionChannelOptions();
 
-        Assert.Throws<MultiCamException>(() => new GrabChannel(options, _mockHal));
+        Assert.Throws<MultiCamException>(() => new AcquisitionChannel(options, _mockHal));
     }
 
     #endregion
@@ -136,8 +136,8 @@ public class GrabChannelTests
     [Fact]
     public void StartAcquisition_SetsChannelStateToActive()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.StartAcquisition();
 
@@ -148,8 +148,8 @@ public class GrabChannelTests
     [Fact]
     public void StartAcquisition_WithFrameCount_SetsSequenceLength()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.StartAcquisition(100);
 
@@ -159,8 +159,8 @@ public class GrabChannelTests
     [Fact]
     public void StartAcquisition_CalledTwice_OnlyStartsOnce()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.StartAcquisition();
         int setParamCallsAfterFirst = _mockHal.CallLog.SetParamCalls;
@@ -174,8 +174,8 @@ public class GrabChannelTests
     [Fact]
     public void StopAcquisition_SetsChannelStateToIdle()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.StartAcquisition();
         channel.StopAcquisition();
@@ -187,8 +187,8 @@ public class GrabChannelTests
     [Fact]
     public void StopAcquisition_WhenNotActive_DoesNothing()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.StopAcquisition(); // Should not throw
 
@@ -198,8 +198,8 @@ public class GrabChannelTests
     [Fact]
     public void StopAcquisition_then_StartAcquisition_succeeds()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.StartAcquisition();
         channel.StopAcquisition();
@@ -211,8 +211,8 @@ public class GrabChannelTests
     [Fact]
     public void SendSoftwareTrigger_SetsForceTrig()
     {
-        var options = new GrabChannelOptions { TriggerMode = McTrigMode.MC_TrigMode_SOFT };
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions { TriggerMode = McTrigMode.MC_TrigMode_SOFT };
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.SendSoftwareTrigger();
 
@@ -222,8 +222,8 @@ public class GrabChannelTests
     [Fact]
     public void WaitForFrame_ReturnsFrameData()
     {
-        var options = new GrabChannelOptions { UseCallback = false };
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions { UseCallback = false };
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         var surface = channel.WaitForFrame(1000);
 
@@ -235,8 +235,8 @@ public class GrabChannelTests
     public void WaitForFrame_OnTimeout_ReturnsNull()
     {
         _mockHal.Configuration.WaitSignalFailure = (int)McStatus.MC_TIMEOUT;
-        var options = new GrabChannelOptions { UseCallback = false };
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions { UseCallback = false };
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         var surface = channel.WaitForFrame(1000);
 
@@ -250,8 +250,8 @@ public class GrabChannelTests
     [Fact]
     public void PerformBlackCalibration_SetsParameter()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.PerformBlackCalibration();
 
@@ -261,8 +261,8 @@ public class GrabChannelTests
     [Fact]
     public void PerformWhiteCalibration_SetsParameter()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.PerformWhiteCalibration();
 
@@ -272,8 +272,8 @@ public class GrabChannelTests
     [Fact]
     public void SetFlatFieldCorrection_SetsParameter()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.SetFlatFieldCorrection(true);
 
@@ -283,8 +283,8 @@ public class GrabChannelTests
     [Fact]
     public void PerformWhiteBalanceOnce_SetsParameter()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.PerformWhiteBalanceOnce();
 
@@ -294,8 +294,8 @@ public class GrabChannelTests
     [Fact]
     public void GetWhiteBalanceRatios_ReturnsCurrentRatios()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         var (red, green, blue) = channel.GetWhiteBalanceRatios();
 
@@ -307,8 +307,8 @@ public class GrabChannelTests
     [Fact]
     public void PerformWhiteBalanceOnce_AdjustsRatios()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.PerformWhiteBalanceOnce();
         var (red, green, blue) = channel.GetWhiteBalanceRatios();
@@ -322,8 +322,8 @@ public class GrabChannelTests
     [Fact]
     public void SetWhiteBalanceRatios_SetsCustomRatios()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.SetWhiteBalanceRatios(1.1, 1.0, 0.9);
         var (red, green, blue) = channel.GetWhiteBalanceRatios();
@@ -340,8 +340,8 @@ public class GrabChannelTests
     [Fact]
     public void GetExposureUs_ReturnsCurrentExposure()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         var exposure = channel.GetExposureUs();
 
@@ -351,8 +351,8 @@ public class GrabChannelTests
     [Fact]
     public void SetExposureUs_SetsExposure()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.SetExposureUs(5000.0);
         var exposure = channel.GetExposureUs();
@@ -363,8 +363,8 @@ public class GrabChannelTests
     [Fact]
     public void GetExposureRange_ReturnsMinMax()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         var (min, max) = channel.GetExposureRange();
 
@@ -379,8 +379,8 @@ public class GrabChannelTests
     [Fact]
     public void GetParamInt_ReturnsValue()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         var width = channel.GetParamInt(MultiCamApi.PN_ImageSizeX);
 
@@ -390,8 +390,8 @@ public class GrabChannelTests
     [Fact]
     public void SetParamInt_SetsValue()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.SetParamInt(MultiCamApi.PN_SurfaceCount, 16);
 
@@ -401,8 +401,8 @@ public class GrabChannelTests
     [Fact]
     public void GetParamFloat_ReturnsValue()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         var exposure = channel.GetParamFloat(MultiCamApi.PN_Expose_us);
 
@@ -412,8 +412,8 @@ public class GrabChannelTests
     [Fact]
     public void SetParamFloat_SetsValue()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.SetParamFloat(MultiCamApi.PN_Expose_us, 20000.0);
 
@@ -423,8 +423,8 @@ public class GrabChannelTests
     [Fact]
     public void GetParamStr_ReturnsValue()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         var state = channel.GetParamStr(MultiCamApi.PN_ChannelState);
 
@@ -434,8 +434,8 @@ public class GrabChannelTests
     [Fact]
     public void SetParamStr_SetsValue()
     {
-        var options = new GrabChannelOptions();
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.SetParamStr(MultiCamApi.PN_TrigMode, MultiCamApi.MC_TrigMode_HARD_STR);
 
@@ -449,8 +449,8 @@ public class GrabChannelTests
     [Fact]
     public void Dispose_DeletesChannel()
     {
-        var options = new GrabChannelOptions();
-        var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.Dispose();
 
@@ -460,8 +460,8 @@ public class GrabChannelTests
     [Fact]
     public void Dispose_StopsAcquisitionFirst()
     {
-        var options = new GrabChannelOptions();
-        var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        var channel = new AcquisitionChannel(options, _mockHal);
         channel.StartAcquisition();
 
         channel.Dispose();
@@ -472,8 +472,8 @@ public class GrabChannelTests
     [Fact]
     public void Dispose_CalledMultipleTimes_IsSafe()
     {
-        var options = new GrabChannelOptions();
-        var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        var channel = new AcquisitionChannel(options, _mockHal);
 
         channel.Dispose();
         channel.Dispose();
@@ -485,8 +485,8 @@ public class GrabChannelTests
     [Fact]
     public void AfterDispose_StartAcquisition_ThrowsException()
     {
-        var options = new GrabChannelOptions();
-        var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        var channel = new AcquisitionChannel(options, _mockHal);
         channel.Dispose();
 
         Assert.Throws<ObjectDisposedException>(() => channel.StartAcquisition());
@@ -495,8 +495,8 @@ public class GrabChannelTests
     [Fact]
     public void AfterDispose_GetParamInt_ThrowsException()
     {
-        var options = new GrabChannelOptions();
-        var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions();
+        var channel = new AcquisitionChannel(options, _mockHal);
         channel.Dispose();
 
         Assert.Throws<ObjectDisposedException>(() =>
@@ -521,8 +521,8 @@ public class GrabChannelTests
             Marshal.Copy(zeros, 0, surfaceMemory, bufferSize);
             _mockHal.Configuration.SimulatedSurfaceAddress = surfaceMemory;
 
-            var options = new GrabChannelOptions { UseCallback = true };
-            using var channel = new GrabChannel(options, _mockHal);
+            var options = new AcquisitionChannelOptions { UseCallback = true };
+            using var channel = new AcquisitionChannel(options, _mockHal);
             var tcs = new TaskCompletionSource<ImageData>();
 
             channel.FrameAcquired += (sender, args) =>
@@ -547,8 +547,8 @@ public class GrabChannelTests
     [Fact]
     public async Task AcquisitionError_FiredOnFailure()
     {
-        var options = new GrabChannelOptions { UseCallback = true };
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions { UseCallback = true };
+        using var channel = new AcquisitionChannel(options, _mockHal);
         var tcs = new TaskCompletionSource<McSignal>();
 
         channel.AcquisitionError += (sender, args) =>
@@ -565,8 +565,8 @@ public class GrabChannelTests
     [Fact]
     public async Task AcquisitionEnded_FiredOnEndChannelActivity()
     {
-        var options = new GrabChannelOptions { UseCallback = true };
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions { UseCallback = true };
+        using var channel = new AcquisitionChannel(options, _mockHal);
         channel.StartAcquisition();
         var tcs = new TaskCompletionSource();
 
@@ -584,8 +584,8 @@ public class GrabChannelTests
     [Fact]
     public async Task UnrecoverableError_StopsAcquisitionAndFiresEvent()
     {
-        var options = new GrabChannelOptions { UseCallback = true };
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions { UseCallback = true };
+        using var channel = new AcquisitionChannel(options, _mockHal);
         channel.StartAcquisition();
         var tcs = new TaskCompletionSource();
 
@@ -603,8 +603,8 @@ public class GrabChannelTests
     [Fact]
     public async Task ClusterUnavailable_FiresAcquisitionError()
     {
-        var options = new GrabChannelOptions { UseCallback = true };
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions { UseCallback = true };
+        using var channel = new AcquisitionChannel(options, _mockHal);
         var tcs = new TaskCompletionSource<McSignal>();
 
         channel.AcquisitionError += (sender, args) =>
@@ -621,8 +621,8 @@ public class GrabChannelTests
     [Fact]
     public void ClusterUnavailable_IncrementsCounter()
     {
-        var options = new GrabChannelOptions { UseCallback = true };
-        using var channel = new GrabChannel(options, _mockHal);
+        var options = new AcquisitionChannelOptions { UseCallback = true };
+        using var channel = new AcquisitionChannel(options, _mockHal);
 
         Assert.Equal(0, channel.ClusterUnavailableCount);
 

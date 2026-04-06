@@ -9,8 +9,8 @@ namespace PeanutVision.Api.Tests.Unit;
 public class CalibrationManagerTests : IDisposable
 {
     protected readonly MockMultiCamHAL _mockHal;
-    protected readonly GrabService _grabService;
-    protected readonly AcquisitionManager _acquisitionManager;
+    protected readonly AcquisitionChannelManager _channelManager;
+    protected readonly AcquisitionService _acquisitionManager;
     protected readonly CalibrationManager _calibrationManager;
     private readonly IntPtr _surfaceMemory;
 
@@ -25,16 +25,16 @@ public class CalibrationManagerTests : IDisposable
         Marshal.Copy(zeros, 0, _surfaceMemory, bufferSize);
         _mockHal.Configuration.SimulatedSurfaceAddress = _surfaceMemory;
 
-        _grabService = new GrabService(_mockHal);
-        _grabService.Initialize();
-        _acquisitionManager = new AcquisitionManager(_grabService, TestCamFileHelper.GetOrCreate());
-        _calibrationManager = new CalibrationManager(_acquisitionManager);
+        _channelManager = new AcquisitionChannelManager(_mockHal);
+        _channelManager.Initialize();
+        _acquisitionManager = new AcquisitionService(_channelManager, TestCamFileHelper.GetOrCreate(), new NullLatencyService());
+        _calibrationManager = new CalibrationManager(_acquisitionManager, _acquisitionManager);
     }
 
     public void Dispose()
     {
         _acquisitionManager.Dispose();
-        _grabService.Dispose();
+        _channelManager.Dispose();
         if (_surfaceMemory != IntPtr.Zero)
             Marshal.FreeHGlobal(_surfaceMemory);
     }

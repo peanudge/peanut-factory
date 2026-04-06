@@ -5,32 +5,31 @@ using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.Api.Services;
 
-public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibration, IExposureControl
+public sealed class AcquisitionService : IAcquisitionService, IChannelCalibration, IExposureControl
 {
-    private readonly IGrabService _grabService;
+    private readonly IAcquisitionChannelManager _channelManager;
     private readonly ICamFileService _camFileService;
     private readonly ILatencyService _latencyService;
     private readonly object _lock = new();
     private readonly ChannelEventLog _eventLog = new();
     private readonly ConcurrentQueue<DateTimeOffset> _triggerTimestamps = new();
 
-    private GrabChannel? _channel;
+    private AcquisitionChannel? _channel;
     private ImageData? _lastFrame;
     private string? _lastError;
     private AcquisitionStatistics? _statistics;
     private TaskCompletionSource<ImageData>? _triggerTcs;
     private bool _disposed;
     private Timer? _triggerTimer;
-    private bool _snapshotInProgress;
-    private ChannelState _channelState = ChannelState.None;
+    private ChannelState _channelState = ChannelState.NotAllocated;
     private ProfileId? _channelProfileId;
     private TriggerMode? _channelTriggerMode;
     private double _desiredExposureUs = 10000.0;
     private int? _targetFrameCount;
 
-    public AcquisitionManager(IGrabService grabService, ICamFileService camFileService, ILatencyService latencyService)
+    public AcquisitionService(IAcquisitionChannelManager channelManager, ICamFileService camFileService, ILatencyService latencyService)
     {
-        _grabService = grabService;
+        _channelManager = channelManager;
         _camFileService = camFileService;
         _latencyService = latencyService;
     }
@@ -101,15 +100,12 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
     {
         lock (_lock)
         {
-            if (_snapshotInProgress)
-                return new HashSet<ChannelAction>();
-
             return _channelState switch
             {
-                ChannelState.None   => new HashSet<ChannelAction> { ChannelAction.Start, ChannelAction.Snapshot },
-                ChannelState.Idle   => new HashSet<ChannelAction> { ChannelAction.Start, ChannelAction.Snapshot },
-                ChannelState.Active => new HashSet<ChannelAction> { ChannelAction.Stop, ChannelAction.Trigger },
-                _                   => new HashSet<ChannelAction>(),
+                ChannelState.NotAllocated => new HashSet<ChannelAction> { ChannelAction.Start },
+                ChannelState.Idle         => new HashSet<ChannelAction> { ChannelAction.Start },
+                ChannelState.Active       => new HashSet<ChannelAction> { ChannelAction.Stop, ChannelAction.Trigger },
+                _                         => new HashSet<ChannelAction>(),
             };
         }
     }
@@ -166,7 +162,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
         }
     }
 
-    private GrabChannel GetRequiredChannel()
+    private AcquisitionChannel GetRequiredChannel()
     {
         lock (_lock)
         {
@@ -176,7 +172,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
         }
     }
 
-    internal GrabChannel? Channel
+    internal AcquisitionChannel? Channel
     {
         get { lock (_lock) return _channel; }
     }
@@ -185,10 +181,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
     {
         lock (_lock)
         {
-            if (_snapshotInProgress)
-                throw new InvalidOperationException("A snapshot is in progress. Wait for it to complete.");
-
-            if (_channelState != ChannelState.None)
+            if (_channelState != ChannelState.NotAllocated)
                 throw new InvalidOperationException("A channel already exists. Release it first.");
 
             var camFile = _camFileService.GetByFileName(profileId.Value);
@@ -196,7 +189,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
                 ? camFile.ToChannelOptions(triggerMode.Value.Mode)
                 : camFile.ToChannelOptions();
 
-            _channel = _grabService.CreateChannel(options);
+            _channel = _channelManager.CreateChannel(options);
             _channelProfileId = profileId;
             _channelTriggerMode = triggerMode;
             _channelState = ChannelState.Idle;
@@ -205,27 +198,27 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
 
     public void ReleaseChannel()
     {
-        GrabChannel? channel;
+        AcquisitionChannel? channel;
 
         lock (_lock)
         {
             if (_channelState == ChannelState.Active)
                 throw new InvalidOperationException("Cannot release an active channel. Stop acquisition first.");
 
-            if (_channelState == ChannelState.None)
+            if (_channelState == ChannelState.NotAllocated)
                 return;
 
             channel = _channel;
             _channel = null;
             _channelProfileId = null;
             _channelTriggerMode = null;
-            _channelState = ChannelState.None;
+            _channelState = ChannelState.NotAllocated;
             _lastFrame = null;
             _statistics = null;
         }
 
         if (channel != null)
-            _grabService.ReleaseChannel(channel);
+            _channelManager.ReleaseChannel(channel);
     }
 
     public void Start(int? frameCount = null, int? intervalMs = null)
@@ -237,10 +230,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
 
         lock (_lock)
         {
-            if (_snapshotInProgress)
-                throw new InvalidOperationException("A snapshot is in progress. Wait for it to complete.");
-
-            if (_channelState == ChannelState.None)
+            if (_channelState == ChannelState.NotAllocated)
                 throw new InvalidOperationException("No channel exists. Create a channel first.");
 
             if (_channelState == ChannelState.Active)
@@ -352,81 +342,8 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
         return await tcs.Task;
     }
 
-    public ImageData Snapshot(ProfileId profileId, TriggerMode? triggerMode = null)
-    {
-        lock (_lock)
-        {
-            if (_channelState == ChannelState.Active)
-                throw new InvalidOperationException("Acquisition is already active. Stop it first.");
-
-            _snapshotInProgress = true;
-        }
-
-        try
-        {
-            var camFile = _camFileService.GetByFileName(profileId.Value);
-            var options = triggerMode.HasValue
-                ? camFile.ToChannelOptions(triggerMode.Value.Mode, useCallback: false)
-                : camFile.ToChannelOptions(useCallback: false);
-
-            // Snapshot requires a software-triggerable mode.
-            // Throw explicitly rather than silently overriding the caller's intent.
-            if (triggerMode.HasValue &&
-                options.TriggerMode != McTrigMode.MC_TrigMode_SOFT &&
-                options.TriggerMode != McTrigMode.MC_TrigMode_COMBINED)
-            {
-                throw new ArgumentException(
-                    $"Snapshot requires SOFT or COMBINED trigger mode. " +
-                    $"The requested mode '{options.TriggerMode}' is not software-triggerable. " +
-                    "Use a cam file or trigger mode that supports software triggering.",
-                    nameof(triggerMode));
-            }
-
-            // If no explicit trigger mode was requested, force SOFT for reliable snapshot behavior.
-            if (!triggerMode.HasValue)
-            {
-                options.TriggerMode = McTrigMode.MC_TrigMode_SOFT;
-            }
-
-            var channel = _grabService.CreateChannel(options);
-            try
-            {
-                channel.StartAcquisition(1);
-                var snapshotTriggerAt = DateTimeOffset.UtcNow;
-                channel.SendSoftwareTrigger();
-
-                var surface = channel.WaitForFrame(5000)
-                    ?? throw new TimeoutException("Snapshot timed out waiting for frame.");
-
-                var snapshotFrameAt = DateTimeOffset.UtcNow;
-                _latencyService.Record(snapshotTriggerAt, snapshotFrameAt, 1, profileId.Value);
-
-                try
-                {
-                    return ImageData.FromSurface(surface);
-                }
-                finally
-                {
-                    channel.ReleaseSurface(surface);
-                }
-            }
-            finally
-            {
-                channel.StopAcquisition();
-                _grabService.ReleaseChannel(channel);
-            }
-        }
-        finally
-        {
-            lock (_lock)
-            {
-                _snapshotInProgress = false;
-            }
-        }
-    }
-
     /// <summary>
-    /// Frame callback — receives already-copied ImageData from GrabChannel's copy thread.
+    /// Frame callback — receives already-copied ImageData from AcquisitionChannel's copy thread.
     /// </summary>
     private void OnFrameAcquired(object? sender, FrameAcquiredEventArgs e)
     {
@@ -445,7 +362,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
     }
 
     /// <summary>
-    /// Error callback — called from GrabChannel's native callback thread.
+    /// Error callback — called from AcquisitionChannel's native callback thread.
     /// </summary>
     private void OnAcquisitionError(object? sender, AcquisitionErrorEventArgs e)
     {
@@ -518,16 +435,16 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
         if (_disposed) return;
         _disposed = true;
         Stop();
-        GrabChannel? channel;
+        AcquisitionChannel? channel;
         lock (_lock)
         {
             channel = _channel;
             _channel = null;
-            _channelState = ChannelState.None;
+            _channelState = ChannelState.NotAllocated;
             _channelProfileId = null;
             _channelTriggerMode = null;
         }
         if (channel != null)
-            _grabService.ReleaseChannel(channel);
+            _channelManager.ReleaseChannel(channel);
     }
 }

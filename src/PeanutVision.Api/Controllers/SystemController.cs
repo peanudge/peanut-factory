@@ -8,12 +8,12 @@ namespace PeanutVision.Api.Controllers;
 [Route("api/[controller]")]
 public class SystemController : ControllerBase
 {
-    private readonly IGrabService _grabService;
+    private readonly IAcquisitionChannelManager _channelManager;
     private readonly ICamFileService _camFileService;
 
-    public SystemController(IGrabService grabService, ICamFileService camFileService)
+    public SystemController(IAcquisitionChannelManager grabService, ICamFileService camFileService)
     {
-        _grabService = grabService;
+        _channelManager = grabService;
         _camFileService = camFileService;
     }
 
@@ -21,9 +21,9 @@ public class SystemController : ControllerBase
     public ActionResult<List<BoardInfo>> GetBoards()
     {
         var boards = new List<BoardInfo>();
-        for (int i = 0; i < _grabService.BoardCount; i++)
+        for (int i = 0; i < _channelManager.BoardCount; i++)
         {
-            boards.Add(_grabService.GetBoardInfo(i));
+            boards.Add(_channelManager.GetBoardInfo(i));
         }
         return boards;
     }
@@ -31,10 +31,10 @@ public class SystemController : ControllerBase
     [HttpGet("boards/{index}/status")]
     public ActionResult<BoardStatus> GetBoardStatus(int index)
     {
-        if (index < 0 || index >= _grabService.BoardCount)
-            return NotFound($"Board index {index} not found. {_grabService.BoardCount} board(s) detected.");
+        if (index < 0 || index >= _channelManager.BoardCount)
+            return NotFound($"Board index {index} not found. {_channelManager.BoardCount} board(s) detected.");
 
-        return _grabService.GetBoardStatus(index);
+        return _channelManager.GetBoardStatus(index);
     }
 
     [HttpGet("cameras")]

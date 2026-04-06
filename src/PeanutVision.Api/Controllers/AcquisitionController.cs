@@ -48,7 +48,7 @@ public class AcquisitionController : ControllerBase
             : (TriggerMode?)null;
 
         // Auto-release any idle channel so callers don't need explicit channel management
-        if (_acquisition.ChannelState != ChannelState.None && _acquisition.ChannelState != ChannelState.Active)
+        if (_acquisition.ChannelState != ChannelState.NotAllocated && _acquisition.ChannelState != ChannelState.Active)
             _acquisition.ReleaseChannel();
 
         _acquisition.CreateChannel(profileId, triggerMode);
@@ -167,39 +167,6 @@ public class AcquisitionController : ControllerBase
         });
     }
 
-    [HttpPost("snapshot")]
-    public async Task<ActionResult> Snapshot([FromBody] SnapshotRequest request)
-    {
-        var profileId = new ProfileId(request.ProfileId);
-        var triggerMode = request.TriggerMode is not null
-            ? TriggerMode.Parse(request.TriggerMode)
-            : (TriggerMode?)null;
-
-        var image = _acquisition.Snapshot(profileId, triggerMode);
-
-        if (!string.IsNullOrWhiteSpace(request.OutputPath))
-        {
-            new ImageWriter().Save(image, request.OutputPath);
-            Response.Headers["X-Image-Path"] = request.OutputPath;
-        }
-        else
-        {
-            var settings = _saveSettings.GetSettings();
-            if (settings.AutoSave)
-            {
-                var filePath = await SaveAndRecordAsync(image, settings, request.ProfileId);
-                Response.Headers["X-Image-Path"] = filePath;
-            }
-        }
-
-        var encoder = new PngEncoder();
-        var stream = new MemoryStream();
-        encoder.Encode(image, stream);
-        stream.Position = 0;
-
-        return File(stream, "image/png", "snapshot.png");
-    }
-
     private async Task<string> SaveAndRecordAsync(
         ImageData image, ImageSaveSettings settings, string? profileId)
     {
@@ -235,9 +202,3 @@ public class StartAcquisitionRequest
     public int? IntervalMs { get; set; }
 }
 
-public class SnapshotRequest
-{
-    public required string ProfileId { get; set; }
-    public string? TriggerMode { get; set; }
-    public string? OutputPath { get; set; }
-}

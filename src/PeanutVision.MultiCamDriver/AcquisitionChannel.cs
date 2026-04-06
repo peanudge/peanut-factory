@@ -6,9 +6,9 @@ using PeanutVision.MultiCamDriver.Imaging;
 namespace PeanutVision.MultiCamDriver;
 
 /// <summary>
-/// Configuration options for creating a GrabChannel
+/// Configuration options for creating an AcquisitionChannel.
 /// </summary>
-public class GrabChannelOptions
+public class AcquisitionChannelOptions
 {
     /// <summary>Driver index (board index), typically 0 for single-board systems</summary>
     public int DriverIndex { get; set; } = 0;
@@ -33,10 +33,11 @@ public class GrabChannelOptions
 }
 
 /// <summary>
-/// Represents a MultiCam acquisition channel with thread-safe callback handling.
-/// Manages the complete lifecycle of a frame grabber channel.
+/// Represents a MultiCam acquisition channel — the complete path from camera through
+/// grabber hardware to the surface cluster in host memory.
+/// Manages the full lifecycle of a single SDK Channel object (MC_CHANNEL).
 /// </summary>
-public sealed class GrabChannel : IDisposable
+public sealed class AcquisitionChannel : IDisposable
 {
     private readonly object _lock = new();
     private readonly IMultiCamHAL _hal;
@@ -118,27 +119,27 @@ public sealed class GrabChannel : IDisposable
     public event EventHandler? AcquisitionEnded;
 
     /// <summary>
-    /// Creates a new GrabChannel with the specified options using the real HAL.
+    /// Creates a new AcquisitionChannel with the specified options using the real HAL.
     /// </summary>
-    public GrabChannel(GrabChannelOptions options)
+    public AcquisitionChannel(AcquisitionChannelOptions options)
         : this(options, MultiCamHAL.Instance)
     {
     }
 
     /// <summary>
-    /// Creates a new GrabChannel with the specified options and HAL.
+    /// Creates a new AcquisitionChannel with the specified options and HAL.
     /// Use this constructor for testing with MockMultiCamHal.
     /// </summary>
-    public GrabChannel(GrabChannelOptions options, IMultiCamHAL hal)
+    public AcquisitionChannel(AcquisitionChannelOptions options, IMultiCamHAL hal)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(hal);
 
         _hal = hal;
-        CreateChannel(options);
+        OpenChannel(options);
     }
 
-    private void CreateChannel(GrabChannelOptions options)
+    private void OpenChannel(AcquisitionChannelOptions options)
     {
         // Create channel instance
         int status = _hal.Create(MultiCamApi.MC_CHANNEL, out _channelHandle);
@@ -243,11 +244,11 @@ public sealed class GrabChannel : IDisposable
         if (info.Context == IntPtr.Zero)
             return;
 
-        GrabChannel? channel;
+        AcquisitionChannel? channel;
         try
         {
             GCHandle handle = GCHandle.FromIntPtr(info.Context);
-            channel = handle.Target as GrabChannel;
+            channel = handle.Target as AcquisitionChannel;
         }
         catch (InvalidOperationException)
         {
@@ -814,7 +815,7 @@ public sealed class GrabChannel : IDisposable
     {
         if (_disposed)
         {
-            throw new ObjectDisposedException(nameof(GrabChannel));
+            throw new ObjectDisposedException(nameof(AcquisitionChannel));
         }
     }
 

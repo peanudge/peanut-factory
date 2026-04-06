@@ -57,7 +57,7 @@ export interface ChannelEvent {
   message: string;
 }
 
-export type AcquisitionAction = "start" | "stop" | "trigger" | "snapshot";
+export type AcquisitionAction = "start" | "stop" | "trigger";
 
 export type ChannelState = "none" | "idle" | "active";
 

@@ -34,13 +34,13 @@ public class PeanutVisionApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<ICamFileService>();
             services.AddSingleton(TestCamFileHelper.GetOrCreate());
 
-            // Remove the production IGrabService registration
-            services.RemoveAll<IGrabService>();
+            // Remove the production IAcquisitionChannelManager registration
+            services.RemoveAll<IAcquisitionChannelManager>();
 
-            // Register a GrabService backed by MockMultiCamHAL
-            services.AddSingleton<IGrabService>(_ =>
+            // Register an AcquisitionChannelManager backed by MockMultiCamHAL
+            services.AddSingleton<IAcquisitionChannelManager>(_ =>
             {
-                var service = new GrabService(MockHal);
+                var service = new AcquisitionChannelManager(MockHal);
                 service.Initialize();
                 return service;
             });

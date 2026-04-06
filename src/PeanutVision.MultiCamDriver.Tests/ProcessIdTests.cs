@@ -102,34 +102,34 @@ public class MultiCamDriverTests
     }
 
     [Fact]
-    public void GrabService_CanBeInstantiated()
+    public void AcquisitionChannelManager_CanBeInstantiated()
     {
-        using var service = new GrabService();
+        using var service = new AcquisitionChannelManager();
         Assert.False(service.IsInitialized);
     }
 
     [Fact]
-    public void GrabService_ThrowsWhenNotInitialized()
+    public void AcquisitionChannelManager_ThrowsWhenNotInitialized()
     {
-        using var service = new GrabService();
+        using var service = new AcquisitionChannelManager();
 
         Assert.Throws<InvalidOperationException>(() =>
-            service.CreateChannel(new GrabChannelOptions { CamFilePath = "test.cam" }));
+            service.CreateChannel(new AcquisitionChannelOptions { CamFilePath = "test.cam" }));
     }
 
     [Fact]
-    public void GrabService_ThrowsAfterDispose()
+    public void AcquisitionChannelManager_ThrowsAfterDispose()
     {
-        var service = new GrabService();
+        var service = new AcquisitionChannelManager();
         service.Dispose();
 
         Assert.Throws<ObjectDisposedException>(() => service.Initialize());
     }
 
     [Fact]
-    public void GrabChannelOptions_HasDefaultValues()
+    public void AcquisitionChannelOptions_HasDefaultValues()
     {
-        var options = new GrabChannelOptions();
+        var options = new AcquisitionChannelOptions();
 
         Assert.Equal(0, options.DriverIndex);
         Assert.Equal("M", options.Connector);

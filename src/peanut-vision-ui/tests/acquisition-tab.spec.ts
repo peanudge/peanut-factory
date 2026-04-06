@@ -39,7 +39,7 @@ test("Single/Continuous mode toggle works", async ({ page }) => {
   await expect(page.getByRole("button", { name: /capture/i })).toBeVisible();
 });
 
-test("Single mode: Capture button triggers snapshot", async ({ page }) => {
+test("Single mode: Capture button starts single-frame acquisition", async ({ page }) => {
   // Wait for status to load so allowedActions enables the button
   await expect(page.getByRole("button", { name: /capture/i })).toBeEnabled({
     timeout: 10_000,
@@ -48,10 +48,10 @@ test("Single mode: Capture button triggers snapshot", async ({ page }) => {
   await page.getByRole("button", { name: /capture/i }).click();
 
   // Wait for the snackbar success message
-  await expect(page.getByText("스냅샷이 촬영되었습니다")).toBeVisible({
+  await expect(page.getByText("단일 프레임 촬영이 시작되었습니다")).toBeVisible({
     timeout: 10_000,
   });
-  await page.screenshot({ path: "test-results/03-snapshot-captured.png" });
+  await page.screenshot({ path: "test-results/03-capture-started.png" });
 });
 
 test("Continuous mode: shows ContinuousSettings when selected", async ({

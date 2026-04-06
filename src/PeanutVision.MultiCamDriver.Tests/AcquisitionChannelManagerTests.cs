@@ -2,11 +2,11 @@ using PeanutVision.MultiCamDriver.Hal;
 
 namespace PeanutVision.MultiCamDriver.Tests;
 
-public class GrabServiceTests
+public class AcquisitionChannelManagerTests
 {
     private readonly MockMultiCamHAL _mockHal;
 
-    public GrabServiceTests()
+    public AcquisitionChannelManagerTests()
     {
         _mockHal = new MockMultiCamHAL();
     }
@@ -14,7 +14,7 @@ public class GrabServiceTests
     [Fact]
     public void Initialize_OpensDriver()
     {
-        using var service = new GrabService(_mockHal);
+        using var service = new AcquisitionChannelManager(_mockHal);
 
         service.Initialize();
 
@@ -26,7 +26,7 @@ public class GrabServiceTests
     public void Initialize_DetectsBoard()
     {
         _mockHal.Configuration.BoardCount = 1;
-        using var service = new GrabService(_mockHal);
+        using var service = new AcquisitionChannelManager(_mockHal);
 
         service.Initialize();
 
@@ -37,7 +37,7 @@ public class GrabServiceTests
     [Fact]
     public void Initialize_CalledMultipleTimes_OnlyOpensOnce()
     {
-        using var service = new GrabService(_mockHal);
+        using var service = new AcquisitionChannelManager(_mockHal);
 
         service.Initialize();
         service.Initialize();
@@ -50,7 +50,7 @@ public class GrabServiceTests
     public void Initialize_WhenDriverFails_ThrowsException()
     {
         _mockHal.Configuration.OpenDriverFailure = (int)McStatus.MC_NO_BOARD_FOUND;
-        using var service = new GrabService(_mockHal);
+        using var service = new AcquisitionChannelManager(_mockHal);
 
         var ex = Assert.Throws<MultiCamException>(() => service.Initialize());
 
@@ -60,19 +60,19 @@ public class GrabServiceTests
     [Fact]
     public void CreateChannel_WhenNotInitialized_ThrowsException()
     {
-        using var service = new GrabService(_mockHal);
+        using var service = new AcquisitionChannelManager(_mockHal);
 
         Assert.Throws<InvalidOperationException>(() =>
-            service.CreateChannel(new GrabChannelOptions { CamFilePath = "test.cam" }));
+            service.CreateChannel(new AcquisitionChannelOptions { CamFilePath = "test.cam" }));
     }
 
     [Fact]
     public void CreateChannel_WhenInitialized_CreatesChannel()
     {
-        using var service = new GrabService(_mockHal);
+        using var service = new AcquisitionChannelManager(_mockHal);
         service.Initialize();
 
-        using var channel = service.CreateChannel(new GrabChannelOptions { CamFilePath = "test.cam" });
+        using var channel = service.CreateChannel(new AcquisitionChannelOptions { CamFilePath = "test.cam" });
 
         Assert.NotNull(channel);
         Assert.True(channel.Handle > 0);
@@ -81,10 +81,10 @@ public class GrabServiceTests
     [Fact]
     public void CreateChannel_SetsCorrectParameters()
     {
-        using var service = new GrabService(_mockHal);
+        using var service = new AcquisitionChannelManager(_mockHal);
         service.Initialize();
 
-        using var channel = service.CreateChannel(new GrabChannelOptions
+        using var channel = service.CreateChannel(new AcquisitionChannelOptions
         {
             CamFilePath = "camera.cam",
             DriverIndex = 1,
@@ -104,7 +104,7 @@ public class GrabServiceTests
         _mockHal.Configuration.BoardNames = new List<string> { "Grablink Full" };
         _mockHal.Configuration.BoardTypes = new List<string> { "PC1622" };
 
-        using var service = new GrabService(_mockHal);
+        using var service = new AcquisitionChannelManager(_mockHal);
         service.Initialize();
 
         var info = service.GetBoardInfo(0);
@@ -118,7 +118,7 @@ public class GrabServiceTests
     public void GetBoardInfo_InvalidIndex_ThrowsException()
     {
         _mockHal.Configuration.BoardCount = 1;
-        using var service = new GrabService(_mockHal);
+        using var service = new AcquisitionChannelManager(_mockHal);
         service.Initialize();
 
         Assert.Throws<ArgumentOutOfRangeException>(() => service.GetBoardInfo(5));
@@ -131,7 +131,7 @@ public class GrabServiceTests
         _mockHal.Configuration.BoardNames = new List<string> { "Grablink Full" };
         _mockHal.Configuration.BoardTypes = new List<string> { "PC1622" };
 
-        using var service = new GrabService(_mockHal);
+        using var service = new AcquisitionChannelManager(_mockHal);
         service.Initialize();
 
         var status = service.GetBoardStatus(0);
@@ -154,7 +154,7 @@ public class GrabServiceTests
     public void GetBoardStatus_InvalidIndex_ThrowsException()
     {
         _mockHal.Configuration.BoardCount = 1;
-        using var service = new GrabService(_mockHal);
+        using var service = new AcquisitionChannelManager(_mockHal);
         service.Initialize();
 
         Assert.Throws<ArgumentOutOfRangeException>(() => service.GetBoardStatus(5));
@@ -163,7 +163,7 @@ public class GrabServiceTests
     [Fact]
     public void Dispose_ClosesDriver()
     {
-        var service = new GrabService(_mockHal);
+        var service = new AcquisitionChannelManager(_mockHal);
         service.Initialize();
 
         service.Dispose();
@@ -174,11 +174,11 @@ public class GrabServiceTests
     [Fact]
     public void Dispose_DisposesAllChannels()
     {
-        using var service = new GrabService(_mockHal);
+        using var service = new AcquisitionChannelManager(_mockHal);
         service.Initialize();
 
-        var channel1 = service.CreateChannel(new GrabChannelOptions { CamFilePath = "test1.cam" });
-        var channel2 = service.CreateChannel(new GrabChannelOptions { CamFilePath = "test2.cam" });
+        var channel1 = service.CreateChannel(new AcquisitionChannelOptions { CamFilePath = "test1.cam" });
+        var channel2 = service.CreateChannel(new AcquisitionChannelOptions { CamFilePath = "test2.cam" });
 
         service.Dispose();
 
@@ -189,7 +189,7 @@ public class GrabServiceTests
     [Fact]
     public void Dispose_CalledMultipleTimes_IsSafe()
     {
-        var service = new GrabService(_mockHal);
+        var service = new AcquisitionChannelManager(_mockHal);
         service.Initialize();
 
         service.Dispose();
@@ -202,7 +202,7 @@ public class GrabServiceTests
     [Fact]
     public void AfterDispose_Initialize_ThrowsException()
     {
-        var service = new GrabService(_mockHal);
+        var service = new AcquisitionChannelManager(_mockHal);
         service.Dispose();
 
         Assert.Throws<ObjectDisposedException>(() => service.Initialize());
@@ -211,10 +211,10 @@ public class GrabServiceTests
     [Fact]
     public void AfterDispose_CreateChannel_ThrowsException()
     {
-        var service = new GrabService(_mockHal);
+        var service = new AcquisitionChannelManager(_mockHal);
         service.Initialize();
         service.Dispose();
 
-        Assert.Throws<ObjectDisposedException>(() => service.CreateChannel(new GrabChannelOptions { CamFilePath = "test.cam" }));
+        Assert.Throws<ObjectDisposedException>(() => service.CreateChannel(new AcquisitionChannelOptions { CamFilePath = "test.cam" }));
     }
 }

@@ -4,23 +4,23 @@ using PeanutVision.MultiCamDriver;
 namespace PeanutVision.FakeCamDriver;
 
 /// <summary>
-/// DI extension methods for registering FakeMultiCamHAL-based GrabService.
+/// DI extension methods for registering FakeMultiCamHAL-based AcquisitionChannelManager.
 /// </summary>
 public static class FakeCamServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds a fake IGrabService backed by FakeMultiCamHAL with test pattern generation.
+    /// Adds a fake IAcquisitionChannelManager backed by FakeMultiCamHAL with test pattern generation.
     /// </summary>
-    public static IServiceCollection AddFakeGrabService(
+    public static IServiceCollection AddFakeAcquisitionChannelManager(
         this IServiceCollection services,
         Action<FakeHalConfiguration>? configure = null)
     {
-        services.AddSingleton<IGrabService>(sp =>
+        services.AddSingleton<IAcquisitionChannelManager>(sp =>
         {
             var fakeHal = new FakeMultiCamHAL();
             configure?.Invoke(fakeHal.FakeConfig);
 
-            var service = new GrabService(fakeHal);
+            var service = new AcquisitionChannelManager(fakeHal);
             service.Initialize();
             return service;
         });

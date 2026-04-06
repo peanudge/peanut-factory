@@ -64,7 +64,7 @@ public class AcquisitionStatusSpec : IClassFixture<PeanutVisionApiFactory>, IAsy
     }
 
     [Fact]
-    public async Task Status_when_idle_allowed_actions_contains_start_and_snapshot()
+    public async Task Status_when_idle_allowed_actions_contains_start()
     {
         var response = await _client.GetAsync("/api/acquisition/status");
 
@@ -72,7 +72,6 @@ public class AcquisitionStatusSpec : IClassFixture<PeanutVisionApiFactory>, IAsy
         var actions = doc.RootElement.GetProperty("allowedActions")
             .EnumerateArray().Select(e => e.GetString()).ToHashSet();
         Assert.Contains("start", actions);
-        Assert.Contains("snapshot", actions);
     }
 
     [Fact]
@@ -89,7 +88,6 @@ public class AcquisitionStatusSpec : IClassFixture<PeanutVisionApiFactory>, IAsy
         Assert.Contains("stop", actions);
         Assert.Contains("trigger", actions);
         Assert.DoesNotContain("start", actions);
-        Assert.DoesNotContain("snapshot", actions);
     }
 
     [Fact]
