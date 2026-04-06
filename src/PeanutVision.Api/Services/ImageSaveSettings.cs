@@ -2,7 +2,7 @@ namespace PeanutVision.Api.Services;
 
 public enum SaveImageFormat { Png, Bmp, Raw }
 
-public enum SubfolderStrategy { None, ByDate, BySession, ByProfile }
+public enum SubfolderStrategy { None, ByDate, ByProfile }
 
 public sealed record ImageSaveSettings
 {
@@ -11,6 +11,6 @@ public sealed record ImageSaveSettings
     public string FilenamePrefix { get; init; } = "capture";
     public string TimestampFormat { get; init; } = "yyyyMMdd_HHmmss_fff";
     public bool IncludeSequenceNumber { get; init; } = false;
-    public SubfolderStrategy SubfolderStrategy { get; init; } = SubfolderStrategy.None;
+    public SubfolderStrategy SubfolderStrategy { get; init; } = SubfolderStrategy.ByDate;
     public bool AutoSave { get; init; } = true;
 }

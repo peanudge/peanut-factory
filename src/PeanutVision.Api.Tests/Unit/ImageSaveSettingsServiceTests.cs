@@ -34,7 +34,7 @@ public class ImageSaveSettingsServiceTests : IDisposable
             Assert.Equal("capture", settings.FilenamePrefix);
             Assert.Equal("yyyyMMdd_HHmmss_fff", settings.TimestampFormat);
             Assert.False(settings.IncludeSequenceNumber);
-            Assert.Equal(SubfolderStrategy.None, settings.SubfolderStrategy);
+            Assert.Equal(SubfolderStrategy.ByDate, settings.SubfolderStrategy);
             Assert.True(settings.AutoSave);
         }
     }
