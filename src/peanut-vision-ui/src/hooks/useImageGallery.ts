@@ -12,13 +12,18 @@ export function useImageGallery() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [page, setPage] = useState(1);
-  const [filterSessionId, setFilterSessionId] = useState<string | null>(null);
+  const [filterDate, _setFilterDate] = useState<string | null>(null);
+
+  const setFilterDate = (date: string | null) => {
+    _setFilterDate(date);
+    setPage(1);
+  };
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const queryParams = {
     page,
     pageSize: PAGE_SIZE,
-    ...(filterSessionId ? { sessionId: filterSessionId } : {}),
+    ...(filterDate ? { date: filterDate } : {}),
   };
 
   const { data, isLoading } = useQuery({
@@ -27,7 +32,6 @@ export function useImageGallery() {
     refetchInterval: GALLERY_POLL_INTERVAL_MS,
   });
 
-  // Auto-select the newest image when nothing is selected
   useEffect(() => {
     if (data?.items.length && selectedId === null) {
       setSelectedId(data.items[0].id);
@@ -56,8 +60,8 @@ export function useImageGallery() {
     page,
     setPage,
     isLoading,
-    filterSessionId,
-    setFilterSessionId,
+    filterDate,
+    setFilterDate,
     selectedId,
     setSelectedId,
     selectedImage,

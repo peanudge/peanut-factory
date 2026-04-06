@@ -2,7 +2,6 @@ namespace PeanutVision.Api.Services;
 
 public sealed class FilenameGenerator
 {
-    private readonly string _sessionTimestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
     private int _sequenceCounter;
 
     public string Generate(ImageSaveSettings settings, string contentRootPath, string? profileId = null)
@@ -13,7 +12,6 @@ public sealed class FilenameGenerator
         var subdir = settings.SubfolderStrategy switch
         {
             SubfolderStrategy.ByDate => now.ToString("yyyy-MM-dd"),
-            SubfolderStrategy.BySession => $"session_{_sessionTimestamp}",
             SubfolderStrategy.ByProfile when !string.IsNullOrEmpty(profileId) => SanitizeSegment(profileId),
             _ => null,
         };

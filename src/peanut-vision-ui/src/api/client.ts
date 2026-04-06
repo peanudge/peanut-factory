@@ -7,7 +7,6 @@ import type {
   ExposureInfo,
   ApiMessage,
   ImageSaveSettings,
-  Session,
   HistogramData,
   AcquisitionPreset,
   ImagePage,
@@ -128,43 +127,6 @@ export function updateImageSaveSettings(
   });
 }
 
-// ── Sessions ──
-
-export function getSessions(limit = 50): Promise<Session[]> {
-  return request(`/sessions?limit=${limit}`);
-}
-
-export function getActiveSession(): Promise<Session | null> {
-  return fetch(`${API_BASE_URL}/sessions/active`)
-    .then((res) => {
-      if (res.status === 204) return null;
-      if (!res.ok) return res.json().then((b) => {
-        throw new ApiError(b.error ?? `HTTP ${res.status}`, b.errorCode ?? "UNKNOWN_ERROR", res.status);
-      });
-      return res.json();
-    });
-}
-
-export function createSession(name: string, notes?: string): Promise<Session> {
-  return request("/sessions", {
-    method: "POST",
-    body: JSON.stringify({ name, notes }),
-  });
-}
-
-export function endSession(id: string): Promise<Session> {
-  return request(`/sessions/${id}/end`, { method: "POST" });
-}
-
-export function deleteSession(id: string): Promise<void> {
-  return fetch(`${API_BASE_URL}/sessions/${id}`, { method: "DELETE" })
-    .then((res) => {
-      if (!res.ok) return res.json().then((b) => {
-        throw new ApiError(b.error ?? `HTTP ${res.status}`, b.errorCode ?? "UNKNOWN_ERROR", res.status);
-      });
-    });
-}
-
 // ── Presets ──
 
 export function getPresets(): Promise<AcquisitionPreset[]> {
@@ -192,16 +154,12 @@ export function deletePreset(name: string): Promise<void> {
 export function listImages(params: {
   page?: number;
   pageSize?: number;
-  sessionId?: string;
-  dateFrom?: string;
-  dateTo?: string;
+  date?: string;
 } = {}): Promise<ImagePage> {
   const qs = new URLSearchParams();
-  if (params.page != null)      qs.set("page", String(params.page));
-  if (params.pageSize != null)  qs.set("pageSize", String(params.pageSize));
-  if (params.sessionId)         qs.set("sessionId", params.sessionId);
-  if (params.dateFrom)          qs.set("dateFrom", params.dateFrom);
-  if (params.dateTo)            qs.set("dateTo", params.dateTo);
+  if (params.page != null)     qs.set("page", String(params.page));
+  if (params.pageSize != null) qs.set("pageSize", String(params.pageSize));
+  if (params.date)             qs.set("date", params.date);
   return request(`/images?${qs}`);
 }
 

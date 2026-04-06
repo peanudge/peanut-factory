@@ -3,6 +3,8 @@ using PeanutVision.Api.Services;
 using PeanutVision.MultiCamDriver;
 using PeanutVision.MultiCamDriver.Imaging;
 using PeanutVision.MultiCamDriver.Imaging.Encoders;
+using System.Text.Json;
+using System.Threading.Channels;
 
 namespace PeanutVision.Api.Controllers;
 
@@ -16,7 +18,6 @@ public class AcquisitionController : ControllerBase
     private readonly FrameSaveTracker _frameSaveTracker;
     private readonly ICapturedImageRepository _imageRepository;
     private readonly IThumbnailService _thumbnailService;
-    private readonly ISessionRepository _sessionRepository;
     private readonly string _contentRootPath;
 
     public AcquisitionController(
@@ -26,7 +27,6 @@ public class AcquisitionController : ControllerBase
         FrameSaveTracker frameSaveTracker,
         ICapturedImageRepository imageRepository,
         IThumbnailService thumbnailService,
-        ISessionRepository sessionRepository,
         IWebHostEnvironment environment)
     {
         _acquisition = acquisition;
@@ -35,7 +35,6 @@ public class AcquisitionController : ControllerBase
         _frameSaveTracker = frameSaveTracker;
         _imageRepository = imageRepository;
         _thumbnailService = thumbnailService;
-        _sessionRepository = sessionRepository;
         _contentRootPath = environment.ContentRootPath;
     }
 
@@ -106,6 +105,45 @@ public class AcquisitionController : ControllerBase
         });
     }
 
+    [HttpGet("events")]
+    public async Task GetEvents(CancellationToken ct)
+    {
+        Response.ContentType = "text/event-stream; charset=utf-8";
+        Response.Headers["Cache-Control"] = "no-cache";
+        Response.Headers["X-Accel-Buffering"] = "no";
+
+        var channel = Channel.CreateUnbounded<string>(
+            new UnboundedChannelOptions { SingleReader = true });
+
+        void OnFrameAcquired(object? _, EventArgs __) =>
+            channel.Writer.TryWrite($"event: frame_ready\ndata: {{\"timestamp\":\"{DateTimeOffset.UtcNow:O}\"}}\n\n");
+
+        void OnStatusChanged(object? _, EventArgs __) =>
+            channel.Writer.TryWrite($"event: status_changed\ndata: {BuildStatusJson()}\n\n");
+
+        _acquisition.FrameAcquired += OnFrameAcquired;
+        _acquisition.StatusChanged += OnStatusChanged;
+
+        // Send current status immediately so client has initial state
+        channel.Writer.TryWrite($"event: status_changed\ndata: {BuildStatusJson()}\n\n");
+
+        try
+        {
+            await foreach (var text in channel.Reader.ReadAllAsync(ct))
+            {
+                await Response.WriteAsync(text, ct);
+                await Response.Body.FlushAsync(ct);
+            }
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _acquisition.FrameAcquired -= OnFrameAcquired;
+            _acquisition.StatusChanged -= OnStatusChanged;
+            channel.Writer.TryComplete();
+        }
+    }
+
     [HttpPost("trigger")]
     public async Task<ActionResult> Trigger()
     {
@@ -167,6 +205,44 @@ public class AcquisitionController : ControllerBase
         });
     }
 
+    private string BuildStatusJson()
+    {
+        var stats = _acquisition.GetStatistics();
+        var payload = new
+        {
+            isActive = _acquisition.IsActive,
+            channelState = _acquisition.ChannelState.ToString().ToLowerInvariant(),
+            profileId = _acquisition.ActiveProfileId?.Value,
+            hasFrame = _acquisition.HasFrame,
+            lastError = _acquisition.LastError,
+            allowedActions = _acquisition.GetAllowedActions()
+                .Select(a => a.ToString().ToLowerInvariant()).ToArray(),
+            statistics = stats.HasValue
+                ? (object)new
+                {
+                    frameCount = stats.Value.FrameCount,
+                    droppedFrameCount = stats.Value.DroppedFrameCount,
+                    errorCount = stats.Value.ErrorCount,
+                    elapsedMs = stats.Value.ElapsedTime.TotalMilliseconds,
+                    averageFps = Math.Round(stats.Value.AverageFps, 2),
+                    minFrameIntervalMs = Math.Round(stats.Value.MinFrameIntervalMs, 2),
+                    maxFrameIntervalMs = Math.Round(stats.Value.MaxFrameIntervalMs, 2),
+                    averageFrameIntervalMs = Math.Round(stats.Value.AverageFrameIntervalMs, 2),
+                    copyDropCount = stats.Value.CopyDropCount,
+                    clusterUnavailableCount = stats.Value.ClusterUnavailableCount,
+                }
+                : null,
+            recentEvents = _acquisition.GetRecentEvents(50).Select(e => new
+            {
+                timestamp = e.Timestamp,
+                type = e.Type.ToString(),
+                message = e.Message,
+            }),
+        };
+        return JsonSerializer.Serialize(payload);
+    }
+
+
     private async Task<string> SaveAndRecordAsync(
         ImageData image, ImageSaveSettings settings, string? profileId)
     {
@@ -174,7 +250,6 @@ public class AcquisitionController : ControllerBase
         new ImageWriter().Save(image, filePath);
 
         var thumbPath = await _thumbnailService.GenerateAsync(filePath);
-        var activeSession = await _sessionRepository.GetActiveAsync();
         var fileInfo = new FileInfo(filePath);
 
         await _imageRepository.AddAsync(new CapturedImage
@@ -187,7 +262,6 @@ public class AcquisitionController : ControllerBase
             FileSizeBytes = fileInfo.Exists ? fileInfo.Length : 0,
             Format = settings.Format.ToString().ToLower(),
             CapturedAt = DateTime.UtcNow,
-            SessionId = activeSession?.Id,
         });
 
         return filePath;
