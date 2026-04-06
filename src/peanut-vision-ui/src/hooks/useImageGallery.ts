@@ -12,7 +12,12 @@ export function useImageGallery() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [page, setPage] = useState(1);
-  const [filterDate, setFilterDate] = useState<string | null>(null);
+  const [filterDate, _setFilterDate] = useState<string | null>(null);
+
+  const setFilterDate = (date: string | null) => {
+    _setFilterDate(date);
+    setPage(1);
+  };
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const queryParams = {
