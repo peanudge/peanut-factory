@@ -26,7 +26,6 @@ const FORMAT_OPTIONS: { value: SaveImageFormat; label: string }[] = [
 const SUBFOLDER_OPTIONS: { value: SubfolderStrategy; label: string }[] = [
   { value: "none", label: "None" },
   { value: "byDate", label: "By Date (YYYY-MM-DD)" },
-  { value: "bySession", label: "By Session" },
   { value: "byProfile", label: "By Profile" },
 ];
 
@@ -36,7 +35,7 @@ const DEFAULT_SETTINGS: ImageSaveSettings = {
   filenamePrefix: "capture",
   timestampFormat: "yyyyMMdd_HHmmss_fff",
   includeSequenceNumber: false,
-  subfolderStrategy: "none",
+  subfolderStrategy: "byDate",
   autoSave: true,
 };
 

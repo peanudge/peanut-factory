@@ -151,7 +151,7 @@ export interface LatencyStats {
 }
 
 export type SaveImageFormat = "png" | "bmp" | "raw";
-export type SubfolderStrategy = "none" | "byDate" | "bySession" | "byProfile";
+export type SubfolderStrategy = "none" | "byDate" | "byProfile";
 
 export interface CapturedImageRecord {
   id: string;
