@@ -5,7 +5,6 @@ import Tab from "@mui/material/Tab";
 import AcquisitionControls from "../components/AcquisitionControls";
 import ContinuousSettings from "../components/ContinuousSettings";
 import ImageSaveSettingsPanel from "../components/ImageSaveSettingsPanel";
-import SessionSelector from "../components/SessionSelector";
 import PresetSelector from "../components/PresetSelector";
 import CalibrationActions from "../components/CalibrationActions";
 import ExposureControl from "../components/ExposureControl";
@@ -14,11 +13,7 @@ import { useAcquisitionActions } from "../hooks/useAcquisitionActions";
 import { useLiveStream } from "../hooks/useLiveStream";
 import { useResizablePanel } from "../hooks/useResizablePanel";
 
-interface Props {
-  onSessionChange?: (name: string | null) => void;
-}
-
-export default function AcquisitionTab({ onSessionChange }: Props = {}) {
+export default function AcquisitionTab() {
   const acq = useAcquisitionActions();
   const live = useLiveStream();
 
@@ -137,7 +132,6 @@ export default function AcquisitionTab({ onSessionChange }: Props = {}) {
         {/* Tab 2: Settings */}
         <Box sx={{ display: sidebarTab === 2 ? "flex" : "none", flexDirection: "column", gap: 2 }}>
           <ImageSaveSettingsPanel />
-          <SessionSelector onSessionChange={onSessionChange} />
         </Box>
       </Box>
 
