@@ -98,20 +98,6 @@ export async function triggerAndCapture(): Promise<CaptureResult> {
   return { blob: await res.blob(), savedPath };
 }
 
-export async function snapshot(
-  profileId: string,
-  triggerMode?: string,
-): Promise<CaptureResult> {
-  const res = await fetch(`${API_BASE_URL}/acquisition/capture-once`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ profileId, triggerMode }),
-  });
-  if (!res.ok) await handleErrorResponse(res);
-  const savedPath = res.headers.get("X-Image-Path") ?? undefined;
-  return { blob: await res.blob(), savedPath };
-}
-
 export async function getLatestFrame(): Promise<CaptureResult | null> {
   const res = await fetch(`${API_BASE_URL}/acquisition/latest-frame`);
   if (res.status === 204) return null;

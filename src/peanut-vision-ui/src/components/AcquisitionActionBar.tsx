@@ -51,8 +51,8 @@ export default function AcquisitionActionBar({
       {mode === "single" ? (
         <Tooltip
           title={
-            busy || !allowed("snapshot") || !selectedProfile
-              ? "촬영 중에는 스냅샷을 찍을 수 없습니다"
+            busy || !allowed("start") || !selectedProfile
+              ? "촬영 중에는 단일 촬영을 시작할 수 없습니다"
               : "단일 촬영"
           }
         >
@@ -61,7 +61,7 @@ export default function AcquisitionActionBar({
               variant="contained"
               startIcon={<PhotoCameraIcon />}
               onClick={onCapture}
-              disabled={busy || !allowed("snapshot") || !selectedProfile}
+              disabled={busy || !allowed("start") || !selectedProfile}
             >
               Capture
             </Button>

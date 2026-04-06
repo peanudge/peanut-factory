@@ -11,7 +11,6 @@ namespace PeanutVision.Api.Controllers;
 public class AcquisitionController : ControllerBase
 {
     private readonly IAcquisitionService _acquisition;
-    private readonly ICaptureOnceService _captureOnce;
     private readonly IImageSaveSettingsService _saveSettings;
     private readonly FilenameGenerator _filenameGenerator;
     private readonly FrameSaveTracker _frameSaveTracker;
@@ -22,7 +21,6 @@ public class AcquisitionController : ControllerBase
 
     public AcquisitionController(
         IAcquisitionService acquisition,
-        ICaptureOnceService captureOnce,
         IImageSaveSettingsService saveSettings,
         FilenameGenerator filenameGenerator,
         FrameSaveTracker frameSaveTracker,
@@ -32,7 +30,6 @@ public class AcquisitionController : ControllerBase
         IWebHostEnvironment environment)
     {
         _acquisition = acquisition;
-        _captureOnce = captureOnce;
         _saveSettings = saveSettings;
         _filenameGenerator = filenameGenerator;
         _frameSaveTracker = frameSaveTracker;
@@ -170,39 +167,6 @@ public class AcquisitionController : ControllerBase
         });
     }
 
-    [HttpPost("capture-once")]
-    public async Task<ActionResult> CaptureOnce([FromBody] CaptureOnceRequest request)
-    {
-        var profileId = new ProfileId(request.ProfileId);
-        var triggerMode = request.TriggerMode is not null
-            ? TriggerMode.Parse(request.TriggerMode)
-            : (TriggerMode?)null;
-
-        var image = _captureOnce.CaptureOnce(profileId, triggerMode);
-
-        if (!string.IsNullOrWhiteSpace(request.OutputPath))
-        {
-            new ImageWriter().Save(image, request.OutputPath);
-            Response.Headers["X-Image-Path"] = request.OutputPath;
-        }
-        else
-        {
-            var settings = _saveSettings.GetSettings();
-            if (settings.AutoSave)
-            {
-                var filePath = await SaveAndRecordAsync(image, settings, request.ProfileId);
-                Response.Headers["X-Image-Path"] = filePath;
-            }
-        }
-
-        var encoder = new PngEncoder();
-        var stream = new MemoryStream();
-        encoder.Encode(image, stream);
-        stream.Position = 0;
-
-        return File(stream, "image/png", "capture-once.png");
-    }
-
     private async Task<string> SaveAndRecordAsync(
         ImageData image, ImageSaveSettings settings, string? profileId)
     {
@@ -238,9 +202,3 @@ public class StartAcquisitionRequest
     public int? IntervalMs { get; set; }
 }
 
-public class CaptureOnceRequest
-{
-    public required string ProfileId { get; set; }
-    public string? TriggerMode { get; set; }
-    public string? OutputPath { get; set; }
-}

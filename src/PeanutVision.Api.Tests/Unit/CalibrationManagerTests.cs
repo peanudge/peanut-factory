@@ -27,7 +27,7 @@ public class CalibrationManagerTests : IDisposable
 
         _channelManager = new AcquisitionChannelManager(_mockHal);
         _channelManager.Initialize();
-        _acquisitionManager = new AcquisitionService(_channelManager, TestCamFileHelper.GetOrCreate(), new NullLatencyService(), new AcquisitionOperationGate());
+        _acquisitionManager = new AcquisitionService(_channelManager, TestCamFileHelper.GetOrCreate(), new NullLatencyService());
         _calibrationManager = new CalibrationManager(_acquisitionManager, _acquisitionManager);
     }
 

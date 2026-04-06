@@ -58,12 +58,10 @@ builder.Services.Configure<LatencyRepositoryOptions>(
 builder.Services.AddSingleton<ILatencyRepository, LatencyRepository>();
 builder.Services.AddSingleton<ILatencyService, LatencyService>();
 
-builder.Services.AddSingleton<AcquisitionOperationGate>();
 builder.Services.AddSingleton<AcquisitionService>();
 builder.Services.AddSingleton<IAcquisitionService>(sp => sp.GetRequiredService<AcquisitionService>());
 builder.Services.AddSingleton<IChannelCalibration>(sp => sp.GetRequiredService<AcquisitionService>());
 builder.Services.AddSingleton<IExposureControl>(sp => sp.GetRequiredService<AcquisitionService>());
-builder.Services.AddSingleton<ICaptureOnceService, CaptureOnceService>();
 builder.Services.AddSingleton<ICalibrationService, CalibrationManager>();
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

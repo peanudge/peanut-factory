@@ -10,7 +10,6 @@ public sealed class AcquisitionService : IAcquisitionService, IChannelCalibratio
     private readonly IAcquisitionChannelManager _channelManager;
     private readonly ICamFileService _camFileService;
     private readonly ILatencyService _latencyService;
-    private readonly AcquisitionOperationGate _gate;
     private readonly object _lock = new();
     private readonly ChannelEventLog _eventLog = new();
     private readonly ConcurrentQueue<DateTimeOffset> _triggerTimestamps = new();
@@ -28,12 +27,11 @@ public sealed class AcquisitionService : IAcquisitionService, IChannelCalibratio
     private double _desiredExposureUs = 10000.0;
     private int? _targetFrameCount;
 
-    public AcquisitionService(IAcquisitionChannelManager channelManager, ICamFileService camFileService, ILatencyService latencyService, AcquisitionOperationGate gate)
+    public AcquisitionService(IAcquisitionChannelManager channelManager, ICamFileService camFileService, ILatencyService latencyService)
     {
         _channelManager = channelManager;
         _camFileService = camFileService;
         _latencyService = latencyService;
-        _gate = gate;
     }
 
     public ChannelState ChannelState
@@ -102,15 +100,12 @@ public sealed class AcquisitionService : IAcquisitionService, IChannelCalibratio
     {
         lock (_lock)
         {
-            if (_gate.IsInProgress)
-                return new HashSet<ChannelAction>();
-
             return _channelState switch
             {
-                ChannelState.NotAllocated   => new HashSet<ChannelAction> { ChannelAction.Start, ChannelAction.CaptureOnce },
-                ChannelState.Idle   => new HashSet<ChannelAction> { ChannelAction.Start, ChannelAction.CaptureOnce },
-                ChannelState.Active => new HashSet<ChannelAction> { ChannelAction.Stop, ChannelAction.Trigger },
-                _                   => new HashSet<ChannelAction>(),
+                ChannelState.NotAllocated => new HashSet<ChannelAction> { ChannelAction.Start },
+                ChannelState.Idle         => new HashSet<ChannelAction> { ChannelAction.Start },
+                ChannelState.Active       => new HashSet<ChannelAction> { ChannelAction.Stop, ChannelAction.Trigger },
+                _                         => new HashSet<ChannelAction>(),
             };
         }
     }
@@ -186,9 +181,6 @@ public sealed class AcquisitionService : IAcquisitionService, IChannelCalibratio
     {
         lock (_lock)
         {
-            if (_gate.IsInProgress)
-                throw new InvalidOperationException("A capture operation is in progress. Wait for it to complete.");
-
             if (_channelState != ChannelState.NotAllocated)
                 throw new InvalidOperationException("A channel already exists. Release it first.");
 
@@ -238,9 +230,6 @@ public sealed class AcquisitionService : IAcquisitionService, IChannelCalibratio
 
         lock (_lock)
         {
-            if (_gate.IsInProgress)
-                throw new InvalidOperationException("A capture operation is in progress. Wait for it to complete.");
-
             if (_channelState == ChannelState.NotAllocated)
                 throw new InvalidOperationException("No channel exists. Create a channel first.");
 

@@ -14,7 +14,6 @@ import {
   stopAcquisition,
   getAcquisitionStatus,
   triggerAndCapture,
-  snapshot,
   blackCalibration,
   whiteCalibration,
   whiteBalance,
@@ -113,12 +112,13 @@ export function useAcquisitionActions() {
     onError: handleError,
   });
 
-  const snapshotMutation = useMutation({
-    mutationFn: () => snapshot(selectedProfile),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.latestFrame });
+  const captureOneMutation = useMutation({
+    mutationFn: () => startAcquisition(selectedProfile, triggerMode, 1),
+    onSuccess: async () => {
       invalidateStatus();
-      toast("스냅샷이 촬영되었습니다", "success");
+      const info = await getExposure().catch(() => null);
+      if (info) { setExposureState(info); setExposureValue(info.exposureUs); }
+      toast("단일 프레임 촬영이 시작되었습니다", "success");
     },
     onError: handleError,
   });
@@ -171,7 +171,7 @@ export function useAcquisitionActions() {
     startMutation.isPending ||
     stopMutation.isPending ||
     triggerMutation.isPending ||
-    snapshotMutation.isPending ||
+    captureOneMutation.isPending ||
     loadExposureMutation.isPending ||
     applyExposureMutation.isPending ||
     blackMutation.isPending ||
@@ -205,7 +205,7 @@ export function useAcquisitionActions() {
   };
   const handleStop = () => stopMutation.mutate();
   const handleTrigger = () => triggerMutation.mutate();
-  const handleCapture = () => snapshotMutation.mutate();
+  const handleCapture = () => captureOneMutation.mutate();
   const handleLoadExposure = () => loadExposureMutation.mutate();
   const handleApplyExposure = () => applyExposureMutation.mutate();
   const handleBlack = () => blackMutation.mutate();

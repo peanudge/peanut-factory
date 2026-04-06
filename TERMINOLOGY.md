@@ -39,11 +39,9 @@ Use these terms consistently in code, comments, commits, and documentation.
 
 | Term | Type | Definition |
 |------|------|------------|
-| **AcquisitionService** | `class AcquisitionService : IAcquisitionService` | Stateful service that owns a persistent `AcquisitionChannel` and manages the **continuous acquisition state machine** (NotAllocated → Idle → Active). Handles frame buffering, statistics, event log, latency measurement, exposure, and calibration delegation. |
-| **ChannelState** | `enum ChannelState` | State of the persistent channel in `AcquisitionService`: `NotAllocated` (no channel), `Idle` (channel exists but not acquiring), `Active` (acquiring). |
-| **ChannelAction** | `enum ChannelAction` | Actions currently allowed given the channel state: `Start`, `Stop`, `Trigger`, `CaptureOnce`. |
-| **CaptureOnceService** | `class CaptureOnceService : ICaptureOnceService` | Performs a **single-shot synchronous capture** using a dedicated temporary channel. Completely independent of `AcquisitionService`'s persistent channel. Cannot run concurrently with itself or while `AcquisitionService` is in `Active` state. |
-| **AcquisitionOperationGate** | `class AcquisitionOperationGate` | Thread-safe `Interlocked`-based gate that coordinates mutual exclusion between `CaptureOnceService` and `AcquisitionService`. `CaptureOnceService` acquires the gate during a capture; `AcquisitionService` checks `IsInProgress` before allowing `Start` or `CreateChannel`. |
+| **AcquisitionService** | `class AcquisitionService : IAcquisitionService` | Stateful service that owns a **persistent** `AcquisitionChannel` and manages the channel state machine (NotAllocated → Idle → Active). Handles frame buffering, statistics, event log, latency, exposure, and calibration. |
+| **ChannelState** | `enum ChannelState` | State of the persistent channel in `AcquisitionService`: `NotAllocated` (no channel), `Idle` (channel exists but not acquiring), `Active` (continuous acquisition running). |
+| **ChannelAction** | `enum ChannelAction` | Actions currently allowed given the channel state: `Start`, `Stop`, `Trigger`. |
 | **CalibrationManager** | `class CalibrationManager : ICalibrationService` | Delegates flat-field correction (FFC), white balance, and exposure operations to the active `AcquisitionChannel` via `IChannelCalibration` and `IExposureControl`. |
 | **TriggerMode** | `record TriggerMode` | API-level value object wrapping `McTrigMode`. Parsed from string (`"soft"`, `"hard"`, `"combined"`, `"immediate"`). |
 
@@ -58,14 +56,13 @@ Use these terms consistently in code, comments, commits, and documentation.
 | `DELETE /api/acquisition` | Release the persistent channel entirely. |
 | `POST /api/acquisition/trigger` | Send a software trigger and wait for the next frame (requires Active + SOFT/COMBINED mode). |
 | `GET /api/acquisition/latest-frame` | Return the most recently acquired frame as PNG. |
-| `POST /api/acquisition/capture-once` | Single-shot capture using a temporary channel (does not affect the persistent channel state). |
 
 ---
 
 ## Key Design Rules
 
 1. **`AcquisitionChannel` = SDK channel path** — maps 1:1 to a `MC_CHANNEL` handle; never share across threads without locking.
-2. **`AcquisitionService` owns one persistent channel** — creates it on `CreateChannel()`, releases it on `ReleaseChannel()` or `Dispose()`.
-3. **`CaptureOnceService` is self-contained** — creates its own temporary channel, captures one frame, and immediately destroys the channel. It never touches `AcquisitionService`'s channel.
-4. **`AcquisitionOperationGate` prevents races** — ensures `CaptureOnce` and `AcquisitionService.Start` cannot overlap.
-5. **`ChannelState.NotAllocated`** — the initial and post-release state; means no driver-level channel exists.
+2. **`AcquisitionService` owns one persistent channel** — created on `CreateChannel()`, released on `ReleaseChannel()` or `Dispose()`.
+3. **Single-frame capture** — achieved by calling `Start(frameCount: 1)`; the channel auto-stops after one frame and returns to `Idle`. No separate CaptureOnce API exists.
+4. **`ChannelState.NotAllocated`** — the initial and post-release state; means no driver-level channel exists.
+5. **One channel at a time** — `AcquisitionService` enforces that only one channel can exist at a time; state machine checks prevent overlapping operations.
