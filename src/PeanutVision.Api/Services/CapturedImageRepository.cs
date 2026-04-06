@@ -26,8 +26,8 @@ public sealed class CapturedImageRepository : ICapturedImageRepository
         if (date.HasValue)
         {
             var from = date.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-            var to   = date.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
-            query = query.Where(c => c.CapturedAt >= from && c.CapturedAt <= to);
+            var to   = date.Value.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            query = query.Where(c => c.CapturedAt >= from && c.CapturedAt < to);
         }
         else
         {
