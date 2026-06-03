@@ -9,39 +9,40 @@
   align-items: center;
   gap: 4px;
   padding: 5px 10px;
-  border: 1px solid #444;
+  border: 1px solid var(--border-default);
   border-radius: 4px;
-  background: #1e1e1e;
-  color: #ccc;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
   font-size: 0.8rem;
   cursor: pointer;
   white-space: nowrap;
 
-  &:hover:not(:disabled) { background: #2a2a2a; }
+  &:hover:not(:disabled) { background: var(--bg-hover); }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 
   &.primary {
-    background: #1565c0;
-    border-color: #1e88e5;
-    color: #fff;
+    background: var(--btn-primary-bg);
+    border-color: var(--btn-primary-border);
+    color: var(--text-inverse);
   }
+  &.primary:hover:not(:disabled) { background: var(--btn-primary-hover); }
 }
 
 .field {
   width: 100%;
   padding: 7px 10px;
-  background: #1a1a1a;
-  border: 1px solid #444;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
   border-radius: 4px;
-  color: #e0e0e0;
+  color: var(--text-primary);
   font-size: 0.85rem;
 
-  &:focus { outline: none; border-color: #58a; }
+  &:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent-subtle); }
 }
 
 .meta {
   font-size: 0.75rem;
-  color: #777;
+  color: var(--text-hint);
   margin-top: 4px;
 }
 
@@ -63,23 +64,24 @@
   cursor: pointer;
   transition: background 0.1s;
 
-  &:hover { background: #2a2a2a; }
+  &:hover { background: var(--bg-hover); }
 }
 
-.presetName { font-size: 0.875rem; }
-.presetMeta { font-size: 0.72rem; color: #666; margin-top: 2px; }
+.presetName { font-size: 0.875rem; color: var(--text-primary); }
+.presetMeta { font-size: 0.72rem; color: var(--text-hint); margin-top: 2px; }
 
 .iconBtn {
   background: none;
   border: none;
-  color: #666;
+  color: var(--text-hint);
   cursor: pointer;
   padding: 4px;
   display: flex;
   align-items: center;
+  border-radius: 3px;
 
-  &:hover { color: #f44336; }
+  &:hover { color: var(--color-error); background: var(--color-error-bg); }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
-.empty { color: #666; font-size: 0.85rem; padding: 12px 0; }
+.empty { color: var(--text-muted); font-size: 0.85rem; padding: 12px 0; }

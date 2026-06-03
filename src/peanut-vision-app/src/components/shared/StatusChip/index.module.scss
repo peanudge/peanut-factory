@@ -2,11 +2,12 @@
   display: inline-block;
   padding: 2px 8px;
   border-radius: 12px;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   border: 1px solid currentColor;
-  &.success { color: #4caf50; }
-  &.warning { color: #ff9800; }
-  &.error   { color: #f44336; }
-  &.default { color: #888; }
+
+  &.success { color: var(--color-success); }
+  &.warning { color: var(--color-warning); }
+  &.error   { color: var(--color-error); }
+  &.default { color: var(--text-muted); }
 }

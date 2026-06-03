@@ -1,10 +1,11 @@
 .card {
-  border: 1px solid #444;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  background: var(--bg-surface);
 }
 
 .header {
@@ -17,6 +18,7 @@
 .title {
   font-size: 0.875rem;
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 .badge {
@@ -27,21 +29,22 @@
   font-weight: 600;
   border: 1px solid currentColor;
 
-  &.live { color: #4caf50; }
-  &.pending { color: #888; }
+  &.live { color: var(--color-success); }
+  &.pending { color: var(--text-hint); }
 }
 
 .textBtn {
   margin-left: auto;
   background: none;
   border: none;
-  color: #58a;
+  color: var(--color-accent);
   font-size: 0.8rem;
   cursor: pointer;
   padding: 2px 6px;
+  border-radius: 3px;
 
   &:disabled { opacity: 0.4; cursor: not-allowed; }
-  &:hover:not(:disabled) { text-decoration: underline; }
+  &:hover:not(:disabled) { background: var(--color-accent-subtle); }
 }
 
 .body {
@@ -52,34 +55,34 @@
 
 .sliderLabel {
   font-size: 0.8rem;
-  color: #aaa;
+  color: var(--text-muted);
 }
 
 .slider {
   width: 100%;
-  accent-color: #58a;
+  accent-color: var(--color-accent);
 }
 
 .hint {
   font-size: 0.75rem;
-  color: #666;
+  color: var(--text-hint);
 }
 
 .btn {
   padding: 7px 14px;
-  border: 1px solid #444;
+  border: 1px solid var(--border-default);
   border-radius: 4px;
-  background: #1e1e1e;
-  color: #e0e0e0;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
   font-size: 0.85rem;
   cursor: pointer;
 
   &.primary {
-    background: #1565c0;
-    border-color: #1e88e5;
-    color: #fff;
+    background: var(--btn-primary-bg);
+    border-color: var(--btn-primary-border);
+    color: var(--text-inverse);
   }
 
   &:disabled { opacity: 0.4; cursor: not-allowed; }
-  &:hover:not(:disabled) { filter: brightness(1.1); }
+  &:hover:not(:disabled) { filter: brightness(1.05); }
 }

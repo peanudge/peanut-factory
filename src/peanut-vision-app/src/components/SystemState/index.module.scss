@@ -9,13 +9,16 @@
   h3 {
     margin: 0 0 12px;
     font-size: 1rem;
+    color: var(--text-secondary);
   }
 }
 
 .tableWrap {
-  border: 1px solid #444;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   overflow: hidden;
+  background: var(--bg-surface);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
 table {
@@ -27,13 +30,17 @@ table {
 th, td {
   padding: 8px 12px;
   text-align: left;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
 }
 
 th {
-  background: #2a2a2a;
+  background: var(--bg-surface-raised);
   font-weight: 600;
-  color: #aaa;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 tr:last-child td {
@@ -41,7 +48,7 @@ tr:last-child td {
 }
 
 tr:hover td {
-  background: #1e1e1e;
+  background: var(--bg-hover);
 }
 
 .mono {
@@ -58,8 +65,8 @@ tr:hover td {
   display: inline-block;
   width: 24px;
   height: 24px;
-  border: 3px solid #444;
-  border-top-color: #58a;
+  border: 3px solid var(--border-default);
+  border-top-color: var(--color-accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -69,8 +76,10 @@ tr:hover td {
 }
 
 .error {
-  color: #f44336;
+  color: var(--color-error);
   padding: 16px;
-  background: #2a1010;
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error);
   border-radius: 6px;
+  font-size: 0.85rem;
 }

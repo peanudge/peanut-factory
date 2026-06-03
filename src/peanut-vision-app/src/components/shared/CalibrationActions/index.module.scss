@@ -1,13 +1,15 @@
 .card {
-  border: 1px solid #444;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   padding: 14px 16px;
+  background: var(--bg-surface);
 }
 
 .title {
   margin: 0 0 12px;
   font-size: 0.875rem;
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 .stack {
@@ -25,22 +27,22 @@
 .btn {
   width: 100%;
   padding: 7px 14px;
-  border: 1px solid #555;
+  border: 1px solid var(--border-default);
   border-radius: 4px;
-  background: transparent;
-  color: #e0e0e0;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
   font-size: 0.85rem;
   cursor: pointer;
   text-align: center;
   transition: background 0.15s;
 
-  &:hover:not(:disabled) { background: #2a2a2a; }
+  &:hover:not(:disabled) { background: var(--bg-hover); border-color: var(--color-accent); }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
 .hint {
   font-size: 0.72rem;
-  color: #666;
+  color: var(--text-hint);
   padding: 0 2px;
 }
 
@@ -49,11 +51,11 @@
   align-items: center;
   gap: 8px;
   font-size: 0.85rem;
-  color: #ccc;
+  color: var(--text-secondary);
   cursor: pointer;
 
   input[type='checkbox'] {
-    accent-color: #58a;
+    accent-color: var(--color-accent);
     width: 14px;
     height: 14px;
   }

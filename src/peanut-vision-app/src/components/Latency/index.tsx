@@ -53,7 +53,7 @@ function LatencyChart({
   return (
     <ResponsiveContainer width="100%" height={220}>
       <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
         <XAxis
           dataKey="id"
           tick={{ fontSize: 11 }}
@@ -62,7 +62,7 @@ function LatencyChart({
         <YAxis tick={{ fontSize: 11 }} unit="ms" width={56} />
         <Tooltip
           formatter={(v) => [`${Number(v).toFixed(3)} ms`, 'Latency']}
-          contentStyle={{ background: '#1e1e2e', border: '1px solid #444', fontSize: 12 }}
+          contentStyle={{ background: '#ffffff', border: '1px solid #d1d5db', fontSize: 12, color: '#374151' }}
         />
         {stats && (
           <ReferenceLine
@@ -150,7 +150,7 @@ function RecordsTable({ records }: { records: LatencyRecord[] }) {
                 <td className={cx('right')}>
                   <LatencyChip value={r.latencyMs} />
                 </td>
-                <td style={{ color: '#666', fontSize: '0.75rem' }}>
+                <td style={{ color: 'var(--text-hint)', fontSize: '0.75rem' }}>
                   {r.profileId ?? '—'}
                 </td>
               </tr>
@@ -192,11 +192,11 @@ export default function Latency() {
   const statItems = [
     { label: 'Count', value: stats?.count, unit: '' },
     { label: 'Min', value: stats?.minMs },
-    { label: 'Max', value: stats?.maxMs, color: '#f44336' },
-    { label: 'Mean', value: stats?.meanMs, color: '#58a' },
+    { label: 'Max', value: stats?.maxMs, color: 'var(--color-error)' },
+    { label: 'Mean', value: stats?.meanMs, color: 'var(--color-accent)' },
     { label: 'P50', value: stats?.p50Ms },
-    { label: 'P95', value: stats?.p95Ms, color: '#ff9800' },
-    { label: 'P99', value: stats?.p99Ms, color: '#f44336' },
+    { label: 'P95', value: stats?.p95Ms, color: 'var(--color-warning)' },
+    { label: 'P99', value: stats?.p99Ms, color: 'var(--color-error)' },
     { label: 'Std Dev', value: stats?.stdDevMs },
   ]
 

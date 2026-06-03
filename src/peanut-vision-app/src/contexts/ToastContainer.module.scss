@@ -10,6 +10,7 @@
   max-width: calc(100vw - 48px);
   pointer-events: none;
 }
+
 .toast {
   display: flex;
   align-items: center;
@@ -18,7 +19,9 @@
   border-radius: 6px;
   font-size: 0.85rem;
   pointer-events: all;
-  color: #fff;
+  color: #fff; // intentional: text on colored fill
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+
   button {
     background: none;
     border: none;
@@ -29,8 +32,9 @@
     opacity: 0.7;
     &:hover { opacity: 1; }
   }
-  &.success { background: #2e7d32; }
-  &.error   { background: #c62828; }
-  &.warning { background: #e65100; }
-  &.info    { background: #1565c0; }
+
+  &.success { background: #16a34a; }
+  &.error   { background: #dc2626; }
+  &.warning { background: #d97706; }
+  &.info    { background: #2563eb; }
 }

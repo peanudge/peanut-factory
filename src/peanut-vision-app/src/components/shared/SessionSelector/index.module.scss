@@ -7,7 +7,7 @@
 
 .label {
   font-size: 0.8rem;
-  color: #888;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
@@ -17,13 +17,13 @@
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 600;
-  border: 1px solid #58a;
-  color: #58a;
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
 }
 
 .noSession {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--text-hint);
 }
 
 .btn {
@@ -31,45 +31,49 @@
   align-items: center;
   gap: 4px;
   padding: 5px 10px;
-  border: 1px solid #444;
+  border: 1px solid var(--border-default);
   border-radius: 4px;
-  background: #1e1e1e;
-  color: #ccc;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
   font-size: 0.8rem;
   cursor: pointer;
   white-space: nowrap;
 
-  &:hover:not(:disabled) { background: #2a2a2a; }
+  &:hover:not(:disabled) { background: var(--bg-hover); }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  &.warning { border-color: #e65100; color: #ff9800; }
-  &.primary { background: #1565c0; border-color: #1e88e5; color: #fff; }
+  &.warning { border-color: var(--color-warning); color: var(--color-warning); }
+  &.primary {
+    background: var(--btn-primary-bg);
+    border-color: var(--btn-primary-border);
+    color: var(--text-inverse);
+  }
 }
 
 .iconBtn {
   display: inline-flex;
   align-items: center;
   padding: 5px;
-  border: 1px solid #444;
+  border: 1px solid var(--border-default);
   border-radius: 4px;
-  background: #1e1e1e;
-  color: #888;
+  background: var(--bg-surface);
+  color: var(--text-muted);
   cursor: pointer;
 
-  &:hover { color: #e0e0e0; }
+  &:hover { color: var(--text-primary); background: var(--bg-hover); }
 }
 
 .field {
   width: 100%;
   padding: 7px 10px;
-  background: #1a1a1a;
-  border: 1px solid #444;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
   border-radius: 4px;
-  color: #e0e0e0;
+  color: var(--text-primary);
   font-size: 0.85rem;
   margin-bottom: 8px;
 
-  &:focus { outline: none; border-color: #58a; }
+  &:focus { outline: none; border-color: var(--color-accent); }
 }
 
 .list {
@@ -88,7 +92,7 @@
   padding: 8px 10px;
   border-radius: 4px;
 
-  &:hover { background: #2a2a2a; }
+  &:hover { background: var(--bg-hover); }
 }
 
 .sessionName {
@@ -96,33 +100,35 @@
   align-items: center;
   gap: 6px;
   font-size: 0.875rem;
+  color: var(--text-primary);
 }
 
 .activeBadge {
   padding: 1px 5px;
   border-radius: 8px;
   font-size: 0.7rem;
-  background: #2e7d32;
-  color: #fff;
+  background: var(--btn-success-bg);
+  color: var(--text-inverse);
 }
 
 .sessionMeta {
   font-size: 0.72rem;
-  color: #666;
+  color: var(--text-hint);
   margin-top: 2px;
 }
 
 .iconBtn2 {
   background: none;
   border: none;
-  color: #666;
+  color: var(--text-hint);
   cursor: pointer;
   padding: 4px;
   display: flex;
   align-items: center;
+  border-radius: 3px;
 
-  &:hover { color: #f44336; }
+  &:hover { color: var(--color-error); background: var(--color-error-bg); }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
-.empty { color: #666; font-size: 0.85rem; padding: 8px 0; }
+.empty { color: var(--text-muted); font-size: 0.85rem; padding: 8px 0; }

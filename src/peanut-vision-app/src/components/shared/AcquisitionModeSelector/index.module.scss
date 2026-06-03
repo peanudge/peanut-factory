@@ -7,27 +7,27 @@
 
 .toggleGroup {
   display: flex;
-  border: 1px solid #444;
+  border: 1px solid var(--border-default);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .toggle {
   padding: 6px 12px;
-  background: #1e1e1e;
+  background: var(--bg-surface);
   border: none;
-  color: #888;
+  color: var(--text-muted);
   font-size: 0.8rem;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 
   &:not(:first-child) {
-    border-left: 1px solid #444;
+    border-left: 1px solid var(--border-default);
   }
 
   &.active {
-    background: #58a;
-    color: #fff;
+    background: var(--color-accent);
+    color: var(--text-inverse);
     font-weight: 600;
   }
 
@@ -41,10 +41,10 @@
   flex: 1;
   min-width: 100px;
   padding: 6px 8px;
-  background: #1e1e1e;
-  border: 1px solid #444;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
   border-radius: 4px;
-  color: #e0e0e0;
+  color: var(--text-primary);
   font-size: 0.85rem;
   cursor: pointer;
 
@@ -55,6 +55,6 @@
 
   &:focus {
     outline: none;
-    border-color: #58a;
+    border-color: var(--color-accent);
   }
 }

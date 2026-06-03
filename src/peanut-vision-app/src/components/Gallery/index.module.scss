@@ -8,14 +8,16 @@
 .viewer {
   width: 480px;
   flex-shrink: 0;
-  border-right: 1px solid #333;
+  border-right: 1px solid var(--border-subtle);
   padding: 16px;
   display: flex;
   flex-direction: column;
+  background: var(--bg-surface);
 }
 
 .gridPane {
   flex: 1;
   overflow: hidden;
   padding: 16px;
+  background: var(--bg-page);
 }

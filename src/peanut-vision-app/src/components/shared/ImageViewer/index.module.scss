@@ -4,10 +4,11 @@
   justify-content: center;
   height: 100%;
   min-height: 200px;
-  border: 1px dashed #444;
+  border: 1px dashed var(--border-default);
   border-radius: 4px;
-  color: #666;
+  color: var(--text-hint);
   font-size: 0.85rem;
+  background: var(--bg-surface);
 }
 
 .viewer {
@@ -19,7 +20,7 @@
 
 .imageWrap {
   position: relative;
-  border: 1px solid #444;
+  border: 1px solid var(--border-default);
   border-radius: 4px;
   overflow: hidden;
   flex: 1;
@@ -27,7 +28,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #111;
+  background: var(--bg-image); // intentionally dark for image viewing
 
   img {
     max-width: 100%;
@@ -60,7 +61,7 @@
   font-weight: 700;
 
   &.error { background: rgba(198, 40, 40, 0.85); color: #fff; }
-  &.live  { background: rgba(46, 125, 50, 0.9); color: #fff; }
+  &.live  { background: rgba(22, 163, 74, 0.9); color: #fff; }
   &.time  { background: rgba(0, 0, 0, 0.6); color: #fff; }
 }
 
@@ -71,11 +72,11 @@
   font-size: 0.68rem;
   font-weight: 600;
   background: rgba(0, 0, 0, 0.5);
-  border: 1px solid #58a;
-  color: #8ab;
+  border: 1px solid rgba(255,255,255,0.4);
+  color: #fff;
   cursor: pointer;
 
-  &:hover { background: rgba(85, 136, 170, 0.3); }
+  &:hover { background: rgba(37, 99, 235, 0.7); }
 }
 
 .actionBar {

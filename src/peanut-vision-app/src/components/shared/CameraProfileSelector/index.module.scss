@@ -5,17 +5,20 @@
 }
 
 .label {
-  font-size: 0.75rem;
-  color: #888;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .select {
   width: 100%;
   padding: 6px 8px;
-  background: #1e1e1e;
-  border: 1px solid #444;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
   border-radius: 4px;
-  color: #e0e0e0;
+  color: var(--text-primary);
   font-size: 0.85rem;
   cursor: pointer;
 
@@ -26,6 +29,7 @@
 
   &:focus {
     outline: none;
-    border-color: #58a;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px var(--color-accent-subtle);
   }
 }

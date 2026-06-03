@@ -7,21 +7,21 @@
 
 .toggleGroup {
   display: flex;
-  border: 1px solid #444;
+  border: 1px solid var(--border-default);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .toggle {
   padding: 5px 12px;
-  background: #1e1e1e;
+  background: var(--bg-surface);
   border: none;
-  color: #888;
+  color: var(--text-muted);
   font-size: 0.8rem;
   cursor: pointer;
 
-  &:not(:first-child) { border-left: 1px solid #444; }
-  &.active { background: #58a; color: #fff; }
+  &:not(:first-child) { border-left: 1px solid var(--border-default); }
+  &.active { background: var(--color-accent); color: var(--text-inverse); }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
@@ -32,25 +32,25 @@
 
   label {
     font-size: 0.72rem;
-    color: #888;
+    color: var(--text-muted);
   }
 
   input {
     width: 110px;
     padding: 5px 8px;
-    background: #1a1a1a;
-    border: 1px solid #444;
+    background: var(--bg-input);
+    border: 1px solid var(--border-default);
     border-radius: 4px;
-    color: #e0e0e0;
+    color: var(--text-primary);
     font-size: 0.85rem;
 
-    &:focus { outline: none; border-color: #58a; }
+    &:focus { outline: none; border-color: var(--color-accent); }
     &:disabled { opacity: 0.4; }
   }
 
   small {
     font-size: 0.7rem;
-    color: #666;
+    color: var(--text-hint);
   }
 }
 
@@ -59,10 +59,10 @@
   align-items: center;
   gap: 6px;
   font-size: 0.82rem;
-  color: #ccc;
+  color: var(--text-secondary);
   cursor: pointer;
 
   input[type='checkbox'] {
-    accent-color: #58a;
+    accent-color: var(--color-accent);
   }
 }
