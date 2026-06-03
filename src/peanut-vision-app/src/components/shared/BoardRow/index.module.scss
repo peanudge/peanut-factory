@@ -1,0 +1,48 @@
+.toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: inherit;
+  display: flex;
+  align-items: center;
+}
+
+.detail {
+  padding: 0 !important;
+}
+
+.detailInner {
+  padding: 12px 16px;
+  background: #1a1a1a;
+}
+
+.detailTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  td {
+    padding: 4px 8px;
+  }
+
+  td:first-child {
+    font-weight: 500;
+    width: 220px;
+    color: #aaa;
+  }
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #444;
+  border-top-color: #58a;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
