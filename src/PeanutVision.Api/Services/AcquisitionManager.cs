@@ -21,7 +21,6 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
     private TaskCompletionSource<ImageData>? _triggerTcs;
     private bool _disposed;
     private Timer? _triggerTimer;
-    private bool _snapshotInProgress;
     private ChannelState _channelState = ChannelState.None;
     private ProfileId? _channelProfileId;
     private TriggerMode? _channelTriggerMode;
@@ -104,13 +103,10 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
     {
         lock (_lock)
         {
-            if (_snapshotInProgress)
-                return new HashSet<ChannelAction>();
-
             return _channelState switch
             {
-                ChannelState.None   => new HashSet<ChannelAction> { ChannelAction.Start, ChannelAction.Snapshot },
-                ChannelState.Idle   => new HashSet<ChannelAction> { ChannelAction.Start, ChannelAction.Snapshot },
+                ChannelState.None   => new HashSet<ChannelAction> { ChannelAction.Start },
+                ChannelState.Idle   => new HashSet<ChannelAction> { ChannelAction.Start },
                 ChannelState.Active => new HashSet<ChannelAction> { ChannelAction.Stop, ChannelAction.Trigger },
                 _                   => new HashSet<ChannelAction>(),
             };
@@ -188,9 +184,6 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
     {
         lock (_lock)
         {
-            if (_snapshotInProgress)
-                throw new InvalidOperationException("A snapshot is in progress. Wait for it to complete.");
-
             if (_channelState != ChannelState.None)
                 throw new InvalidOperationException("A channel already exists. Release it first.");
 
@@ -240,9 +233,6 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
 
         lock (_lock)
         {
-            if (_snapshotInProgress)
-                throw new InvalidOperationException("A snapshot is in progress. Wait for it to complete.");
-
             if (_channelState == ChannelState.None)
                 throw new InvalidOperationException("No channel exists. Create a channel first.");
 
@@ -356,87 +346,6 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
         }
 
         return await tcs.Task;
-    }
-
-    public ImageData Snapshot(ProfileId profileId, TriggerMode? triggerMode = null)
-    {
-        lock (_lock)
-        {
-            if (_channelState == ChannelState.Active)
-                throw new InvalidOperationException("Acquisition is already active. Stop it first.");
-
-            _snapshotInProgress = true;
-        }
-
-        StatusChanged?.Invoke(this, EventArgs.Empty);
-
-        try
-        {
-            var camFile = _camFileService.GetByFileName(profileId.Value);
-            var options = triggerMode.HasValue
-                ? camFile.ToChannelOptions(triggerMode.Value.Mode, useCallback: false)
-                : camFile.ToChannelOptions(useCallback: false);
-
-            // Snapshot requires a software-triggerable mode.
-            // Throw explicitly rather than silently overriding the caller's intent.
-            if (triggerMode.HasValue &&
-                options.TriggerMode != McTrigMode.MC_TrigMode_SOFT &&
-                options.TriggerMode != McTrigMode.MC_TrigMode_COMBINED)
-            {
-                throw new ArgumentException(
-                    $"Snapshot requires SOFT or COMBINED trigger mode. " +
-                    $"The requested mode '{options.TriggerMode}' is not software-triggerable. " +
-                    "Use a cam file or trigger mode that supports software triggering.",
-                    nameof(triggerMode));
-            }
-
-            // If no explicit trigger mode was requested, force SOFT for reliable snapshot behavior.
-            if (!triggerMode.HasValue)
-            {
-                options.TriggerMode = McTrigMode.MC_TrigMode_SOFT;
-            }
-
-            var channel = _grabService.CreateChannel(options);
-            try
-            {
-                channel.StartAcquisition(1);
-                var snapshotTriggerAt = DateTimeOffset.UtcNow;
-                channel.SendSoftwareTrigger();
-
-                var surface = channel.WaitForFrame(5000)
-                    ?? throw new TimeoutException("Snapshot timed out waiting for frame.");
-
-                var snapshotFrameAt = DateTimeOffset.UtcNow;
-                _latencyService.Record(snapshotTriggerAt, snapshotFrameAt, 1, profileId.Value);
-
-                ImageData image;
-                try
-                {
-                    image = ImageData.FromSurface(surface);
-                }
-                finally
-                {
-                    channel.ReleaseSurface(surface);
-                }
-
-                lock (_lock) { _lastFrame = image; }
-                FrameAcquired?.Invoke(this, EventArgs.Empty);
-                return image;
-            }
-            finally
-            {
-                channel.StopAcquisition();
-                _grabService.ReleaseChannel(channel);
-            }
-        }
-        finally
-        {
-            lock (_lock)
-            {
-                _snapshotInProgress = false;
-            }
-            StatusChanged?.Invoke(this, EventArgs.Empty);
-        }
     }
 
     /// <summary>

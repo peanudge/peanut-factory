@@ -22,9 +22,6 @@ public class GrabChannelOptions
     /// <summary>Number of surfaces in the cluster (frame buffers)</summary>
     public int SurfaceCount { get; set; } = 4;
 
-    /// <summary>Enable callback-based acquisition (recommended for high performance)</summary>
-    public bool UseCallback { get; set; } = true;
-
     /// <summary>Trigger mode for acquisition</summary>
     public McTrigMode TriggerMode { get; set; } = McTrigMode.MC_TrigMode_IMMEDIATE;
 
@@ -59,7 +56,7 @@ public sealed class GrabChannel : IDisposable
     private int _clusterUnavailableCount;
     private McTrigMode _triggerMode;
 
-    // Internal signal processing thread (only active when UseCallback=true)
+    // Internal signal processing thread.
     // All signals from the native callback are enqueued here — no event is ever
     // fired directly on the MultiCam thread, guaranteeing < 1ms callback time.
     private volatile Channel<CallbackSignal>? _signalQueue;
@@ -198,12 +195,8 @@ public sealed class GrabChannel : IDisposable
             SetSignalEnable(McSignal.MC_SIG_UNRECOVERABLE_OVERRUN, true);
             SetSignalEnable(McSignal.MC_SIG_CLUSTER_UNAVAILABLE, true);
 
-            // Register callback if requested
-            if (options.UseCallback)
-            {
-                RegisterCallback();
-                InitializeProcessingThread();
-            }
+            RegisterCallback();
+            InitializeProcessingThread();
 
             // Read back image parameters
             RefreshImageParameters();
@@ -539,39 +532,6 @@ public sealed class GrabChannel : IDisposable
                 MultiCamApi.MC_ForceTrig_STR);
             ThrowOnError(status, "SetParam(ForceTrig=TRIG)");
         }
-    }
-
-    /// <summary>
-    /// Waits for the next frame using polling (alternative to callback).
-    /// </summary>
-    /// <param name="timeoutMs">Timeout in milliseconds</param>
-    /// <returns>Surface data, or null if timeout</returns>
-    public SurfaceData? WaitForFrame(uint timeoutMs = 5000)
-    {
-        ThrowIfDisposed();
-
-        int status = _hal.WaitSignal(_channelHandle,
-            (int)McSignal.MC_SIG_SURFACE_PROCESSING, timeoutMs, out McSignalInfo info);
-
-        if (status == (int)McStatus.MC_TIMEOUT)
-            return null;
-
-        ThrowOnError(status, "McWaitSignal");
-
-        uint surfaceHandle = info.SignalInfo;
-        var surface = GetSurfaceData(surfaceHandle);
-
-        // Note: Caller is responsible for calling ReleaseSurface when done
-        return surface;
-    }
-
-    /// <summary>
-    /// Releases a surface back to the acquisition cluster.
-    /// Must be called after processing a frame obtained via WaitForFrame.
-    /// </summary>
-    public void ReleaseSurface(SurfaceData surface)
-    {
-        ReleaseSurface(surface.SurfaceHandle);
     }
 
     #endregion

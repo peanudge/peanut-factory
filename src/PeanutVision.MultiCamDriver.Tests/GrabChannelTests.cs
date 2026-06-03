@@ -88,23 +88,13 @@ public class GrabChannelTests
     }
 
     [Fact]
-    public void Constructor_RegistersCallback_WhenEnabled()
+    public void Constructor_RegistersCallback()
     {
-        var options = new GrabChannelOptions { UseCallback = true };
+        var options = new GrabChannelOptions();
 
         using var channel = new GrabChannel(options, _mockHal);
 
         Assert.Equal(1, _mockHal.CallLog.RegisterCallbackCalls);
-    }
-
-    [Fact]
-    public void Constructor_DoesNotRegisterCallback_WhenDisabled()
-    {
-        var options = new GrabChannelOptions { UseCallback = false };
-
-        using var channel = new GrabChannel(options, _mockHal);
-
-        Assert.Equal(0, _mockHal.CallLog.RegisterCallbackCalls);
     }
 
     [Fact]
@@ -217,30 +207,6 @@ public class GrabChannelTests
         channel.SendSoftwareTrigger();
 
         Assert.Equal(1, _mockHal.CallLog.SoftwareTriggerCount);
-    }
-
-    [Fact]
-    public void WaitForFrame_ReturnsFrameData()
-    {
-        var options = new GrabChannelOptions { UseCallback = false };
-        using var channel = new GrabChannel(options, _mockHal);
-
-        var surface = channel.WaitForFrame(1000);
-
-        Assert.NotNull(surface);
-        Assert.Equal(1, _mockHal.CallLog.WaitSignalCalls);
-    }
-
-    [Fact]
-    public void WaitForFrame_OnTimeout_ReturnsNull()
-    {
-        _mockHal.Configuration.WaitSignalFailure = (int)McStatus.MC_TIMEOUT;
-        var options = new GrabChannelOptions { UseCallback = false };
-        using var channel = new GrabChannel(options, _mockHal);
-
-        var surface = channel.WaitForFrame(1000);
-
-        Assert.Null(surface);
     }
 
     #endregion
@@ -521,7 +487,7 @@ public class GrabChannelTests
             Marshal.Copy(zeros, 0, surfaceMemory, bufferSize);
             _mockHal.Configuration.SimulatedSurfaceAddress = surfaceMemory;
 
-            var options = new GrabChannelOptions { UseCallback = true };
+            var options = new GrabChannelOptions();
             using var channel = new GrabChannel(options, _mockHal);
             var tcs = new TaskCompletionSource<ImageData>();
 
@@ -547,7 +513,7 @@ public class GrabChannelTests
     [Fact]
     public async Task AcquisitionError_FiredOnFailure()
     {
-        var options = new GrabChannelOptions { UseCallback = true };
+        var options = new GrabChannelOptions();
         using var channel = new GrabChannel(options, _mockHal);
         var tcs = new TaskCompletionSource<McSignal>();
 
@@ -565,7 +531,7 @@ public class GrabChannelTests
     [Fact]
     public async Task AcquisitionEnded_FiredOnEndChannelActivity()
     {
-        var options = new GrabChannelOptions { UseCallback = true };
+        var options = new GrabChannelOptions();
         using var channel = new GrabChannel(options, _mockHal);
         channel.StartAcquisition();
         var tcs = new TaskCompletionSource();
@@ -584,7 +550,7 @@ public class GrabChannelTests
     [Fact]
     public async Task UnrecoverableError_StopsAcquisitionAndFiresEvent()
     {
-        var options = new GrabChannelOptions { UseCallback = true };
+        var options = new GrabChannelOptions();
         using var channel = new GrabChannel(options, _mockHal);
         channel.StartAcquisition();
         var tcs = new TaskCompletionSource();
@@ -603,7 +569,7 @@ public class GrabChannelTests
     [Fact]
     public async Task ClusterUnavailable_FiresAcquisitionError()
     {
-        var options = new GrabChannelOptions { UseCallback = true };
+        var options = new GrabChannelOptions();
         using var channel = new GrabChannel(options, _mockHal);
         var tcs = new TaskCompletionSource<McSignal>();
 
@@ -621,7 +587,7 @@ public class GrabChannelTests
     [Fact]
     public void ClusterUnavailable_IncrementsCounter()
     {
-        var options = new GrabChannelOptions { UseCallback = true };
+        var options = new GrabChannelOptions();
         using var channel = new GrabChannel(options, _mockHal);
 
         Assert.Equal(0, channel.ClusterUnavailableCount);

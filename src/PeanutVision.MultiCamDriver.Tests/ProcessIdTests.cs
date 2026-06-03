@@ -135,7 +135,6 @@ public class MultiCamDriverTests
         Assert.Equal("M", options.Connector);
         Assert.Null(options.CamFilePath);
         Assert.Equal(4, options.SurfaceCount);
-        Assert.True(options.UseCallback);
         Assert.Equal(McTrigMode.MC_TrigMode_IMMEDIATE, options.TriggerMode);
     }
 

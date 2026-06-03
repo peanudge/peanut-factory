@@ -167,43 +167,35 @@ public class HardwareTests : IDisposable
     }
 
     [Fact]
-    public void SoftwareTrigger_WithPolling_CapturesFrames()
+    public async Task SoftwareTrigger_WithCallback_CapturesFrames()
     {
         SkipIfNoHardware();
 
-        var camPath = _camFileService.GetByFileName("TC-A160K-SEM_freerun_RGB8.cam").FilePath;
+        var camInfo = _camFileService.GetByFileName("TC-A160K-SEM_freerun_RGB8.cam");
+        var options = camInfo.ToChannelOptions(triggerMode: McTrigMode.MC_TrigMode_SOFT);
 
-        using var channel = _service.CreateChannel(new GrabChannelOptions
+        using var channel = _service.CreateChannel(options);
+
+        int capturedFrames = 0;
+        var tcs = new TaskCompletionSource<bool>();
+
+        channel.FrameAcquired += (_, e) =>
         {
-            DriverIndex = 0,
-            Connector = "M",
-            CamFilePath = camPath,
-            SurfaceCount = 2,
-            UseCallback = false,
-            TriggerMode = McTrigMode.MC_TrigMode_SOFT
-        });
+            capturedFrames++;
+            if (capturedFrames >= 5)
+                tcs.TrySetResult(true);
+        };
 
         channel.StartAcquisition();
 
-        int capturedFrames = 0;
         for (int i = 0; i < 5; i++)
-        {
             channel.SendSoftwareTrigger();
-            var surface = channel.WaitForFrame(2000);
 
-            if (surface.HasValue)
-            {
-                capturedFrames++;
-                Assert.True(surface.Value.Width > 0);
-                Assert.True(surface.Value.Height > 0);
-                Assert.True(surface.Value.Address != IntPtr.Zero);
-                channel.ReleaseSurface(surface.Value);
-            }
-        }
-
+        var completed = await Task.WhenAny(tcs.Task, Task.Delay(10_000));
         channel.StopAcquisition();
 
-        Assert.True(capturedFrames > 0, "Should have captured at least 1 frame");
+        Assert.True(completed == tcs.Task, "Should have captured 5 frames within timeout");
+        Assert.True(capturedFrames >= 5, $"Expected >= 5 frames, got {capturedFrames}");
     }
 
     [Fact]

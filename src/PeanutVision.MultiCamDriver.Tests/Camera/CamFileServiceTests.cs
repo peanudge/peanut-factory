@@ -168,6 +168,5 @@ public class CamFileServiceTests : IDisposable
         Assert.Equal(0, options.DriverIndex);
         Assert.Equal("M", options.Connector);
         Assert.Equal(4, options.SurfaceCount);
-        Assert.True(options.UseCallback);
     }
 }

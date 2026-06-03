@@ -37,7 +37,6 @@ public static class AcquisitionExample
             Connector = "M",  // Medium connector for Camera Link Full
             CamFilePath = camFilePath,
             SurfaceCount = 4,  // 4 frame buffers for smooth acquisition
-            UseCallback = true,
             TriggerMode = McTrigMode.MC_TrigMode_IMMEDIATE  // Free-run mode
         });
 
@@ -90,7 +89,7 @@ public static class AcquisitionExample
     }
 
     /// <summary>
-    /// Software trigger acquisition example.
+    /// Software trigger acquisition example using callback-based frame receipt.
     /// Use this when you need precise control over frame capture timing.
     /// </summary>
     public static void RunSoftwareTriggerAcquisition()
@@ -106,39 +105,23 @@ public static class AcquisitionExample
             Connector = "M",
             CamFilePath = camFilePath,
             SurfaceCount = 2,
-            UseCallback = false,  // Use polling instead of callbacks
-            TriggerMode = McTrigMode.MC_TrigMode_SOFT  // Software trigger mode
+            TriggerMode = McTrigMode.MC_TrigMode_SOFT
         });
 
-        // Start acquisition (will wait for triggers)
+        int frameCount = 0;
+        channel.FrameAcquired += (_, e) =>
+        {
+            frameCount++;
+            Console.WriteLine($"Frame {frameCount}: {e.Image.Width}x{e.Image.Height}");
+        };
+
         channel.StartAcquisition();
 
         Console.WriteLine("Capturing 10 frames with software triggers...");
-
         for (int i = 0; i < 10; i++)
-        {
-            // Send software trigger
             channel.SendSoftwareTrigger();
 
-            // Wait for frame (5 second timeout)
-            var surface = channel.WaitForFrame(5000);
-
-            if (surface.HasValue)
-            {
-                Console.WriteLine($"Frame {i + 1}: {surface.Value.Width}x{surface.Value.Height}, " +
-                                $"Address: 0x{surface.Value.Address:X}");
-
-                // Process the frame...
-
-                // IMPORTANT: Release the surface back to MultiCam
-                channel.ReleaseSurface(surface.Value);
-            }
-            else
-            {
-                Console.WriteLine($"Frame {i + 1}: Timeout!");
-            }
-        }
-
+        Console.ReadLine();
         channel.StopAcquisition();
     }
 

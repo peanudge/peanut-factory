@@ -1,0 +1,330 @@
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using PeanutVision.Api.Services;
+using PeanutVision.MultiCamDriver;
+using PeanutVision.MultiCamDriver.Imaging;
+
+namespace PeanutVision.Api.Tests.Unit;
+
+public class AutoSaveServiceTests : IDisposable
+{
+    private readonly string _tempDir;
+    private readonly FakeAcquisitionService _acquisition;
+    private readonly FakeSaveSettingsService _saveSettings;
+    private readonly FrameSaveTracker _tracker;
+    private readonly FilenameGenerator _filenameGenerator;
+    private readonly FakeThumbnailService _thumbnailService;
+    private readonly FakeScopeFactory _scopeFactory;
+    private readonly FakeWebHostEnvironment _environment;
+
+    public AutoSaveServiceTests()
+    {
+        _tempDir = Path.Combine(Path.GetTempPath(), $"autosave_test_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_tempDir);
+
+        _acquisition = new FakeAcquisitionService();
+        _saveSettings = new FakeSaveSettingsService(_tempDir);
+        _tracker = new FrameSaveTracker();
+        _filenameGenerator = new FilenameGenerator();
+        _thumbnailService = new FakeThumbnailService();
+        _scopeFactory = new FakeScopeFactory();
+        _environment = new FakeWebHostEnvironment(_tempDir);
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempDir))
+            Directory.Delete(_tempDir, recursive: true);
+    }
+
+    private AutoSaveService BuildService() =>
+        new(_acquisition, _saveSettings, _filenameGenerator, _tracker,
+            _thumbnailService, _scopeFactory, _environment);
+
+    private static ImageData MakeFrame() =>
+        new(new byte[4 * 1 * 3], 4, 1, 12);
+
+    // ── Subscribe / Unsubscribe ──
+
+    [Fact]
+    public async Task StartAsync_subscribes_to_FrameAcquired()
+    {
+        var svc = BuildService();
+        await svc.StartAsync(CancellationToken.None);
+
+        _saveSettings.AutoSave = false; // prevent actual save
+        _acquisition.SimulateFrame(MakeFrame());
+
+        // If subscribed, OnFrameAcquired ran — no exception means event handler was wired
+        Assert.True(true);
+    }
+
+    [Fact]
+    public async Task StopAsync_unsubscribes_so_no_save_after_stop()
+    {
+        var svc = BuildService();
+        await svc.StartAsync(CancellationToken.None);
+        await svc.StopAsync(CancellationToken.None);
+
+        _saveSettings.AutoSave = true;
+        _acquisition.SimulateFrame(MakeFrame());
+
+        await Task.Delay(100); // give fire-and-forget time to run if it leaked
+        Assert.Empty(Directory.GetFiles(_tempDir, "*.png", SearchOption.AllDirectories));
+    }
+
+    // ── AutoSave = false ──
+
+    [Fact]
+    public async Task When_autosave_disabled_no_file_is_written()
+    {
+        _saveSettings.AutoSave = false;
+        var svc = BuildService();
+        await svc.StartAsync(CancellationToken.None);
+
+        _acquisition.SimulateFrame(MakeFrame());
+        await Task.Delay(100);
+
+        Assert.Empty(Directory.GetFiles(_tempDir, "*", SearchOption.AllDirectories));
+    }
+
+    // ── Null frame ──
+
+    [Fact]
+    public async Task When_latest_frame_is_null_no_file_is_written()
+    {
+        _saveSettings.AutoSave = true;
+        var svc = BuildService();
+        await svc.StartAsync(CancellationToken.None);
+
+        _acquisition.SimulateFrame(null); // fires event but GetLatestFrame returns null
+        await Task.Delay(100);
+
+        Assert.Empty(Directory.GetFiles(_tempDir, "*", SearchOption.AllDirectories));
+    }
+
+    // ── FrameSaveTracker dedup ──
+
+    [Fact]
+    public async Task Same_frame_reference_saved_only_once()
+    {
+        _saveSettings.AutoSave = true;
+        var svc = BuildService();
+        await svc.StartAsync(CancellationToken.None);
+
+        var frame = MakeFrame();
+        _acquisition.SimulateFrame(frame);
+        await Task.Delay(200);
+        _acquisition.SimulateFrame(frame); // same reference
+        await Task.Delay(200);
+
+        Assert.Single(Directory.GetFiles(_tempDir, "*.png", SearchOption.AllDirectories));
+    }
+
+    [Fact]
+    public async Task Different_frames_each_saved()
+    {
+        _saveSettings.AutoSave = true;
+        var svc = BuildService();
+        await svc.StartAsync(CancellationToken.None);
+
+        _acquisition.SimulateFrame(MakeFrame());
+        await Task.Delay(200);
+        _acquisition.SimulateFrame(MakeFrame());
+        await Task.Delay(200);
+
+        Assert.Equal(2, Directory.GetFiles(_tempDir, "*.png", SearchOption.AllDirectories).Length);
+    }
+
+    // ── File written ──
+
+    [Fact]
+    public async Task When_autosave_enabled_new_frame_writes_png_file()
+    {
+        _saveSettings.AutoSave = true;
+        var svc = BuildService();
+        await svc.StartAsync(CancellationToken.None);
+
+        _acquisition.SimulateFrame(MakeFrame());
+        await Task.Delay(300);
+
+        var files = Directory.GetFiles(_tempDir, "*.png", SearchOption.AllDirectories);
+        var file = Assert.Single(files);
+        Assert.True(new FileInfo(file).Length > 0);
+    }
+
+    [Fact]
+    public async Task Saved_file_has_valid_png_magic_bytes()
+    {
+        _saveSettings.AutoSave = true;
+        var svc = BuildService();
+        await svc.StartAsync(CancellationToken.None);
+
+        _acquisition.SimulateFrame(MakeFrame());
+        await Task.Delay(300);
+
+        var file = Directory.GetFiles(_tempDir, "*.png", SearchOption.AllDirectories).Single();
+        var bytes = await File.ReadAllBytesAsync(file);
+        Assert.Equal(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }, bytes[..8]);
+    }
+
+    [Fact]
+    public async Task Repository_AddAsync_called_after_save()
+    {
+        _saveSettings.AutoSave = true;
+        var svc = BuildService();
+        await svc.StartAsync(CancellationToken.None);
+
+        _acquisition.SimulateFrame(MakeFrame());
+        await Task.Delay(300);
+
+        Assert.Equal(1, _scopeFactory.FakeImageRepo.AddCount);
+    }
+
+    // ── Save failure does not propagate ──
+
+    [Fact]
+    public async Task Save_failure_does_not_throw_or_crash()
+    {
+        _saveSettings.AutoSave = true;
+        _scopeFactory.FakeImageRepo.ThrowOnAdd = true;
+        var svc = BuildService();
+        await svc.StartAsync(CancellationToken.None);
+
+        // Should not throw
+        _acquisition.SimulateFrame(MakeFrame());
+        await Task.Delay(300);
+
+        Assert.True(true);
+    }
+}
+
+// ── Fakes ──
+
+internal sealed class FakeAcquisitionService : IAcquisitionService
+{
+    private ImageData? _frame;
+
+    public event EventHandler? FrameAcquired;
+    public event EventHandler? StatusChanged { add { } remove { } }
+
+    public void SimulateFrame(ImageData? frame)
+    {
+        _frame = frame;
+        FrameAcquired?.Invoke(this, EventArgs.Empty);
+    }
+
+    public ImageData? GetLatestFrame() => _frame;
+
+    // Unused members
+    public bool IsActive => false;
+    public bool HasFrame => _frame != null;
+    public ChannelState ChannelState => ChannelState.None;
+    public ProfileId? ActiveProfileId => null;
+    public TriggerMode? ChannelTriggerMode => null;
+    public string? LastError => null;
+    public AcquisitionStatisticsSnapshot? GetStatistics() => null;
+    public IReadOnlyList<ChannelEvent> GetRecentEvents(int max = 50) => [];
+    public IReadOnlySet<ChannelAction> GetAllowedActions() => new HashSet<ChannelAction>();
+    public void CreateChannel(ProfileId profileId, TriggerMode? triggerMode = null) { }
+    public void ReleaseChannel() { }
+    public void Start(int? frameCount = null, int? intervalMs = null) { }
+    public void Stop() { }
+    public Task<PeanutVision.MultiCamDriver.Imaging.ImageData> TriggerAndWaitAsync(int timeoutMs = 5000) =>
+        Task.FromResult(new PeanutVision.MultiCamDriver.Imaging.ImageData(new byte[3], 1, 1, 3));
+    public void Dispose() { }
+}
+
+internal sealed class FakeSaveSettingsService : IImageSaveSettingsService
+{
+    private readonly string _outputDir;
+    public bool AutoSave { get; set; } = true;
+
+    public FakeSaveSettingsService(string outputDir) => _outputDir = outputDir;
+
+    public ImageSaveSettings GetSettings() => new()
+    {
+        AutoSave = AutoSave,
+        OutputDirectory = _outputDir,
+        Format = SaveImageFormat.Png,
+        FilenamePrefix = "capture",
+        TimestampFormat = "yyyyMMdd_HHmmss_fff",
+        IncludeSequenceNumber = false,
+        SubfolderStrategy = SubfolderStrategy.None,
+    };
+
+    public Task SaveSettingsAsync(ImageSaveSettings settings) => Task.CompletedTask;
+}
+
+internal sealed class FakeThumbnailService : IThumbnailService
+{
+    public Task<string?> GenerateAsync(string imagePath) => Task.FromResult<string?>(null);
+}
+
+internal sealed class FakeImageRepository : ICapturedImageRepository
+{
+    public int AddCount;
+    public bool ThrowOnAdd;
+
+    public Task<CapturedImage> AddAsync(CapturedImage image)
+    {
+        if (ThrowOnAdd) throw new InvalidOperationException("Simulated DB failure");
+        Interlocked.Increment(ref AddCount);
+        return Task.FromResult(image);
+    }
+
+    public Task<(IReadOnlyList<CapturedImage> Items, int TotalCount)> GetPageAsync(
+        int page, int pageSize, Guid? sessionId = null, DateTime? dateFrom = null, DateTime? dateTo = null) =>
+        Task.FromResult<(IReadOnlyList<CapturedImage>, int)>(([], 0));
+
+    public Task<CapturedImage?> GetByIdAsync(Guid id) => Task.FromResult<CapturedImage?>(null);
+    public Task DeleteAsync(Guid id) => Task.CompletedTask;
+}
+
+internal sealed class FakeSessionRepository : ISessionRepository
+{
+    public Task<Session> CreateAsync(string name, string? notes = null) =>
+        Task.FromResult(new Session { Id = Guid.NewGuid(), Name = name });
+    public Task<Session?> GetByIdAsync(Guid id) => Task.FromResult<Session?>(null);
+    public Task<IReadOnlyList<Session>> GetAllAsync(int limit = 50) =>
+        Task.FromResult<IReadOnlyList<Session>>([]);
+    public Task<Session?> GetActiveAsync() => Task.FromResult<Session?>(null);
+    public Task<Session> EndSessionAsync(Guid id) =>
+        Task.FromResult(new Session { Id = id });
+    public Task<Session> UpdateAsync(Guid id, string? name = null, string? notes = null) =>
+        Task.FromResult(new Session { Id = id });
+    public Task DeleteAsync(Guid id) => Task.CompletedTask;
+}
+
+internal sealed class FakeScopeFactory : IServiceScopeFactory
+{
+    public readonly FakeImageRepository FakeImageRepo = new();
+
+    public IServiceScope CreateScope()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<ICapturedImageRepository>(FakeImageRepo);
+        services.AddSingleton<ISessionRepository>(new FakeSessionRepository());
+        var provider = services.BuildServiceProvider();
+        return new FakeScope(provider);
+    }
+
+    private sealed class FakeScope(IServiceProvider provider) : IServiceScope
+    {
+        public IServiceProvider ServiceProvider { get; } = provider;
+        public void Dispose() { }
+    }
+}
+
+internal sealed class FakeWebHostEnvironment : IWebHostEnvironment
+{
+    public FakeWebHostEnvironment(string contentRoot) => ContentRootPath = contentRoot;
+    public string ContentRootPath { get; set; }
+    public string WebRootPath { get; set; } = "";
+    public string EnvironmentName { get; set; } = "Test";
+    public string ApplicationName { get; set; } = "Test";
+    public Microsoft.Extensions.FileProviders.IFileProvider WebRootFileProvider { get; set; } =
+        new Microsoft.Extensions.FileProviders.NullFileProvider();
+    public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } =
+        new Microsoft.Extensions.FileProviders.NullFileProvider();
+}

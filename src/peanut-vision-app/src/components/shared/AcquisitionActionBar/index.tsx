@@ -49,7 +49,7 @@ export default function AcquisitionActionBar({
           type="button"
           className={cx('btn', 'primary')}
           onClick={onCapture}
-          disabled={busy || !allowed('snapshot') || !selectedProfile}
+          disabled={busy || !allowed('start') || !selectedProfile}
         >
           <Camera size={14} /> Capture
         </button>

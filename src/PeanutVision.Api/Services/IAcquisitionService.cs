@@ -13,7 +13,6 @@ public interface IAcquisitionService : IChannelService, IDisposable
     void Start(int? frameCount = null, int? intervalMs = null);
     void Stop();
     Task<ImageData> TriggerAndWaitAsync(int timeoutMs = 5000);
-    ImageData Snapshot(ProfileId profileId, TriggerMode? triggerMode = null);
     ImageData? GetLatestFrame();
 
     /// <summary>Raised on the driver callback thread when a new frame is ready in <see cref="GetLatestFrame"/>.</summary>

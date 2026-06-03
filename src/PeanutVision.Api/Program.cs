@@ -63,6 +63,7 @@ builder.Services.AddSingleton<IAcquisitionService>(sp => sp.GetRequiredService<A
 builder.Services.AddSingleton<IChannelCalibration>(sp => sp.GetRequiredService<AcquisitionManager>());
 builder.Services.AddSingleton<IExposureControl>(sp => sp.GetRequiredService<AcquisitionManager>());
 builder.Services.AddSingleton<ICalibrationService, CalibrationManager>();
+builder.Services.AddHostedService<AutoSaveService>();
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 

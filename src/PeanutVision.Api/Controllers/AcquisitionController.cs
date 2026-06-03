@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using PeanutVision.Api.Services;
-using PeanutVision.MultiCamDriver;
-using PeanutVision.MultiCamDriver.Imaging;
 using PeanutVision.MultiCamDriver.Imaging.Encoders;
 using System.Text.Json;
 using System.Threading.Channels;
@@ -13,32 +11,10 @@ namespace PeanutVision.Api.Controllers;
 public class AcquisitionController : ControllerBase
 {
     private readonly IAcquisitionService _acquisition;
-    private readonly IImageSaveSettingsService _saveSettings;
-    private readonly FilenameGenerator _filenameGenerator;
-    private readonly FrameSaveTracker _frameSaveTracker;
-    private readonly ICapturedImageRepository _imageRepository;
-    private readonly IThumbnailService _thumbnailService;
-    private readonly ISessionRepository _sessionRepository;
-    private readonly string _contentRootPath;
 
-    public AcquisitionController(
-        IAcquisitionService acquisition,
-        IImageSaveSettingsService saveSettings,
-        FilenameGenerator filenameGenerator,
-        FrameSaveTracker frameSaveTracker,
-        ICapturedImageRepository imageRepository,
-        IThumbnailService thumbnailService,
-        ISessionRepository sessionRepository,
-        IWebHostEnvironment environment)
+    public AcquisitionController(IAcquisitionService acquisition)
     {
         _acquisition = acquisition;
-        _saveSettings = saveSettings;
-        _filenameGenerator = filenameGenerator;
-        _frameSaveTracker = frameSaveTracker;
-        _imageRepository = imageRepository;
-        _thumbnailService = thumbnailService;
-        _sessionRepository = sessionRepository;
-        _contentRootPath = environment.ContentRootPath;
     }
 
     [HttpPost("start")]
@@ -152,14 +128,6 @@ public class AcquisitionController : ControllerBase
     {
         var image = await _acquisition.TriggerAndWaitAsync(5000);
 
-        var settings = _saveSettings.GetSettings();
-        if (settings.AutoSave)
-        {
-            var filePath = await SaveAndRecordAsync(
-                image, settings, _acquisition.ActiveProfileId?.Value);
-            Response.Headers["X-Image-Path"] = filePath;
-        }
-
         var encoder = new PngEncoder();
         var stream = new MemoryStream();
         encoder.Encode(image, stream);
@@ -169,19 +137,11 @@ public class AcquisitionController : ControllerBase
     }
 
     [HttpGet("latest-frame")]
-    public async Task<ActionResult> GetLatestFrame()
+    public ActionResult GetLatestFrame()
     {
         var frame = _acquisition.GetLatestFrame();
         if (frame is null)
             return NoContent();
-
-        var settings = _saveSettings.GetSettings();
-        if (settings.AutoSave && _frameSaveTracker.ShouldSave(frame))
-        {
-            var filePath = await SaveAndRecordAsync(
-                frame, settings, _acquisition.ActiveProfileId?.Value);
-            Response.Headers["X-Image-Path"] = filePath;
-        }
 
         var encoder = new PngEncoder();
         var stream = new MemoryStream();
@@ -206,39 +166,6 @@ public class AcquisitionController : ControllerBase
             blue = histogram.Blue,
             bins = 256,
         });
-    }
-
-    [HttpPost("snapshot")]
-    public async Task<ActionResult> Snapshot([FromBody] SnapshotRequest request)
-    {
-        var profileId = new ProfileId(request.ProfileId);
-        var triggerMode = request.TriggerMode is not null
-            ? TriggerMode.Parse(request.TriggerMode)
-            : (TriggerMode?)null;
-
-        var image = _acquisition.Snapshot(profileId, triggerMode);
-
-        if (!string.IsNullOrWhiteSpace(request.OutputPath))
-        {
-            new ImageWriter().Save(image, request.OutputPath);
-            Response.Headers["X-Image-Path"] = request.OutputPath;
-        }
-        else
-        {
-            var settings = _saveSettings.GetSettings();
-            if (settings.AutoSave)
-            {
-                var filePath = await SaveAndRecordAsync(image, settings, request.ProfileId);
-                Response.Headers["X-Image-Path"] = filePath;
-            }
-        }
-
-        var encoder = new PngEncoder();
-        var stream = new MemoryStream();
-        encoder.Encode(image, stream);
-        stream.Position = 0;
-
-        return File(stream, "image/png", "snapshot.png");
     }
 
     private string BuildStatusJson()
@@ -278,31 +205,6 @@ public class AcquisitionController : ControllerBase
         return JsonSerializer.Serialize(payload);
     }
 
-    private async Task<string> SaveAndRecordAsync(
-        ImageData image, ImageSaveSettings settings, string? profileId)
-    {
-        var filePath = _filenameGenerator.Generate(settings, _contentRootPath, profileId);
-        new ImageWriter().Save(image, filePath);
-
-        var thumbPath = await _thumbnailService.GenerateAsync(filePath);
-        var activeSession = await _sessionRepository.GetActiveAsync();
-        var fileInfo = new FileInfo(filePath);
-
-        await _imageRepository.AddAsync(new CapturedImage
-        {
-            Id = Guid.NewGuid(),
-            FilePath = filePath,
-            ThumbnailPath = thumbPath,
-            Width = image.Width,
-            Height = image.Height,
-            FileSizeBytes = fileInfo.Exists ? fileInfo.Length : 0,
-            Format = settings.Format.ToString().ToLower(),
-            CapturedAt = DateTime.UtcNow,
-            SessionId = activeSession?.Id,
-        });
-
-        return filePath;
-    }
 }
 
 public class StartAcquisitionRequest
@@ -311,11 +213,4 @@ public class StartAcquisitionRequest
     public string? TriggerMode { get; set; }
     public int? FrameCount { get; set; }
     public int? IntervalMs { get; set; }
-}
-
-public class SnapshotRequest
-{
-    public required string ProfileId { get; set; }
-    public string? TriggerMode { get; set; }
-    public string? OutputPath { get; set; }
 }

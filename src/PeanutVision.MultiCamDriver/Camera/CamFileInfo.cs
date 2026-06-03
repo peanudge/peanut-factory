@@ -21,7 +21,7 @@ public sealed record CamFileInfo(
     /// Creates GrabChannelOptions from this cam file info.
     /// </summary>
     public GrabChannelOptions ToChannelOptions(int driverIndex = 0, string connector = "M",
-        int surfaceCount = 4, bool useCallback = true)
+        int surfaceCount = 4)
     {
         var trigMode = ParseTrigMode(TrigMode);
         return new GrabChannelOptions
@@ -32,7 +32,6 @@ public sealed record CamFileInfo(
             SurfaceCount = surfaceCount,
             TriggerMode = trigMode,
             AcquisitionMode = DeriveAcquisitionMode(trigMode),
-            UseCallback = useCallback
         };
     }
 
@@ -40,9 +39,9 @@ public sealed record CamFileInfo(
     /// Creates GrabChannelOptions with a custom trigger mode override.
     /// </summary>
     public GrabChannelOptions ToChannelOptions(McTrigMode triggerMode, int driverIndex = 0,
-        string connector = "M", int surfaceCount = 4, bool useCallback = true)
+        string connector = "M", int surfaceCount = 4)
     {
-        var options = ToChannelOptions(driverIndex, connector, surfaceCount, useCallback);
+        var options = ToChannelOptions(driverIndex, connector, surfaceCount);
         options.TriggerMode = triggerMode;
         return options;
     }
