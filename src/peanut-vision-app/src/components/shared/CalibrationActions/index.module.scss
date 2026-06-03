@@ -1,0 +1,60 @@
+.card {
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+
+.title {
+  margin: 0 0 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.btn {
+  width: 100%;
+  padding: 7px 14px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: transparent;
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) { background: #2a2a2a; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.hint {
+  font-size: 0.72rem;
+  color: #666;
+  padding: 0 2px;
+}
+
+.checkLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #ccc;
+  cursor: pointer;
+
+  input[type='checkbox'] {
+    accent-color: #58a;
+    width: 14px;
+    height: 14px;
+  }
+}
