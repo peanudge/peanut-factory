@@ -16,5 +16,3 @@ function ItemPage() {
   const Component = route.Component
   return <Component />
 }
-
-export default ItemPage

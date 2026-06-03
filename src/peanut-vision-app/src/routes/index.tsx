@@ -8,7 +8,7 @@ export const Route = createFileRoute('/')({ component: Home })
 function Home() {
   return (
     <div className={cx('Home')}>
-      <h2 className={cx('title')}>[ Vision Camera Test ]</h2>
+      <h2>[ Vision Camera Test ]</h2>
       <h3>테스트</h3>
     </div>
   )

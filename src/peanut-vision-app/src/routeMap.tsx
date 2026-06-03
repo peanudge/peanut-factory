@@ -1,6 +1,8 @@
+import SystemState from './components/SystemState'
+
 const _routerMap = {
-  root: { name: 'root', children: ['home'] },
-  home: { name: 'Home', Component: () => <div>Home</div> },
+  root: { name: 'root', children: ['system-state'] },
+  'system-state': { name: '카메라 상태', Component: SystemState },
 }
 
 export type RoutePath = keyof typeof _routerMap
