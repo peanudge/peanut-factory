@@ -55,14 +55,11 @@ export default function Acquisition() {
             cameras={acq.cameras}
             selectedProfile={acq.selectedProfile}
             onProfileChange={acq.setSelectedProfile}
-            mode={acq.mode}
-            onModeChange={acq.setMode}
             continuousSubMode={acq.continuousSubMode}
             triggerMode={acq.triggerMode}
             onTriggerModeChange={acq.setTriggerMode}
             status={acq.acquisitionStatus}
             busy={acq.busy}
-            onCapture={acq.handleCapture}
             onStart={acq.handleStart}
             onStop={acq.handleStop}
             onTrigger={acq.handleTrigger}
@@ -71,17 +68,15 @@ export default function Acquisition() {
             hasWarnings={acq.hasWarnings}
             hasErrors={acq.hasErrors}
           />
-          {acq.mode === 'continuous' && (
-            <ContinuousSettings
-              subMode={acq.continuousSubMode}
-              onSubModeChange={acq.setContinuousSubMode}
-              frameCount={acq.frameCount}
-              onFrameCountChange={acq.setFrameCount}
-              intervalMs={acq.intervalMs}
-              onIntervalMsChange={acq.setIntervalMs}
-              disabled={acq.acquisitionStatus?.isActive}
-            />
-          )}
+          <ContinuousSettings
+            subMode={acq.continuousSubMode}
+            onSubModeChange={acq.setContinuousSubMode}
+            frameCount={acq.frameCount}
+            onFrameCountChange={acq.setFrameCount}
+            intervalMs={acq.intervalMs}
+            onIntervalMsChange={acq.setIntervalMs}
+            disabled={acq.acquisitionStatus?.isActive}
+          />
         </div>
 
         {/* Tab 1: Camera */}

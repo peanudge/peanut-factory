@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type {
-  AcquisitionMode,
   AcquisitionPreset,
   AcquisitionStatus,
   ContinuousSubMode,
@@ -24,14 +23,12 @@ import {
 } from '@/api/client'
 import { queryKeys } from '@/api/queryKeys'
 import { useToast } from '@/contexts/ToastContext'
-import { DEFAULT_CONTINUOUS_INTERVAL_MS } from '@/constants'
 
 export function useAcquisitionActions() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
   const [selectedProfile, setSelectedProfile] = useState('')
-  const [mode, setMode] = useState<AcquisitionMode>('single')
   const [continuousSubMode, setContinuousSubMode] =
     useState<ContinuousSubMode>('auto')
   const [triggerMode, setTriggerMode] = useState<TriggerModeOption>('soft')
@@ -125,15 +122,6 @@ export function useAcquisitionActions() {
     onError: handleError,
   })
 
-  const captureMutation = useMutation({
-    mutationFn: () => startAcquisition(selectedProfile, triggerMode, 1),
-    onSuccess: () => {
-      invalidateStatus()
-      toast('촬영이 시작되었습니다', 'success')
-    },
-    onError: handleError,
-  })
-
   const loadExposureMutation = useMutation({
     mutationFn: getExposure,
     onSuccess: (info) => {
@@ -182,7 +170,6 @@ export function useAcquisitionActions() {
     startMutation.isPending ||
     stopMutation.isPending ||
     triggerMutation.isPending ||
-    captureMutation.isPending ||
     loadExposureMutation.isPending ||
     applyExposureMutation.isPending ||
     blackMutation.isPending ||
@@ -208,19 +195,14 @@ export function useAcquisitionActions() {
   // ── Handlers ──
 
   const handleStart = () => {
-    if (
-      mode === 'continuous' &&
-      continuousSubMode === 'auto' &&
-      intervalMs === null
-    ) {
-      toast('Please input interval time for continuous mode', 'warning')
+    if (continuousSubMode === 'auto' && intervalMs === null) {
+      toast('Please input interval time', 'warning')
       return
     }
     startMutation.mutate()
   }
   const handleStop = () => stopMutation.mutate()
   const handleTrigger = () => triggerMutation.mutate()
-  const handleCapture = () => captureMutation.mutate()
   const handleLoadExposure = () => loadExposureMutation.mutate()
   const handleApplyExposure = () => applyExposureMutation.mutate()
   const handleBlack = () => blackMutation.mutate()
@@ -232,9 +214,6 @@ export function useAcquisitionActions() {
     setTriggerMode(preset.triggerMode ?? 'soft')
     setFrameCount(preset.frameCount ?? null)
     setIntervalMs(preset.intervalMs ?? null)
-    if (preset.frameCount != null || preset.intervalMs != null) {
-      setMode('continuous')
-    }
   }, [])
 
   const handleFfcToggle = (_: unknown, checked: boolean) => {
@@ -242,19 +221,10 @@ export function useAcquisitionActions() {
     ffcMutation.mutate(checked)
   }
 
-  const handleSetMode = useCallback((next: AcquisitionMode) => {
-    setMode(next)
-    if (next === 'continuous') {
-      setIntervalMs((prev) => prev ?? DEFAULT_CONTINUOUS_INTERVAL_MS)
-    }
-  }, [])
-
   return {
     cameras,
     selectedProfile,
     setSelectedProfile,
-    mode,
-    setMode: handleSetMode,
     continuousSubMode,
     setContinuousSubMode,
     triggerMode,
@@ -276,7 +246,6 @@ export function useAcquisitionActions() {
     handleStart,
     handleStop,
     handleTrigger,
-    handleCapture,
     handleLoadExposure,
     handleApplyExposure,
     isCalibrationAvailable,

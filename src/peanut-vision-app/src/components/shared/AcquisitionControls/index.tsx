@@ -2,7 +2,6 @@ import CameraProfileSelector from '@/components/shared/CameraProfileSelector'
 import AcquisitionModeSelector from '@/components/shared/AcquisitionModeSelector'
 import AcquisitionActionBar from '@/components/shared/AcquisitionActionBar'
 import type {
-  AcquisitionMode,
   AcquisitionStatus,
   CamFileInfo,
   ContinuousSubMode,
@@ -14,14 +13,11 @@ interface Props {
   cameras: CamFileInfo[]
   selectedProfile: string
   onProfileChange: (id: string) => void
-  mode: AcquisitionMode
-  onModeChange: (mode: AcquisitionMode) => void
   continuousSubMode: ContinuousSubMode
   triggerMode: TriggerModeOption
   onTriggerModeChange: (mode: TriggerModeOption) => void
   status: AcquisitionStatus | null
   busy: boolean
-  onCapture: () => void
   onStart: () => void
   onStop: () => void
   onTrigger: () => void
@@ -35,14 +31,11 @@ export default function AcquisitionControls({
   cameras,
   selectedProfile,
   onProfileChange,
-  mode,
-  onModeChange,
   continuousSubMode,
   triggerMode,
   onTriggerModeChange,
   status,
   busy,
-  onCapture,
   onStart,
   onStop,
   onTrigger,
@@ -60,19 +53,15 @@ export default function AcquisitionControls({
         disabled={status?.isActive}
       />
       <AcquisitionModeSelector
-        mode={mode}
-        onModeChange={onModeChange}
         triggerMode={triggerMode}
         onTriggerModeChange={onTriggerModeChange}
         disabled={status?.isActive}
       />
       <AcquisitionActionBar
-        mode={mode}
         continuousSubMode={continuousSubMode}
         selectedProfile={selectedProfile}
         status={status}
         busy={busy}
-        onCapture={onCapture}
         onStart={onStart}
         onStop={onStop}
         onTrigger={onTrigger}
