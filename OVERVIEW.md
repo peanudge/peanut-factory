@@ -64,19 +64,21 @@ graph TB
         CMD --> CAMINFO
     end
 
-    subgraph UI["peanut-vision-ui (React + MUI)"]
-        APP["App.tsx"]
-        ACQT["AcquisitionTab"]
-        CALT["CalibrationTab"]
-        SYST["SystemTab"]
-        COMP["Components\nImageViewer / ExposureControl\nStatusChip / BoardRow / ..."]
+    subgraph UI["peanut-vision-app (React + SCSS)"]
+        ROUTER["TanStack Router\n(file-based routing)"]
+        SYSPAGE["SystemPage"]
+        ACQPAGE["AcquisitionPage"]
+        GALPAGE["GalleryPage"]
+        LATPAGE["LatencyPage"]
+        SHARED["Shared Components\nImageViewer / ExposureControl\nStatusChip / BoardRow / ..."]
 
-        APP --> ACQT
-        APP --> CALT
-        APP --> SYST
-        ACQT --> COMP
-        CALT --> COMP
-        SYST --> COMP
+        ROUTER --> SYSPAGE
+        ROUTER --> ACQPAGE
+        ROUTER --> GALPAGE
+        ROUTER --> LATPAGE
+        ACQPAGE --> SHARED
+        SYSPAGE --> SHARED
+        GALPAGE --> SHARED
     end
 
     subgraph Tests["Tests"]
@@ -87,7 +89,7 @@ graph TB
 
     MCAPI -->|"P/Invoke"| GL
     CLI --> GS
-    UI -->|"HTTP REST"| API
+    UI -->|"HTTP REST + SSE"| API
     UT -.->|tests| Driver
     IT -.->|tests| Driver
     AT -.->|tests| API
@@ -146,14 +148,15 @@ peanut-factory/
 │   │       ├── SystemStatusCommand.cs
 │   │       └── CamFileInfoCommand.cs
 │   │
-│   ├── peanut-vision-ui/                 # React dashboard (Vite + MUI)
+│   ├── peanut-vision-app/                # React dashboard (Vite + TanStack Router + SCSS)
 │   │   └── src/
-│   │       ├── App.tsx
+│   │       ├── routes/                   # File-based routes (__root, /$, index)
+│   │       ├── components/               # Page components + shared UI
+│   │       │   └── shared/               # StatusChip, ImageViewer, BoardRow, ...
+│   │       ├── hooks/                    # useAcquisitionActions, useLiveStream, ...
 │   │       ├── api/                      # API client & types
-│   │       ├── tabs/                     # Acquisition, Calibration, System
-│   │       ├── components/               # Shared UI components
-│   │       ├── hooks/                    # useApiData, usePolling, ...
-│   │       └── theme.ts                  # MUI dark theme
+│   │       ├── contexts/                 # ToastContext
+│   │       └── styles/                   # Global SCSS + design tokens
 │   │
 │   ├── PeanutVision.StrobeLightConsole/  # Strobe light control utility
 │   │
@@ -213,5 +216,5 @@ sequenceDiagram
 | Native Driver | MultiCam.dll (Euresys SDK) |
 | Core Library | .NET 9/10, C# 12, LibraryImport (P/Invoke) |
 | REST API | ASP.NET Core Minimal/Controllers |
-| Frontend | React 18, TypeScript, Vite, MUI (Material UI) |
+| Frontend | React 19, TypeScript, Vite, TanStack Router, SCSS Modules |
 | Testing | xUnit, WebApplicationFactory |
