@@ -1,1 +1,80 @@
-.Acquisition { padding: 20px; }
+.Acquisition {
+  display: flex;
+  flex-grow: 1;
+  overflow: hidden;
+  height: calc(100vh - 0px); // full height minus nav
+}
+
+.sidebar {
+  width: 340px;
+  flex-shrink: 0;
+  border-right: 1px solid #333;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.sidebarTabs {
+  position: sticky;
+  top: -16px;
+  z-index: 1;
+  background: #1a1a2e;
+  margin: -16px -16px 16px;
+  border-bottom: 1px solid #333;
+  display: flex;
+}
+
+.tab {
+  flex: 1;
+  padding: 10px 4px;
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s;
+
+  &.active {
+    color: #e0e0e0;
+    border-bottom-color: #58a;
+  }
+
+  &:hover:not(.active) { color: #bbb; }
+}
+
+.tabPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  &.hidden { display: none; }
+}
+
+.resizer {
+  width: 4px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  background: #333;
+  transition: background 0.15s;
+
+  &:hover { background: #58a; }
+}
+
+.canvas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.imageArea {
+  flex: 1;
+  min-height: 0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
