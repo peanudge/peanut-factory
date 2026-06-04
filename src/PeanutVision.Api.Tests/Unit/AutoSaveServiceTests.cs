@@ -247,10 +247,6 @@ internal sealed class FakeSaveSettingsService : IImageSaveSettingsService
         AutoSave = AutoSave,
         OutputDirectory = _outputDir,
         Format = SaveImageFormat.Png,
-        FilenamePrefix = "capture",
-        TimestampFormat = "yyyyMMdd_HHmmss_fff",
-        IncludeSequenceNumber = false,
-        SubfolderStrategy = SubfolderStrategy.None,
     };
 
     public Task SaveSettingsAsync(ImageSaveSettings settings) => Task.CompletedTask;
@@ -274,25 +270,10 @@ internal sealed class FakeImageRepository : ICapturedImageRepository
     }
 
     public Task<(IReadOnlyList<CapturedImage> Items, int TotalCount)> GetPageAsync(
-        int page, int pageSize, Guid? sessionId = null, DateTime? dateFrom = null, DateTime? dateTo = null) =>
+        int page, int pageSize, DateTime? dateFrom = null, DateTime? dateTo = null) =>
         Task.FromResult<(IReadOnlyList<CapturedImage>, int)>(([], 0));
 
     public Task<CapturedImage?> GetByIdAsync(Guid id) => Task.FromResult<CapturedImage?>(null);
-    public Task DeleteAsync(Guid id) => Task.CompletedTask;
-}
-
-internal sealed class FakeSessionRepository : ISessionRepository
-{
-    public Task<Session> CreateAsync(string name, string? notes = null) =>
-        Task.FromResult(new Session { Id = Guid.NewGuid(), Name = name });
-    public Task<Session?> GetByIdAsync(Guid id) => Task.FromResult<Session?>(null);
-    public Task<IReadOnlyList<Session>> GetAllAsync(int limit = 50) =>
-        Task.FromResult<IReadOnlyList<Session>>([]);
-    public Task<Session?> GetActiveAsync() => Task.FromResult<Session?>(null);
-    public Task<Session> EndSessionAsync(Guid id) =>
-        Task.FromResult(new Session { Id = id });
-    public Task<Session> UpdateAsync(Guid id, string? name = null, string? notes = null) =>
-        Task.FromResult(new Session { Id = id });
     public Task DeleteAsync(Guid id) => Task.CompletedTask;
 }
 
@@ -304,7 +285,6 @@ internal sealed class FakeScopeFactory : IServiceScopeFactory
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICapturedImageRepository>(FakeImageRepo);
-        services.AddSingleton<ISessionRepository>(new FakeSessionRepository());
         var provider = services.BuildServiceProvider();
         return new FakeScope(provider);
     }

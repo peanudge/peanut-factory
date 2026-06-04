@@ -2,52 +2,43 @@ namespace PeanutVision.Api.Services;
 
 public sealed class FilenameGenerator
 {
-    private readonly string _sessionTimestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
     private int _sequenceCounter;
 
+    /// <summary>
+    /// outputDirectory 내 지원 토큰:
+    ///   {date}    → yyyy-MM-dd
+    ///   {profile} → profileId에서 특수문자를 _로 치환한 값
+    /// 파일명 고정: capture_yyyyMMdd_HHmmss_fff_NNNNN.ext
+    /// </summary>
     public string Generate(ImageSaveSettings settings, string contentRootPath, string? profileId = null)
     {
         var now = DateTime.Now;
-        var baseDir = ResolveDirectory(settings.OutputDirectory, contentRootPath);
-
-        var subdir = settings.SubfolderStrategy switch
-        {
-            SubfolderStrategy.ByDate => now.ToString("yyyy-MM-dd"),
-            SubfolderStrategy.BySession => $"session_{_sessionTimestamp}",
-            SubfolderStrategy.ByProfile when !string.IsNullOrEmpty(profileId) => SanitizeSegment(profileId),
-            _ => null,
-        };
-
-        var dir = subdir is not null ? Path.Combine(baseDir, subdir) : baseDir;
+        var dir = ExpandDirectory(settings.OutputDirectory, contentRootPath, now, profileId);
         Directory.CreateDirectory(dir);
 
-        var prefix = string.IsNullOrWhiteSpace(settings.FilenamePrefix) ? "capture" : settings.FilenamePrefix;
+        var seq = Interlocked.Increment(ref _sequenceCounter);
         var ext = settings.Format switch
         {
             SaveImageFormat.Bmp => ".bmp",
             SaveImageFormat.Raw => ".raw",
             _ => ".png",
         };
-
-        string name;
-        if (settings.IncludeSequenceNumber)
-        {
-            var seq = Interlocked.Increment(ref _sequenceCounter);
-            name = $"{prefix}_{now.ToString(settings.TimestampFormat)}_{seq:D5}{ext}";
-        }
-        else
-        {
-            name = $"{prefix}_{now.ToString(settings.TimestampFormat)}{ext}";
-        }
-
+        var name = $"capture_{now:yyyyMMdd_HHmmss_fff}_{seq:D5}{ext}";
         return Path.Combine(dir, name);
     }
 
-    private static string ResolveDirectory(string outputDir, string contentRootPath)
+    private static string ExpandDirectory(string template, string contentRootPath, DateTime now, string? profileId)
     {
-        if (string.IsNullOrWhiteSpace(outputDir))
+        if (string.IsNullOrWhiteSpace(template))
             return Path.Combine(contentRootPath, "CapturedImages");
-        return Path.IsPathRooted(outputDir) ? outputDir : Path.Combine(contentRootPath, outputDir);
+
+        var expanded = template
+            .Replace("{date}", now.ToString("yyyy-MM-dd"))
+            .Replace("{profile}", SanitizeSegment(profileId ?? "unknown"));
+
+        return Path.IsPathRooted(expanded)
+            ? expanded
+            : Path.Combine(contentRootPath, expanded);
     }
 
     private static string SanitizeSegment(string segment) =>

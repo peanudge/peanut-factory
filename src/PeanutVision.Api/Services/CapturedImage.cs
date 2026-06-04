@@ -8,9 +8,6 @@ public sealed class CapturedImage
     public int Width { get; set; }
     public int Height { get; set; }
     public long FileSizeBytes { get; set; }
-    public string Format { get; set; } = string.Empty;  // "png", "bmp", "raw"
+    public string Format { get; set; } = string.Empty;
     public DateTime CapturedAt { get; set; }
-    public Guid? SessionId { get; set; }
-
-    public Session? Session { get; set; }
 }

@@ -31,10 +31,6 @@ public class ImageSaveSettingsServiceTests : IDisposable
 
             Assert.Equal("CapturedImages", settings.OutputDirectory);
             Assert.Equal(SaveImageFormat.Png, settings.Format);
-            Assert.Equal("capture", settings.FilenamePrefix);
-            Assert.Equal("yyyyMMdd_HHmmss_fff", settings.TimestampFormat);
-            Assert.False(settings.IncludeSequenceNumber);
-            Assert.Equal(SubfolderStrategy.None, settings.SubfolderStrategy);
             Assert.True(settings.AutoSave);
         }
     }
@@ -48,10 +44,6 @@ public class ImageSaveSettingsServiceTests : IDisposable
             {
                 OutputDirectory = "/custom/path",
                 Format = SaveImageFormat.Bmp,
-                FilenamePrefix = "test",
-                TimestampFormat = "HHmmss",
-                IncludeSequenceNumber = true,
-                SubfolderStrategy = SubfolderStrategy.ByDate,
                 AutoSave = false,
             };
             File.WriteAllText(_filePath, JsonSerializer.Serialize(expected));
@@ -61,10 +53,6 @@ public class ImageSaveSettingsServiceTests : IDisposable
 
             Assert.Equal("/custom/path", settings.OutputDirectory);
             Assert.Equal(SaveImageFormat.Bmp, settings.Format);
-            Assert.Equal("test", settings.FilenamePrefix);
-            Assert.Equal("HHmmss", settings.TimestampFormat);
-            Assert.True(settings.IncludeSequenceNumber);
-            Assert.Equal(SubfolderStrategy.ByDate, settings.SubfolderStrategy);
             Assert.False(settings.AutoSave);
         }
     }
@@ -108,10 +96,6 @@ public class ImageSaveSettingsServiceTests : IDisposable
             {
                 OutputDirectory = "/saved/path",
                 Format = SaveImageFormat.Raw,
-                FilenamePrefix = "saved",
-                TimestampFormat = "yyyyMMdd",
-                IncludeSequenceNumber = true,
-                SubfolderStrategy = SubfolderStrategy.ByProfile,
                 AutoSave = false,
             };
 
@@ -129,11 +113,11 @@ public class ImageSaveSettingsServiceTests : IDisposable
         public async Task Then_in_memory_settings_updated()
         {
             var service = new ImageSaveSettingsService(_filePath);
-            var newSettings = new ImageSaveSettings { FilenamePrefix = "updated" };
+            var newSettings = new ImageSaveSettings { OutputDirectory = "updated" };
 
             await service.SaveSettingsAsync(newSettings);
 
-            Assert.Equal("updated", service.GetSettings().FilenamePrefix);
+            Assert.Equal("updated", service.GetSettings().OutputDirectory);
         }
 
         [Fact]
@@ -154,10 +138,10 @@ public class ImageSaveSettingsServiceTests : IDisposable
         public async Task Then_new_instance_reads_saved_settings()
         {
             var service1 = new ImageSaveSettingsService(_filePath);
-            await service1.SaveSettingsAsync(new ImageSaveSettings { FilenamePrefix = "roundtrip" });
+            await service1.SaveSettingsAsync(new ImageSaveSettings { OutputDirectory = "roundtrip" });
 
             var service2 = new ImageSaveSettingsService(_filePath);
-            Assert.Equal("roundtrip", service2.GetSettings().FilenamePrefix);
+            Assert.Equal("roundtrip", service2.GetSettings().OutputDirectory);
         }
     }
 
@@ -168,13 +152,13 @@ public class ImageSaveSettingsServiceTests : IDisposable
         {
             var service = new ImageSaveSettingsService(_filePath);
             var tasks = Enumerable.Range(0, 10).Select(i =>
-                service.SaveSettingsAsync(new ImageSaveSettings { FilenamePrefix = $"concurrent-{i}" }));
+                service.SaveSettingsAsync(new ImageSaveSettings { OutputDirectory = $"concurrent-{i}" }));
 
             await Task.WhenAll(tasks);
 
             // Verify final state is one of the saved values
             var settings = service.GetSettings();
-            Assert.StartsWith("concurrent-", settings.FilenamePrefix);
+            Assert.StartsWith("concurrent-", settings.OutputDirectory);
         }
     }
 
@@ -184,14 +168,13 @@ public class ImageSaveSettingsServiceTests : IDisposable
         public void Then_missing_fields_get_defaults()
         {
             // Write JSON with only some fields
-            File.WriteAllText(_filePath, """{"FilenamePrefix":"partial"}""");
+            File.WriteAllText(_filePath, """{"OutputDirectory":"partial"}""");
 
             var service = new ImageSaveSettingsService(_filePath);
             var settings = service.GetSettings();
 
-            Assert.Equal("partial", settings.FilenamePrefix);
+            Assert.Equal("partial", settings.OutputDirectory);
             // Missing fields should get their default values
-            Assert.Equal("CapturedImages", settings.OutputDirectory);
             Assert.Equal(SaveImageFormat.Png, settings.Format);
             Assert.True(settings.AutoSave);
         }

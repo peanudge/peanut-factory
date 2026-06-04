@@ -33,18 +33,8 @@ public class SettingsController : ControllerBase
     {
         var errors = new List<string>();
 
-        if (string.IsNullOrWhiteSpace(settings.FilenamePrefix))
-            errors.Add("FilenamePrefix is required");
-        else if (settings.FilenamePrefix.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
-            errors.Add("FilenamePrefix contains invalid filename characters");
-
-        if (string.IsNullOrWhiteSpace(settings.TimestampFormat))
-            errors.Add("TimestampFormat is required");
-        else
-        {
-            try { _ = DateTime.Now.ToString(settings.TimestampFormat); }
-            catch { errors.Add("TimestampFormat is not a valid date/time format string"); }
-        }
+        if (string.IsNullOrWhiteSpace(settings.OutputDirectory))
+            errors.Add("OutputDirectory is required");
 
         return errors;
     }

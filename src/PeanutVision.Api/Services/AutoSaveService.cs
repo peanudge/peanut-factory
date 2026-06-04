@@ -68,8 +68,6 @@ public sealed class AutoSaveService : IHostedService
 
             using var scope = _scopeFactory.CreateScope();
             var imageRepo = scope.ServiceProvider.GetRequiredService<ICapturedImageRepository>();
-            var sessionRepo = scope.ServiceProvider.GetRequiredService<ISessionRepository>();
-            var activeSession = await sessionRepo.GetActiveAsync();
 
             await imageRepo.AddAsync(new CapturedImage
             {
@@ -81,7 +79,6 @@ public sealed class AutoSaveService : IHostedService
                 FileSizeBytes = fileInfo.Exists ? fileInfo.Length : 0,
                 Format = settings.Format.ToString().ToLower(),
                 CapturedAt = DateTime.UtcNow,
-                SessionId = activeSession?.Id,
             });
         }
         catch
