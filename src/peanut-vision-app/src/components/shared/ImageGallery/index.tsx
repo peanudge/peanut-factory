@@ -1,7 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, Trash2, X } from 'lucide-react'
-import { getSessions, thumbnailUrl } from '@/api/client'
-import { queryKeys } from '@/api/queryKeys'
+import { thumbnailUrl } from '@/api/client'
 import type { CapturedImageRecord } from '@/api/types'
 import { formatTime } from '@/utils/formatTimestamp'
 import cx from './cx'
@@ -14,8 +12,10 @@ interface Props {
   page: number
   totalPages: number
   onPageChange: (p: number) => void
-  filterSessionId: string | null
-  onFilterChange: (sessionId: string | null) => void
+  dateFrom: string | null
+  dateTo: string | null
+  onDateFromChange: (v: string | null) => void
+  onDateToChange: (v: string | null) => void
   isLoading: boolean
 }
 
@@ -27,31 +27,38 @@ export default function ImageGallery({
   page,
   totalPages,
   onPageChange,
-  filterSessionId,
-  onFilterChange,
+  dateFrom,
+  dateTo,
+  onDateFromChange,
+  onDateToChange,
   isLoading,
 }: Props) {
-  const { data: sessions } = useQuery({
-    queryKey: queryKeys.sessions,
-    queryFn: () => getSessions(),
-  })
-
   return (
     <div className={cx('wrap')}>
-      {/* Session filter */}
+      {/* Date range filter */}
       <div className={cx('filterRow')}>
-        <select
-          className={cx('select')}
-          value={filterSessionId ?? ''}
-          onChange={(e) => onFilterChange(e.target.value || null)}
-        >
-          <option value="">All sessions</option>
-          {sessions?.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+        <input
+          type="date"
+          className={cx('dateInput')}
+          value={dateFrom ?? ''}
+          onChange={(e) => onDateFromChange(e.target.value || null)}
+        />
+        <span>–</span>
+        <input
+          type="date"
+          className={cx('dateInput')}
+          value={dateTo ?? ''}
+          onChange={(e) => onDateToChange(e.target.value || null)}
+        />
+        {(dateFrom || dateTo) && (
+          <button
+            type="button"
+            className={cx('clearBtn')}
+            onClick={() => { onDateFromChange(null); onDateToChange(null) }}
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
 
       {/* Loading */}

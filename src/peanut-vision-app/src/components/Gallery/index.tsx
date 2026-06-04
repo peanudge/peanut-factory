@@ -32,8 +32,10 @@ export default function Gallery() {
           page={gallery.page}
           totalPages={gallery.totalPages}
           onPageChange={gallery.setPage}
-          filterSessionId={gallery.filterSessionId}
-          onFilterChange={gallery.setFilterSessionId}
+          dateFrom={gallery.dateFrom}
+          dateTo={gallery.dateTo}
+          onDateFromChange={gallery.setDateFrom}
+          onDateToChange={gallery.setDateTo}
           isLoading={gallery.isLoading}
         />
       </div>

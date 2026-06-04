@@ -94,15 +94,6 @@ export interface CapturedEvent {
   objectUrl: string | null;
 }
 
-export interface Session {
-  id: string;
-  name: string;
-  createdAt: string;
-  endedAt: string | null;
-  notes: string | null;
-  isActive: boolean;
-}
-
 export interface HistogramData {
   red: number[];
   green: number[];
@@ -150,7 +141,6 @@ export interface LatencyStats {
 }
 
 export type SaveImageFormat = "png" | "bmp" | "raw";
-export type SubfolderStrategy = "none" | "byDate" | "bySession" | "byProfile";
 
 export interface CapturedImageRecord {
   id: string;
@@ -162,7 +152,6 @@ export interface CapturedImageRecord {
   fileSizeBytes: number;
   format: string;
   capturedAt: string;
-  sessionId: string | null;
 }
 
 export interface ImagePage {
@@ -176,9 +165,5 @@ export interface ImagePage {
 export interface ImageSaveSettings {
   outputDirectory: string;
   format: SaveImageFormat;
-  filenamePrefix: string;
-  timestampFormat: string;
-  includeSequenceNumber: boolean;
-  subfolderStrategy: SubfolderStrategy;
   autoSave: boolean;
 }

@@ -7,7 +7,6 @@ import ContinuousSettings from '@/components/shared/ContinuousSettings'
 import ExposureControl from '@/components/shared/ExposureControl'
 import CalibrationActions from '@/components/shared/CalibrationActions'
 import PresetSelector from '@/components/shared/PresetSelector'
-import SessionSelector from '@/components/shared/SessionSelector'
 import ImageSaveSettingsPanel from '@/components/shared/ImageSaveSettingsPanel'
 import ImageViewer from '@/components/shared/ImageViewer'
 import cx from './cx'
@@ -105,7 +104,6 @@ export default function Acquisition() {
         {/* Tab 2: Settings */}
         <div className={cx('tabPanel', { hidden: sidebarTab !== 2 })}>
           <ImageSaveSettingsPanel />
-          <SessionSelector />
         </div>
       </div>
 
