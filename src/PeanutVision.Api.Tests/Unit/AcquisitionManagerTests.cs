@@ -588,4 +588,84 @@ public class AcquisitionManagerTests : IDisposable
             Assert.Equal(new ProfileId("crevis-tc-a160k-softtrig-rgb8.cam"), _manager.ActiveProfileId);
         }
     }
+
+    public class Given_active_frameCount_and_intervalMs : AcquisitionManagerTests
+    {
+        [Fact]
+        public void Then_ActiveFrameCount_reflects_configured_value()
+        {
+            _manager.CreateChannel("crevis-tc-a160k-freerun-rgb8.cam");
+            _manager.Start(frameCount: 10);
+
+            Assert.Equal(10, _manager.ActiveFrameCount);
+        }
+
+        [Fact]
+        public void Then_ActiveFrameCount_is_null_when_not_specified()
+        {
+            _manager.CreateChannel("crevis-tc-a160k-freerun-rgb8.cam");
+            _manager.Start();
+
+            Assert.Null(_manager.ActiveFrameCount);
+        }
+
+        [Fact]
+        public void Then_ActiveIntervalMs_reflects_configured_value()
+        {
+            _manager.CreateChannel("crevis-tc-a160k-freerun-rgb8.cam");
+            _manager.Start(intervalMs: 200);
+
+            Assert.Equal(200, _manager.ActiveIntervalMs);
+        }
+
+        [Fact]
+        public void Then_ActiveIntervalMs_is_null_when_not_specified()
+        {
+            _manager.CreateChannel("crevis-tc-a160k-freerun-rgb8.cam");
+            _manager.Start();
+
+            Assert.Null(_manager.ActiveIntervalMs);
+        }
+
+        [Fact]
+        public void Then_ActiveIntervalMs_is_null_when_intervalMs_is_zero()
+        {
+            _manager.CreateChannel("crevis-tc-a160k-freerun-rgb8.cam");
+            _manager.Start(intervalMs: 0);
+
+            Assert.Null(_manager.ActiveIntervalMs);
+        }
+
+        [Fact]
+        public void Then_ActiveFrameCount_is_null_after_stop()
+        {
+            _manager.CreateChannel("crevis-tc-a160k-freerun-rgb8.cam");
+            _manager.Start(frameCount: 5);
+            _manager.Stop();
+
+            Assert.Null(_manager.ActiveFrameCount);
+        }
+
+        [Fact]
+        public void Then_ActiveIntervalMs_is_null_after_stop()
+        {
+            _manager.CreateChannel("crevis-tc-a160k-freerun-rgb8.cam");
+            _manager.Start(intervalMs: 100);
+            _manager.Stop();
+
+            Assert.Null(_manager.ActiveIntervalMs);
+        }
+
+        [Fact]
+        public void Then_ActiveFrameCount_is_null_when_not_started()
+        {
+            Assert.Null(_manager.ActiveFrameCount);
+        }
+
+        [Fact]
+        public void Then_ActiveIntervalMs_is_null_when_not_started()
+        {
+            Assert.Null(_manager.ActiveIntervalMs);
+        }
+    }
 }

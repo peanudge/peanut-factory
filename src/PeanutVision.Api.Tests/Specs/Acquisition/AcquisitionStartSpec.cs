@@ -114,4 +114,43 @@ public class AcquisitionStartSpec : IClassFixture<PeanutVisionApiFactory>, IAsyn
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Start_when_already_active_returns_409_conflict()
+    {
+        await _client.PostJsonAsync("/api/acquisition/start",
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
+
+        var response = await _client.PostJsonAsync("/api/acquisition/start",
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Start_when_already_active_conflict_response_has_error_field()
+    {
+        await _client.PostJsonAsync("/api/acquisition/start",
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
+
+        var response = await _client.PostJsonAsync("/api/acquisition/start",
+            new { profileId = "crevis-tc-a160k-softtrig-rgb8.cam" });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        using var doc = await response.ReadJsonDocumentAsync();
+        Assert.True(doc.RootElement.TryGetProperty("error", out _));
+    }
+
+    [Fact]
+    public async Task Start_after_stop_succeeds_even_if_previously_active()
+    {
+        await _client.PostJsonAsync("/api/acquisition/start",
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
+        await _client.PostAsync("/api/acquisition/stop", null);
+
+        var response = await _client.PostJsonAsync("/api/acquisition/start",
+            new { profileId = "crevis-tc-a160k-softtrig-rgb8.cam" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
 }
