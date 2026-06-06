@@ -38,71 +38,9 @@ public sealed class AcquisitionManager : IAcquisitionSession, IChannelCalibratio
         _latencyService = latencyService;
     }
 
-    public ChannelState ChannelState
-    {
-        get { lock (_lock) return _channelState; }
-    }
-
-    public bool IsActive
-    {
-        get { lock (_lock) return _channelState == ChannelState.Active; }
-    }
-
-    public ProfileId? ActiveProfileId
-    {
-        get { lock (_lock) return _channelProfileId; }
-    }
-
-    public TriggerMode? ChannelTriggerMode
-    {
-        get { lock (_lock) return _channelTriggerMode; }
-    }
-
-    public int? ActiveFrameCount
-    {
-        get { lock (_lock) return _targetFrameCount; }
-    }
-
-    public int? ActiveIntervalMs
-    {
-        get { lock (_lock) return _activeIntervalMs; }
-    }
-
-    internal ImageData? LastFrame
-    {
-        get { lock (_lock) return _lastFrame; }
-    }
-
-    public bool HasFrame
-    {
-        get { lock (_lock) return _lastFrame != null; }
-    }
-
     public ImageData? GetLatestFrame()
     {
         lock (_lock) return _lastFrame;
-    }
-
-    public string? LastError
-    {
-        get { lock (_lock) return _lastError; }
-    }
-
-    public AcquisitionStatisticsSnapshot? GetStatistics()
-    {
-        lock (_lock)
-        {
-            var snapshot = _statistics?.GetSnapshot();
-            if (snapshot.HasValue && _channel != null)
-            {
-                return snapshot.Value with
-                {
-                    CopyDropCount = _channel.CopyDropCount,
-                    ClusterUnavailableCount = _channel.ClusterUnavailableCount,
-                };
-            }
-            return snapshot;
-        }
     }
 
     public AcquisitionStatus GetStatus()
@@ -148,29 +86,12 @@ public sealed class AcquisitionManager : IAcquisitionSession, IChannelCalibratio
         }
     }
 
-    public IReadOnlyList<ChannelEvent> GetRecentEvents(int max = 50)
-    {
-        return _eventLog.GetRecent(max);
-    }
-
-    public IReadOnlySet<ChannelAction> GetAllowedActions()
-    {
-        lock (_lock)
-        {
-            return _channelState switch
-            {
-                ChannelState.None   => new HashSet<ChannelAction> { ChannelAction.Start },
-                ChannelState.Idle   => new HashSet<ChannelAction> { ChannelAction.Start },
-                ChannelState.Active => new HashSet<ChannelAction> { ChannelAction.Stop, ChannelAction.Trigger },
-                _                   => new HashSet<ChannelAction>(),
-            };
-        }
-    }
-
     // IChannelCalibration implementation
 
-    public bool IsCalibrationAvailable =>
-        ChannelState == ChannelState.Idle || ChannelState == ChannelState.Active;
+    public bool IsCalibrationAvailable
+    {
+        get { lock (_lock) return _channelState == ChannelState.Idle || _channelState == ChannelState.Active; }
+    }
 
     public void PerformBlackCalibration() => GetRequiredChannel().PerformBlackCalibration();
 
@@ -229,12 +150,7 @@ public sealed class AcquisitionManager : IAcquisitionSession, IChannelCalibratio
         }
     }
 
-    internal GrabChannel? Channel
-    {
-        get { lock (_lock) return _channel; }
-    }
-
-    public void CreateChannel(ProfileId profileId, TriggerMode? triggerMode = null)
+    private void CreateChannel(ProfileId profileId, TriggerMode? triggerMode = null)
     {
         lock (_lock)
         {
@@ -354,61 +270,6 @@ public sealed class AcquisitionManager : IAcquisitionSession, IChannelCalibratio
 
         if (channel != null)
             _grabService.ReleaseChannel(channel);
-    }
-
-    public void Start(int? frameCount = null, int? intervalMs = null)
-    {
-        const int minIntervalMs = 50;
-
-        if (intervalMs.HasValue && intervalMs.Value > 0 && intervalMs.Value < minIntervalMs)
-            throw new ArgumentException($"intervalMs must be at least {minIntervalMs}ms, got {intervalMs.Value}ms.");
-
-        lock (_lock)
-        {
-            if (_channelState == ChannelState.None)
-                throw new InvalidOperationException("No channel exists. Create a channel first.");
-
-            if (_channelState == ChannelState.Active)
-                throw new InvalidOperationException("Acquisition is already active. Stop it first.");
-
-            _lastFrame = null;
-            _lastError = null;
-            _statistics = new AcquisitionStatistics();
-
-            _channel!.FrameAcquired    += OnFrameAcquired;
-            _channel.AcquisitionError  += OnAcquisitionError;
-            _channel.AcquisitionEnded  += OnAcquisitionEnded;
-
-            _targetFrameCount = frameCount;
-            _activeIntervalMs = intervalMs is > 0 ? intervalMs : null;
-            _channelState = ChannelState.Active;
-            _statistics.Start();
-            _channel.StartAcquisition(frameCount ?? -1);
-            try { _channel.SetExposureUs(_desiredExposureUs); } catch { /* best-effort */ }
-
-            if (intervalMs.HasValue && intervalMs.Value > 0)
-            {
-                _triggerTimer = new Timer(_ =>
-                {
-                    lock (_lock)
-                    {
-                        if (_channel?.IsActive == true)
-                        {
-                            _triggerTimestamps.Enqueue(DateTimeOffset.UtcNow);
-                            _channel.SendSoftwareTrigger();
-                        }
-                    }
-                }, null, 0, intervalMs.Value);
-            }
-
-            _eventLog.Add(new ChannelEvent(
-                DateTime.UtcNow, ChannelEventType.AcquisitionStarted,
-                $"Acquisition started with profile '{_channelProfileId?.Value}'" +
-                (frameCount.HasValue ? $", frameCount={frameCount}" : "") +
-                (intervalMs.HasValue ? $", intervalMs={intervalMs}" : "")));
-        }
-
-        StatusChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public void Stop()
