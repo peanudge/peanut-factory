@@ -10,9 +10,9 @@ namespace PeanutVision.Api.Controllers;
 [Route("api/[controller]")]
 public class AcquisitionController : ControllerBase
 {
-    private readonly IAcquisitionService _acquisition;
+    private readonly IAcquisitionSession _acquisition;
 
-    public AcquisitionController(IAcquisitionService acquisition)
+    public AcquisitionController(IAcquisitionSession acquisition)
     {
         _acquisition = acquisition;
     }
@@ -20,20 +20,14 @@ public class AcquisitionController : ControllerBase
     [HttpPost("start")]
     public ActionResult Start([FromBody] StartAcquisitionRequest request)
     {
-        if (_acquisition.ChannelState == ChannelState.Active)
-            return Conflict(new { error = "Acquisition is already running. Stop it first." });
+        var config = new AcquisitionConfig(
+            new ProfileId(request.ProfileId),
+            request.TriggerMode is not null ? TriggerMode.Parse(request.TriggerMode) : null,
+            request.FrameCount,
+            request.IntervalMs);
 
-        var profileId = new ProfileId(request.ProfileId);
-        var triggerMode = request.TriggerMode is not null
-            ? TriggerMode.Parse(request.TriggerMode)
-            : (TriggerMode?)null;
-
-        if (_acquisition.ChannelState == ChannelState.Idle)
-            _acquisition.ReleaseChannel();
-
-        _acquisition.CreateChannel(profileId, triggerMode);
-        _acquisition.Start(request.FrameCount, request.IntervalMs);
-        return Ok(new { message = "Acquisition started", profileId = profileId.Value });
+        _acquisition.Start(config);
+        return Ok(new { message = "Acquisition started", profileId = config.ProfileId.Value });
     }
 
     [HttpPost("stop")]
@@ -53,34 +47,34 @@ public class AcquisitionController : ControllerBase
     [HttpGet("status")]
     public ActionResult GetStatus()
     {
-        var stats = _acquisition.GetStatistics();
+        var s = _acquisition.GetStatus();
         return Ok(new
         {
-            isActive = _acquisition.IsActive,
-            channelState = _acquisition.ChannelState.ToString().ToLowerInvariant(),
-            profileId = _acquisition.ActiveProfileId?.Value,
-            triggerMode = _acquisition.ChannelTriggerMode?.ToString().ToLowerInvariant(),
-            activeFrameCount = _acquisition.ActiveFrameCount,
-            activeIntervalMs = _acquisition.ActiveIntervalMs,
-            hasFrame = _acquisition.HasFrame,
-            lastError = _acquisition.LastError,
-            allowedActions = _acquisition.GetAllowedActions(),
-            statistics = stats.HasValue
+            isActive = s.IsActive,
+            channelState = s.ChannelState.ToString().ToLowerInvariant(),
+            profileId = s.ActiveConfig?.ProfileId.Value,
+            triggerMode = s.ActiveConfig?.TriggerMode?.ToString().ToLowerInvariant(),
+            activeFrameCount = s.IsActive ? s.ActiveConfig?.FrameCount : null,
+            activeIntervalMs = s.IsActive ? s.ActiveConfig?.IntervalMs : null,
+            hasFrame = s.HasFrame,
+            lastError = s.LastError,
+            allowedActions = s.AllowedActions,
+            statistics = s.Statistics.HasValue
                 ? new
                 {
-                    frameCount = stats.Value.FrameCount,
-                    droppedFrameCount = stats.Value.DroppedFrameCount,
-                    errorCount = stats.Value.ErrorCount,
-                    elapsedMs = stats.Value.ElapsedTime.TotalMilliseconds,
-                    averageFps = Math.Round(stats.Value.AverageFps, 2),
-                    minFrameIntervalMs = Math.Round(stats.Value.MinFrameIntervalMs, 2),
-                    maxFrameIntervalMs = Math.Round(stats.Value.MaxFrameIntervalMs, 2),
-                    averageFrameIntervalMs = Math.Round(stats.Value.AverageFrameIntervalMs, 2),
-                    copyDropCount = stats.Value.CopyDropCount,
-                    clusterUnavailableCount = stats.Value.ClusterUnavailableCount,
+                    frameCount = s.Statistics.Value.FrameCount,
+                    droppedFrameCount = s.Statistics.Value.DroppedFrameCount,
+                    errorCount = s.Statistics.Value.ErrorCount,
+                    elapsedMs = s.Statistics.Value.ElapsedTime.TotalMilliseconds,
+                    averageFps = Math.Round(s.Statistics.Value.AverageFps, 2),
+                    minFrameIntervalMs = Math.Round(s.Statistics.Value.MinFrameIntervalMs, 2),
+                    maxFrameIntervalMs = Math.Round(s.Statistics.Value.MaxFrameIntervalMs, 2),
+                    averageFrameIntervalMs = Math.Round(s.Statistics.Value.AverageFrameIntervalMs, 2),
+                    copyDropCount = s.Statistics.Value.CopyDropCount,
+                    clusterUnavailableCount = s.Statistics.Value.ClusterUnavailableCount,
                 }
                 : null,
-            recentEvents = _acquisition.GetRecentEvents(50).Select(e => new
+            recentEvents = s.RecentEvents.Select(e => new
             {
                 timestamp = e.Timestamp,
                 type = e.Type.ToString(),
@@ -108,7 +102,6 @@ public class AcquisitionController : ControllerBase
         _acquisition.FrameAcquired += OnFrameAcquired;
         _acquisition.StatusChanged += OnStatusChanged;
 
-        // Send current status immediately so client has initial state
         channel.Writer.TryWrite($"event: status_changed\ndata: {BuildStatusJson()}\n\n");
 
         try
@@ -131,13 +124,11 @@ public class AcquisitionController : ControllerBase
     [HttpPost("trigger")]
     public async Task<ActionResult> Trigger()
     {
-        var image = await _acquisition.TriggerAndWaitAsync(5000);
-
+        var image = await _acquisition.TriggerAsync(5000);
         var encoder = new PngEncoder();
         var stream = new MemoryStream();
         encoder.Encode(image, stream);
         stream.Position = 0;
-
         return File(stream, "image/png", "trigger.png");
     }
 
@@ -147,12 +138,10 @@ public class AcquisitionController : ControllerBase
         var frame = _acquisition.GetLatestFrame();
         if (frame is null)
             return NoContent();
-
         var encoder = new PngEncoder();
         var stream = new MemoryStream();
         encoder.Encode(frame, stream);
         stream.Position = 0;
-
         return File(stream, "image/png", "latest.png");
     }
 
@@ -162,48 +151,40 @@ public class AcquisitionController : ControllerBase
         var frame = _acquisition.GetLatestFrame();
         if (frame is null)
             return NoContent();
-
         var histogram = HistogramService.Compute(frame);
-        return Ok(new
-        {
-            red = histogram.Red,
-            green = histogram.Green,
-            blue = histogram.Blue,
-            bins = 256,
-        });
+        return Ok(new { red = histogram.Red, green = histogram.Green, blue = histogram.Blue, bins = 256 });
     }
 
     private string BuildStatusJson()
     {
-        var stats = _acquisition.GetStatistics();
+        var s = _acquisition.GetStatus();
         var payload = new
         {
-            isActive = _acquisition.IsActive,
-            channelState = _acquisition.ChannelState.ToString().ToLowerInvariant(),
-            profileId = _acquisition.ActiveProfileId?.Value,
-            triggerMode = _acquisition.ChannelTriggerMode?.ToString().ToLowerInvariant(),
-            activeFrameCount = _acquisition.ActiveFrameCount,
-            activeIntervalMs = _acquisition.ActiveIntervalMs,
-            hasFrame = _acquisition.HasFrame,
-            lastError = _acquisition.LastError,
-            allowedActions = _acquisition.GetAllowedActions()
-                .Select(a => a.ToString().ToLowerInvariant()).ToArray(),
-            statistics = stats.HasValue
+            isActive = s.IsActive,
+            channelState = s.ChannelState.ToString().ToLowerInvariant(),
+            profileId = s.ActiveConfig?.ProfileId.Value,
+            triggerMode = s.ActiveConfig?.TriggerMode?.ToString().ToLowerInvariant(),
+            activeFrameCount = s.IsActive ? s.ActiveConfig?.FrameCount : (int?)null,
+            activeIntervalMs = s.IsActive ? s.ActiveConfig?.IntervalMs : (int?)null,
+            hasFrame = s.HasFrame,
+            lastError = s.LastError,
+            allowedActions = s.AllowedActions.Select(a => a.ToString().ToLowerInvariant()).ToArray(),
+            statistics = s.Statistics.HasValue
                 ? (object)new
                 {
-                    frameCount = stats.Value.FrameCount,
-                    droppedFrameCount = stats.Value.DroppedFrameCount,
-                    errorCount = stats.Value.ErrorCount,
-                    elapsedMs = stats.Value.ElapsedTime.TotalMilliseconds,
-                    averageFps = Math.Round(stats.Value.AverageFps, 2),
-                    minFrameIntervalMs = Math.Round(stats.Value.MinFrameIntervalMs, 2),
-                    maxFrameIntervalMs = Math.Round(stats.Value.MaxFrameIntervalMs, 2),
-                    averageFrameIntervalMs = Math.Round(stats.Value.AverageFrameIntervalMs, 2),
-                    copyDropCount = stats.Value.CopyDropCount,
-                    clusterUnavailableCount = stats.Value.ClusterUnavailableCount,
+                    frameCount = s.Statistics.Value.FrameCount,
+                    droppedFrameCount = s.Statistics.Value.DroppedFrameCount,
+                    errorCount = s.Statistics.Value.ErrorCount,
+                    elapsedMs = s.Statistics.Value.ElapsedTime.TotalMilliseconds,
+                    averageFps = Math.Round(s.Statistics.Value.AverageFps, 2),
+                    minFrameIntervalMs = Math.Round(s.Statistics.Value.MinFrameIntervalMs, 2),
+                    maxFrameIntervalMs = Math.Round(s.Statistics.Value.MaxFrameIntervalMs, 2),
+                    averageFrameIntervalMs = Math.Round(s.Statistics.Value.AverageFrameIntervalMs, 2),
+                    copyDropCount = s.Statistics.Value.CopyDropCount,
+                    clusterUnavailableCount = s.Statistics.Value.ClusterUnavailableCount,
                 }
                 : null,
-            recentEvents = _acquisition.GetRecentEvents(50).Select(e => new
+            recentEvents = s.RecentEvents.Select(e => new
             {
                 timestamp = e.Timestamp,
                 type = e.Type.ToString(),
@@ -212,7 +193,6 @@ public class AcquisitionController : ControllerBase
         };
         return JsonSerializer.Serialize(payload);
     }
-
 }
 
 public class StartAcquisitionRequest

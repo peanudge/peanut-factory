@@ -5,7 +5,7 @@ using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.Api.Services;
 
-public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibration, IExposureControl
+public sealed class AcquisitionManager : IAcquisitionSession, IChannelCalibration, IExposureControl
 {
     private readonly IGrabService _grabService;
     private readonly ICamFileService _camFileService;
@@ -445,7 +445,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
         StatusChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public async Task<ImageData> TriggerAndWaitAsync(int timeoutMs = 5000)
+    public async Task<ImageData> TriggerAsync(int timeoutMs = 5000)
     {
         TaskCompletionSource<ImageData> tcs;
 
@@ -461,7 +461,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
             if (!_channel.SupportsSoftwareTrigger)
             {
                 throw new InvalidOperationException(
-                    $"TriggerAndWaitAsync requires SOFT or COMBINED trigger mode, but channel is configured for {_channel.TriggerMode}. " +
+                    $"TriggerAsync requires SOFT or COMBINED trigger mode, but channel is configured for {_channel.TriggerMode}. " +
                     "Use Start() with the correct trigger mode, or use the frame event for IMMEDIATE/HARD trigger modes.");
             }
 

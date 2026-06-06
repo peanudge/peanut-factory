@@ -4,7 +4,7 @@ namespace PeanutVision.Api.Services;
 
 public sealed class AutoSaveService : IHostedService
 {
-    private readonly IAcquisitionService _acquisition;
+    private readonly IAcquisitionSession _acquisition;
     private readonly IImageSaveSettingsService _saveSettings;
     private readonly FilenameGenerator _filenameGenerator;
     private readonly FrameSaveTracker _frameSaveTracker;
@@ -13,7 +13,7 @@ public sealed class AutoSaveService : IHostedService
     private readonly IWebHostEnvironment _environment;
 
     public AutoSaveService(
-        IAcquisitionService acquisition,
+        IAcquisitionSession acquisition,
         IImageSaveSettingsService saveSettings,
         FilenameGenerator filenameGenerator,
         FrameSaveTracker frameSaveTracker,
@@ -52,7 +52,7 @@ public sealed class AutoSaveService : IHostedService
         if (frame == null || !_frameSaveTracker.ShouldSave(frame))
             return;
 
-        var profileId = _acquisition.ActiveProfileId?.Value;
+        var profileId = _acquisition.GetStatus().ActiveConfig?.ProfileId.Value;
         _ = SaveAsync(frame, settings, profileId);
     }
 

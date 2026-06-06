@@ -201,7 +201,7 @@ public class AutoSaveServiceTests : IDisposable
 
 // ── Fakes ──
 
-internal sealed class FakeAcquisitionService : IAcquisitionService
+internal sealed class FakeAcquisitionService : IAcquisitionSession
 {
     private ImageData? _frame;
 
@@ -216,24 +216,21 @@ internal sealed class FakeAcquisitionService : IAcquisitionService
 
     public ImageData? GetLatestFrame() => _frame;
 
-    // Unused members
-    public bool IsActive => false;
-    public bool HasFrame => _frame != null;
-    public int? ActiveFrameCount => null;
-    public int? ActiveIntervalMs => null;
-    public ChannelState ChannelState => ChannelState.None;
-    public ProfileId? ActiveProfileId => null;
-    public TriggerMode? ChannelTriggerMode => null;
-    public string? LastError => null;
-    public AcquisitionStatisticsSnapshot? GetStatistics() => null;
-    public IReadOnlyList<ChannelEvent> GetRecentEvents(int max = 50) => [];
-    public IReadOnlySet<ChannelAction> GetAllowedActions() => new HashSet<ChannelAction>();
-    public void CreateChannel(ProfileId profileId, TriggerMode? triggerMode = null) { }
-    public void ReleaseChannel() { }
-    public void Start(int? frameCount = null, int? intervalMs = null) { }
+    public AcquisitionStatus GetStatus() => new(
+        ChannelState: ChannelState.None,
+        ActiveConfig: null,
+        HasFrame: _frame != null,
+        LastError: null,
+        Statistics: null,
+        RecentEvents: [],
+        AllowedActions: new HashSet<ChannelAction> { ChannelAction.Start }
+    );
+
+    public void Start(AcquisitionConfig config) { }
     public void Stop() { }
-    public Task<PeanutVision.MultiCamDriver.Imaging.ImageData> TriggerAndWaitAsync(int timeoutMs = 5000) =>
-        Task.FromResult(new PeanutVision.MultiCamDriver.Imaging.ImageData(new byte[3], 1, 1, 3));
+    public void ReleaseChannel() { }
+    public Task<ImageData> TriggerAsync(int timeoutMs = 5000) =>
+        Task.FromResult(new ImageData(new byte[3], 1, 1, 3));
     public void Dispose() { }
 }
 

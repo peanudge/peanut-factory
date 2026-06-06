@@ -88,7 +88,7 @@ public class AcquisitionManagerTests : IDisposable
         public async Task When_trigger_and_wait_then_throws()
         {
             await Assert.ThrowsAsync<InvalidOperationException>(
-                () => _manager.TriggerAndWaitAsync());
+                () => _manager.TriggerAsync());
         }
 
         [Fact]
@@ -327,7 +327,7 @@ public class AcquisitionManagerTests : IDisposable
 
             _manager.CreateChannel(new ProfileId("crevis-tc-a160k-softtrig-rgb8.cam"));
             _manager.Start();
-            var image = await _manager.TriggerAndWaitAsync();
+            var image = await _manager.TriggerAsync();
 
             Assert.Equal(width, image.Width);
             Assert.Equal(height, image.Height);
@@ -340,8 +340,8 @@ public class AcquisitionManagerTests : IDisposable
             _manager.Start();
             _mockHal.CallLog.Reset();
 
-            await _manager.TriggerAndWaitAsync();
-            await _manager.TriggerAndWaitAsync();
+            await _manager.TriggerAsync();
+            await _manager.TriggerAsync();
 
             Assert.Equal(2, _mockHal.CallLog.SoftwareTriggerCount);
         }
@@ -357,7 +357,7 @@ public class AcquisitionManagerTests : IDisposable
             _manager.Start();
 
             await Assert.ThrowsAsync<TimeoutException>(
-                () => _manager.TriggerAndWaitAsync(timeoutMs: 100));
+                () => _manager.TriggerAsync(timeoutMs: 100));
         }
     }
 
