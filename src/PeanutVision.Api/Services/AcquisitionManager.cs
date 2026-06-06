@@ -26,6 +26,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
     private TriggerMode? _channelTriggerMode;
     private double _desiredExposureUs = 10000.0;
     private int? _targetFrameCount;
+    private int? _activeIntervalMs;
 
     public event EventHandler? FrameAcquired;
     public event EventHandler? StatusChanged;
@@ -55,6 +56,16 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
     public TriggerMode? ChannelTriggerMode
     {
         get { lock (_lock) return _channelTriggerMode; }
+    }
+
+    public int? ActiveFrameCount
+    {
+        get { lock (_lock) return _targetFrameCount; }
+    }
+
+    public int? ActiveIntervalMs
+    {
+        get { lock (_lock) return _activeIntervalMs; }
     }
 
     internal ImageData? LastFrame
@@ -248,6 +259,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
             _channel.AcquisitionEnded  += OnAcquisitionEnded;
 
             _targetFrameCount = frameCount;
+            _activeIntervalMs = intervalMs is > 0 ? intervalMs : null;
             _channelState = ChannelState.Active;
             _statistics.Start();
             _channel.StartAcquisition(frameCount ?? -1);
@@ -289,6 +301,7 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
 
             _channelState = ChannelState.Idle;
             _targetFrameCount = null;
+            _activeIntervalMs = null;
 
             tcs = _triggerTcs;
             _triggerTcs = null;

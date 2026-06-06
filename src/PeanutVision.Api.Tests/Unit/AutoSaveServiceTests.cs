@@ -219,6 +219,8 @@ internal sealed class FakeAcquisitionService : IAcquisitionService
     // Unused members
     public bool IsActive => false;
     public bool HasFrame => _frame != null;
+    public int? ActiveFrameCount => null;
+    public int? ActiveIntervalMs => null;
     public ChannelState ChannelState => ChannelState.None;
     public ProfileId? ActiveProfileId => null;
     public TriggerMode? ChannelTriggerMode => null;

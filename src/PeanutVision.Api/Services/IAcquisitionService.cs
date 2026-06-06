@@ -8,6 +8,8 @@ public interface IAcquisitionService : IChannelService, IDisposable
     bool IsActive { get; }
     bool HasFrame { get; }
     string? LastError { get; }
+    int? ActiveFrameCount { get; }
+    int? ActiveIntervalMs { get; }
     AcquisitionStatisticsSnapshot? GetStatistics();
     IReadOnlyList<ChannelEvent> GetRecentEvents(int max = 50);
     void Start(int? frameCount = null, int? intervalMs = null);

@@ -81,3 +81,78 @@
   display: flex;
   flex-direction: column;
 }
+
+// ── Active view (readonly) ──
+
+.activeView {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.activeHeader {
+  display: flex;
+  align-items: center;
+}
+
+.activeInfo {
+  margin: 0;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  padding: 2px 0;
+
+  dt {
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &.warn dd { color: var(--color-warning, #f59e0b); }
+  &.error dd { color: var(--color-error, #ef4444); font-size: 0.75rem; }
+}
+
+.triggerBtn {
+  padding: 8px 14px;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: var(--bg-hover); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.stopBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  background: var(--color-danger, #ef4444);
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { opacity: 0.88; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}

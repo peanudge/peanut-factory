@@ -67,6 +67,9 @@ export interface AcquisitionStatus {
   isActive: boolean;
   channelState?: ChannelState;
   profileId?: string;
+  triggerMode?: string;
+  activeFrameCount?: number | null;
+  activeIntervalMs?: number | null;
   hasFrame?: boolean;
   lastError?: string | null;
   allowedActions?: AcquisitionAction[];

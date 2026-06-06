@@ -20,13 +20,15 @@ public class AcquisitionController : ControllerBase
     [HttpPost("start")]
     public ActionResult Start([FromBody] StartAcquisitionRequest request)
     {
+        if (_acquisition.ChannelState == ChannelState.Active)
+            return Conflict(new { error = "Acquisition is already running. Stop it first." });
+
         var profileId = new ProfileId(request.ProfileId);
         var triggerMode = request.TriggerMode is not null
             ? TriggerMode.Parse(request.TriggerMode)
             : (TriggerMode?)null;
 
-        // Auto-release any idle channel so callers don't need explicit channel management
-        if (_acquisition.ChannelState != ChannelState.None && _acquisition.ChannelState != ChannelState.Active)
+        if (_acquisition.ChannelState == ChannelState.Idle)
             _acquisition.ReleaseChannel();
 
         _acquisition.CreateChannel(profileId, triggerMode);
@@ -57,6 +59,9 @@ public class AcquisitionController : ControllerBase
             isActive = _acquisition.IsActive,
             channelState = _acquisition.ChannelState.ToString().ToLowerInvariant(),
             profileId = _acquisition.ActiveProfileId?.Value,
+            triggerMode = _acquisition.ChannelTriggerMode?.ToString().ToLowerInvariant(),
+            activeFrameCount = _acquisition.ActiveFrameCount,
+            activeIntervalMs = _acquisition.ActiveIntervalMs,
             hasFrame = _acquisition.HasFrame,
             lastError = _acquisition.LastError,
             allowedActions = _acquisition.GetAllowedActions(),
@@ -176,6 +181,9 @@ public class AcquisitionController : ControllerBase
             isActive = _acquisition.IsActive,
             channelState = _acquisition.ChannelState.ToString().ToLowerInvariant(),
             profileId = _acquisition.ActiveProfileId?.Value,
+            triggerMode = _acquisition.ChannelTriggerMode?.ToString().ToLowerInvariant(),
+            activeFrameCount = _acquisition.ActiveFrameCount,
+            activeIntervalMs = _acquisition.ActiveIntervalMs,
             hasFrame = _acquisition.HasFrame,
             lastError = _acquisition.LastError,
             allowedActions = _acquisition.GetAllowedActions()
