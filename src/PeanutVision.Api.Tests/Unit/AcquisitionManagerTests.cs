@@ -668,4 +668,32 @@ public class AcquisitionManagerTests : IDisposable
             Assert.Null(_manager.ActiveIntervalMs);
         }
     }
+
+    public class Given_AcquisitionConfig : AcquisitionManagerTests
+    {
+        [Fact]
+        public void Config_holds_all_fields()
+        {
+            var config = new AcquisitionConfig(
+                new ProfileId("cam.cam"),
+                TriggerMode.Soft,
+                FrameCount: 5,
+                IntervalMs: 100);
+
+            Assert.Equal("cam.cam", config.ProfileId.Value);
+            Assert.Equal(TriggerMode.Soft, config.TriggerMode);
+            Assert.Equal(5, config.FrameCount);
+            Assert.Equal(100, config.IntervalMs);
+        }
+
+        [Fact]
+        public void Config_defaults_optional_fields_to_null()
+        {
+            var config = new AcquisitionConfig(new ProfileId("cam.cam"));
+
+            Assert.Null(config.TriggerMode);
+            Assert.Null(config.FrameCount);
+            Assert.Null(config.IntervalMs);
+        }
+    }
 }
