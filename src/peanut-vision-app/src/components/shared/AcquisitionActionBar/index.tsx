@@ -1,16 +1,15 @@
 import { Play, Square, Crosshair, RefreshCw } from 'lucide-react'
 import StatusChip from '@/components/shared/StatusChip'
-import type {
-  AcquisitionAction,
-  AcquisitionStatus,
-  ContinuousSubMode,
-} from '@/api/types'
+import type { ContinuousSubMode } from '@/api/types'
 import cx from './cx'
 
 interface Props {
+  isActive: boolean
+  profileLabel?: string
+  canStart: boolean
+  canStop: boolean
+  canTrigger: boolean
   continuousSubMode: ContinuousSubMode
-  selectedProfile: string
-  status: AcquisitionStatus | null
   busy: boolean
   onStart: () => void
   onStop: () => void
@@ -22,9 +21,12 @@ interface Props {
 }
 
 export default function AcquisitionActionBar({
+  isActive,
+  profileLabel,
+  canStart,
+  canStop,
+  canTrigger,
   continuousSubMode,
-  selectedProfile,
-  status,
   busy,
   onStart,
   onStop,
@@ -34,13 +36,10 @@ export default function AcquisitionActionBar({
   hasWarnings,
   hasErrors,
 }: Props) {
-  const allowed = (action: AcquisitionAction) =>
-    status?.allowedActions?.includes(action) ?? false
-
   return (
     <div className={cx('bar')}>
       <div className={cx('group')}>
-        {allowed('stop') ? (
+        {canStop ? (
           <button
             type="button"
             className={cx('btn', 'danger')}
@@ -54,12 +53,12 @@ export default function AcquisitionActionBar({
             type="button"
             className={cx('btn', 'success')}
             onClick={onStart}
-            disabled={busy || !allowed('start') || !selectedProfile}
+            disabled={busy || !canStart}
           >
             <Play size={14} /> Start
           </button>
         )}
-        {allowed('trigger') && continuousSubMode === 'manual' && (
+        {canTrigger && continuousSubMode === 'manual' && (
           <button
             type="button"
             className={cx('btn')}
@@ -71,14 +70,12 @@ export default function AcquisitionActionBar({
         )}
       </div>
 
-      {status && (
-        <StatusChip
-          active={status.isActive}
-          label={status.isActive ? `Active (${status.profileId ?? ''})` : 'Inactive'}
-          hasWarnings={hasWarnings}
-          hasErrors={hasErrors}
-        />
-      )}
+      <StatusChip
+        active={isActive}
+        label={isActive ? `Active (${profileLabel ?? ''})` : 'Inactive'}
+        hasWarnings={hasWarnings}
+        hasErrors={hasErrors}
+      />
 
       <button
         type="button"
