@@ -696,4 +696,70 @@ public class AcquisitionManagerTests : IDisposable
             Assert.Null(config.IntervalMs);
         }
     }
+
+    public class Given_Start_with_config : AcquisitionManagerTests
+    {
+        [Fact]
+        public void Then_channel_is_active()
+        {
+            var config = new AcquisitionConfig(new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"));
+            _manager.Start(config);
+
+            Assert.True(_manager.IsActive);
+            Assert.Equal(ChannelState.Active, _manager.ChannelState);
+        }
+
+        [Fact]
+        public void Then_active_profile_id_matches_config()
+        {
+            var config = new AcquisitionConfig(new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"));
+            _manager.Start(config);
+
+            Assert.Equal("crevis-tc-a160k-freerun-rgb8.cam", _manager.ActiveProfileId?.Value);
+        }
+
+        [Fact]
+        public void Then_auto_releases_idle_channel_before_starting()
+        {
+            // Put manager into Idle state first
+            _manager.CreateChannel("crevis-tc-a160k-freerun-rgb8.cam");
+            _mockHal.CallLog.Reset();
+
+            var config = new AcquisitionConfig(new ProfileId("crevis-tc-a160k-softtrig-rgb8.cam"));
+            _manager.Start(config);
+
+            // Old channel released (1 Delete), new one created (1 Create)
+            Assert.Equal(1, _mockHal.CallLog.DeleteCalls);
+            Assert.Equal(1, _mockHal.CallLog.CreateCalls);
+            Assert.Equal("crevis-tc-a160k-softtrig-rgb8.cam", _manager.ActiveProfileId?.Value);
+        }
+
+        [Fact]
+        public void When_already_active_then_throws()
+        {
+            var config = new AcquisitionConfig(new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"));
+            _manager.Start(config);
+
+            Assert.Throws<InvalidOperationException>(() =>
+                _manager.Start(new AcquisitionConfig(new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"))));
+        }
+
+        [Fact]
+        public void Then_frameCount_stored_as_ActiveFrameCount()
+        {
+            var config = new AcquisitionConfig(new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"), FrameCount: 7);
+            _manager.Start(config);
+
+            Assert.Equal(7, _manager.ActiveFrameCount);
+        }
+
+        [Fact]
+        public void Then_intervalMs_stored_as_ActiveIntervalMs()
+        {
+            var config = new AcquisitionConfig(new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"), IntervalMs: 200);
+            _manager.Start(config);
+
+            Assert.Equal(200, _manager.ActiveIntervalMs);
+        }
+    }
 }

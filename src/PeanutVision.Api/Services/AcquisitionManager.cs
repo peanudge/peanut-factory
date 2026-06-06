@@ -210,6 +210,84 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
         }
     }
 
+    public void Start(AcquisitionConfig config)
+    {
+        const int minIntervalMs = 50;
+        if (config.IntervalMs is > 0 and < minIntervalMs)
+            throw new ArgumentException($"intervalMs must be at least {minIntervalMs}ms.");
+
+        // Capture idle channel for release OUTSIDE lock to avoid potential deadlock with channel Dispose
+        GrabChannel? toRelease = null;
+        lock (_lock)
+        {
+            if (_channelState == ChannelState.Active)
+                throw new InvalidOperationException("Acquisition is already running. Stop it first.");
+
+            if (_channelState == ChannelState.Idle)
+            {
+                toRelease = _channel;
+                _channel = null;
+                _channelProfileId = null;
+                _channelTriggerMode = null;
+                _channelState = ChannelState.None;
+                _lastFrame = null;
+                _statistics = null;
+            }
+        }
+        if (toRelease != null)
+            _grabService.ReleaseChannel(toRelease);
+
+        lock (_lock)
+        {
+            var camFile = _camFileService.GetByFileName(config.ProfileId.Value);
+            var options = config.TriggerMode.HasValue
+                ? camFile.ToChannelOptions(config.TriggerMode.Value.Mode)
+                : camFile.ToChannelOptions();
+
+            _channel = _grabService.CreateChannel(options);
+            _channelProfileId = config.ProfileId;
+            _channelTriggerMode = config.TriggerMode;
+            _lastFrame = null;
+            _lastError = null;
+            _statistics = new AcquisitionStatistics();
+
+            _channel.FrameAcquired    += OnFrameAcquired;
+            _channel.AcquisitionError += OnAcquisitionError;
+            _channel.AcquisitionEnded += OnAcquisitionEnded;
+
+            _targetFrameCount = config.FrameCount;
+            _activeIntervalMs = config.IntervalMs is > 0 ? config.IntervalMs : null;
+            _channelState = ChannelState.Active;
+            _statistics.Start();
+            _channel.StartAcquisition(config.FrameCount ?? -1);
+            try { _channel.SetExposureUs(_desiredExposureUs); } catch { /* best-effort */ }
+
+            if (config.IntervalMs is > 0)
+            {
+                var ms = config.IntervalMs.Value;
+                _triggerTimer = new Timer(_ =>
+                {
+                    lock (_lock)
+                    {
+                        if (_channel?.IsActive == true)
+                        {
+                            _triggerTimestamps.Enqueue(DateTimeOffset.UtcNow);
+                            _channel.SendSoftwareTrigger();
+                        }
+                    }
+                }, null, 0, ms);
+            }
+
+            _eventLog.Add(new ChannelEvent(
+                DateTime.UtcNow, ChannelEventType.AcquisitionStarted,
+                $"Acquisition started with profile '{config.ProfileId.Value}'" +
+                (config.FrameCount.HasValue ? $", frameCount={config.FrameCount}" : "") +
+                (config.IntervalMs.HasValue ? $", intervalMs={config.IntervalMs}" : "")));
+        }
+
+        StatusChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     public void ReleaseChannel()
     {
         GrabChannel? channel;
