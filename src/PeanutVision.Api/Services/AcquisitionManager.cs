@@ -105,6 +105,49 @@ public sealed class AcquisitionManager : IAcquisitionService, IChannelCalibratio
         }
     }
 
+    public AcquisitionStatus GetStatus()
+    {
+        lock (_lock)
+        {
+            var statsSnapshot = _statistics?.GetSnapshot();
+            AcquisitionStatisticsSnapshot? stats = null;
+            if (statsSnapshot.HasValue && _channel != null)
+            {
+                stats = statsSnapshot.Value with
+                {
+                    CopyDropCount = _channel.CopyDropCount,
+                    ClusterUnavailableCount = _channel.ClusterUnavailableCount,
+                };
+            }
+            else if (statsSnapshot.HasValue)
+            {
+                stats = statsSnapshot;
+            }
+
+            AcquisitionConfig? activeConfig = _channelState == ChannelState.Active
+                ? new AcquisitionConfig(_channelProfileId!.Value, _channelTriggerMode, _targetFrameCount, _activeIntervalMs)
+                : null;
+
+            var allowedActions = _channelState switch
+            {
+                ChannelState.None   => (IReadOnlySet<ChannelAction>)new HashSet<ChannelAction> { ChannelAction.Start },
+                ChannelState.Idle   => new HashSet<ChannelAction> { ChannelAction.Start },
+                ChannelState.Active => new HashSet<ChannelAction> { ChannelAction.Stop, ChannelAction.Trigger },
+                _                   => new HashSet<ChannelAction>(),
+            };
+
+            return new AcquisitionStatus(
+                ChannelState: _channelState,
+                ActiveConfig: activeConfig,
+                HasFrame: _lastFrame != null,
+                LastError: _lastError,
+                Statistics: stats,
+                RecentEvents: _eventLog.GetRecent(50),
+                AllowedActions: allowedActions
+            );
+        }
+    }
+
     public IReadOnlyList<ChannelEvent> GetRecentEvents(int max = 50)
     {
         return _eventLog.GetRecent(max);

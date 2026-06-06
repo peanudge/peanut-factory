@@ -697,6 +697,76 @@ public class AcquisitionManagerTests : IDisposable
         }
     }
 
+    public class Given_GetStatus : AcquisitionManagerTests
+    {
+        [Fact]
+        public void When_idle_returns_None_state_and_no_config()
+        {
+            var status = _manager.GetStatus();
+
+            Assert.Equal(ChannelState.None, status.ChannelState);
+            Assert.False(status.IsActive);
+            Assert.Null(status.ActiveConfig);
+            Assert.False(status.HasFrame);
+            Assert.Null(status.LastError);
+            Assert.Null(status.Statistics);
+        }
+
+        [Fact]
+        public void When_active_returns_Active_state_with_config()
+        {
+            var config = new AcquisitionConfig(
+                new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"),
+                TriggerMode.Soft,
+                FrameCount: 3,
+                IntervalMs: 100);
+            _manager.Start(config);
+
+            var status = _manager.GetStatus();
+
+            Assert.Equal(ChannelState.Active, status.ChannelState);
+            Assert.True(status.IsActive);
+            Assert.NotNull(status.ActiveConfig);
+            Assert.Equal("crevis-tc-a160k-freerun-rgb8.cam", status.ActiveConfig!.ProfileId.Value);
+            Assert.Equal(TriggerMode.Soft, status.ActiveConfig.TriggerMode);
+            Assert.Equal(3, status.ActiveConfig.FrameCount);
+            Assert.Equal(100, status.ActiveConfig.IntervalMs);
+        }
+
+        [Fact]
+        public void When_active_AllowedActions_contains_Stop_and_Trigger()
+        {
+            _manager.Start(new AcquisitionConfig(new ProfileId("crevis-tc-a160k-freerun-rgb8.cam")));
+
+            var status = _manager.GetStatus();
+
+            Assert.Contains(ChannelAction.Stop, status.AllowedActions);
+            Assert.Contains(ChannelAction.Trigger, status.AllowedActions);
+            Assert.DoesNotContain(ChannelAction.Start, status.AllowedActions);
+        }
+
+        [Fact]
+        public void When_idle_AllowedActions_contains_Start()
+        {
+            var status = _manager.GetStatus();
+
+            Assert.Contains(ChannelAction.Start, status.AllowedActions);
+        }
+
+        [Fact]
+        public void After_stop_returns_Idle_state_and_null_config()
+        {
+            _manager.Start(new AcquisitionConfig(new ProfileId("crevis-tc-a160k-freerun-rgb8.cam")));
+            _manager.Stop();
+
+            var status = _manager.GetStatus();
+
+            Assert.Equal(ChannelState.Idle, status.ChannelState);
+            Assert.False(status.IsActive);
+            Assert.Null(status.ActiveConfig);
+        }
+    }
+
     public class Given_Start_with_config : AcquisitionManagerTests
     {
         [Fact]
