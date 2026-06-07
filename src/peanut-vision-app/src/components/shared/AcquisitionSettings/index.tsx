@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Loader2, FolderSearch } from 'lucide-react'
 import type { AcquisitionFormConfig, SaveImageFormat, CamFileInfo } from '@/api/types'
 import DirectoryBrowser from '@/components/shared/DirectoryBrowser'
@@ -32,6 +32,37 @@ export default function AcquisitionSettings({
   const [browserOpen, setBrowserOpen] = useState(false)
   const [saveOpen, setSaveOpen] = useState(false)
   const [presetName, setPresetName] = useState('')
+  const [intervalRaw, setIntervalRaw] = useState(
+    config.intervalMs != null ? String(config.intervalMs) : ''
+  )
+  const [intervalError, setIntervalError] = useState('')
+
+  // Sync when intervalMs changes externally (e.g. preset loaded)
+  useEffect(() => {
+    setIntervalRaw(config.intervalMs != null ? String(config.intervalMs) : '')
+    setIntervalError('')
+  }, [config.intervalMs])
+
+  const handleIntervalChange = (raw: string) => {
+    setIntervalRaw(raw)
+    if (raw.trim() === '') {
+      setIntervalError('')
+      onChange('intervalMs', null)
+      return
+    }
+    const ms = parseInt(raw, 10)
+    if (isNaN(ms) || ms < 50) {
+      setIntervalError('50ms 이상의 정수를 입력하세요')
+    } else {
+      setIntervalError('')
+      onChange('intervalMs', ms)
+    }
+  }
+
+  const handleIntervalStep = (delta: number) => {
+    const next = Math.max(50, (config.intervalMs ?? 1000) + delta)
+    onChange('intervalMs', next)
+  }
 
   const handleSave = () => {
     if (!presetName.trim()) return
@@ -153,31 +184,29 @@ export default function AcquisitionSettings({
               <button
                 type="button"
                 className={cx('intervalBtn')}
-                onClick={() => onChange('intervalMs', Math.max(50, (config.intervalMs ?? 1000) - 50))}
+                onClick={() => handleIntervalStep(-50)}
                 disabled={busy || (config.intervalMs ?? 1000) <= 50}
-              >−50
-              </button>
+              >−50</button>
               <input
-                type="number"
-                min={50}
-                step={50}
-                value={config.intervalMs ?? ''}
+                type="text"
+                inputMode="numeric"
+                value={intervalRaw}
                 placeholder="1000"
-                onChange={(e) => {
-                  const ms = parseInt(e.target.value, 10)
-                  onChange('intervalMs', isNaN(ms) || ms < 50 ? null : ms)
-                }}
+                onChange={(e) => handleIntervalChange(e.target.value)}
                 disabled={busy}
+                className={intervalError ? cx('inputError') : undefined}
               />
               <span className={cx('intervalUnit')}>ms</span>
               <button
                 type="button"
                 className={cx('intervalBtn')}
-                onClick={() => onChange('intervalMs', (config.intervalMs ?? 1000) + 50)}
+                onClick={() => handleIntervalStep(50)}
                 disabled={busy}
-              >+50
-              </button>
+              >+50</button>
             </div>
+            {intervalError && (
+              <span className={cx('errorMsg')}>{intervalError}</span>
+            )}
           </label>
         )}
       </section>

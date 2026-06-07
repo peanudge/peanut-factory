@@ -104,6 +104,16 @@
   flex-shrink: 0;
 }
 
+.inputError {
+  border-color: var(--color-error, #ef4444) !important;
+  outline-color: var(--color-error, #ef4444);
+}
+
+.errorMsg {
+  font-size: 0.72rem;
+  color: var(--color-error, #ef4444);
+}
+
 // ── Dir row ──
 
 .dirRow {
