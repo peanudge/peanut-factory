@@ -63,6 +63,27 @@ export type ChannelState = "none" | "idle" | "active";
 
 export type AcquisitionMode = "auto" | "manual";
 
+/** The full form configuration a user fills in before starting acquisition. */
+export interface AcquisitionFormConfig {
+  profileId: string
+  acquisitionMode: AcquisitionMode
+  frameCount: number | null
+  intervalMs: number | null
+  outputDirectory: string
+  format: SaveImageFormat
+  autoSave: boolean
+}
+
+export const DEFAULT_ACQUISITION_FORM_CONFIG: AcquisitionFormConfig = {
+  profileId: '',
+  acquisitionMode: 'auto',
+  frameCount: null,
+  intervalMs: null,
+  outputDirectory: 'CapturedImages',
+  format: 'png',
+  autoSave: true,
+}
+
 export interface AcquisitionStatus {
   isActive: boolean;
   channelState?: ChannelState;

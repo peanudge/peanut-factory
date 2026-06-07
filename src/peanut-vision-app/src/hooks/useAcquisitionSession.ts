@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { AcquisitionStatus, AcquisitionMode,  } from '@/api/types'
+import type { AcquisitionStatus, AcquisitionFormConfig } from '@/api/types'
 import {
   startAcquisition,
   stopAcquisition,
@@ -11,17 +11,7 @@ import {
 import { queryKeys } from '@/api/queryKeys'
 import { useToast } from '@/contexts/ToastContext'
 
-interface SessionConfig {
-  selectedProfile: string
-  frameCount: number | null
-  intervalMs: number | null
-  acquisitionMode: AcquisitionMode
-  outputDirectory: string
-  format: string
-  autoSave: boolean
-}
-
-export function useAcquisitionSession(config: SessionConfig) {
+export function useAcquisitionSession(config: AcquisitionFormConfig) {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
@@ -44,7 +34,7 @@ export function useAcquisitionSession(config: SessionConfig) {
   const startMutation = useMutation({
     mutationFn: () =>
       startAcquisition({
-        profileId: config.selectedProfile,
+        profileId: config.profileId,
         frameCount: config.frameCount,
         intervalMs: config.acquisitionMode === 'auto' ? config.intervalMs : null,
         outputDirectory: config.outputDirectory,
@@ -79,7 +69,7 @@ export function useAcquisitionSession(config: SessionConfig) {
   const status = acquisitionStatus ?? null
   const isActive = status?.isActive ?? false
   const busy = startMutation.isPending || stopMutation.isPending || triggerMutation.isPending
-  const canStart = (status?.allowedActions?.includes('start') ?? false) && !!config.selectedProfile
+  const canStart = (status?.allowedActions?.includes('start') ?? false) && !!config.profileId
   const canStop = status?.allowedActions?.includes('stop') ?? false
   const canTrigger = status?.allowedActions?.includes('trigger') ?? false
   const hasWarnings =

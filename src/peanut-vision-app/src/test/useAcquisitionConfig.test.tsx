@@ -3,7 +3,6 @@ import { renderHook, act } from '@testing-library/react'
 import { useAcquisitionConfig } from '@/hooks/useAcquisitionConfig'
 import { createWrapper } from './helpers'
 
-// Mock API — cameras query
 vi.mock('@/api/client', () => ({
   getCameras: vi.fn().mockResolvedValue([
     { fileName: 'crevis-tc-a160k-freerun-rgb8.cam', width: 4160, height: 3120 },
@@ -17,76 +16,97 @@ describe('useAcquisitionConfig', () => {
   describe('initial state', () => {
     it('starts with auto acquisition mode', () => {
       const { result } = renderHook(() => useAcquisitionConfig(), { wrapper })
-      expect(result.current.acquisitionMode).toBe('auto')
+      expect(result.current.config.acquisitionMode).toBe('auto')
     })
 
     it('starts with null frameCount and intervalMs', () => {
       const { result } = renderHook(() => useAcquisitionConfig(), { wrapper })
-      expect(result.current.frameCount).toBeNull()
-      expect(result.current.intervalMs).toBeNull()
+      expect(result.current.config.frameCount).toBeNull()
+      expect(result.current.config.intervalMs).toBeNull()
+    })
+
+    it('starts with default outputDirectory', () => {
+      const { result } = renderHook(() => useAcquisitionConfig(), { wrapper })
+      expect(result.current.config.outputDirectory).toBe('CapturedImages')
     })
 
     it('auto-selects first camera profile after cameras load', async () => {
       const { result } = renderHook(() => useAcquisitionConfig(), { wrapper })
-      // After the cameras query resolves, the first camera is auto-selected
       await vi.waitFor(() => {
-        expect(result.current.selectedProfile).toBe('crevis-tc-a160k-freerun-rgb8.cam')
+        expect(result.current.config.profileId).toBe('crevis-tc-a160k-freerun-rgb8.cam')
       })
     })
   })
 
-  describe('state updates', () => {
-    it('setAcquisitionMode updates mode', () => {
+  describe('updateConfig', () => {
+    it('updates a single field by key', () => {
       const { result } = renderHook(() => useAcquisitionConfig(), { wrapper })
-      act(() => { result.current.setAcquisitionMode('manual') })
-      expect(result.current.acquisitionMode).toBe('manual')
+      act(() => { result.current.updateConfig('acquisitionMode', 'manual') })
+      expect(result.current.config.acquisitionMode).toBe('manual')
     })
 
-    it('setFrameCount updates frameCount', () => {
+    it('updates frameCount', () => {
       const { result } = renderHook(() => useAcquisitionConfig(), { wrapper })
-      act(() => { result.current.setFrameCount(10) })
-      expect(result.current.frameCount).toBe(10)
+      act(() => { result.current.updateConfig('frameCount', 10) })
+      expect(result.current.config.frameCount).toBe(10)
     })
 
-    it('setIntervalMs updates intervalMs', () => {
+    it('updates intervalMs', () => {
       const { result } = renderHook(() => useAcquisitionConfig(), { wrapper })
-      act(() => { result.current.setIntervalMs(500) })
-      expect(result.current.intervalMs).toBe(500)
+      act(() => { result.current.updateConfig('intervalMs', 500) })
+      expect(result.current.config.intervalMs).toBe(500)
     })
 
-    it('setSelectedProfile updates profile', () => {
+    it('updates profileId', () => {
       const { result } = renderHook(() => useAcquisitionConfig(), { wrapper })
-      act(() => { result.current.setSelectedProfile('crevis-tc-a160k-softtrig-rgb8.cam') })
-      expect(result.current.selectedProfile).toBe('crevis-tc-a160k-softtrig-rgb8.cam')
+      act(() => { result.current.updateConfig('profileId', 'crevis-tc-a160k-softtrig-rgb8.cam') })
+      expect(result.current.config.profileId).toBe('crevis-tc-a160k-softtrig-rgb8.cam')
+    })
+
+    it('does not overwrite other fields when updating one', () => {
+      const { result } = renderHook(() => useAcquisitionConfig(), { wrapper })
+      act(() => { result.current.updateConfig('frameCount', 5) })
+      act(() => { result.current.updateConfig('intervalMs', 200) })
+      expect(result.current.config.frameCount).toBe(5)
+      expect(result.current.config.intervalMs).toBe(200)
     })
   })
 
-  describe('handleLoadPreset', () => {
-    it('loads preset values into config state', () => {
+  describe('loadPreset', () => {
+    it('loads all preset values into config', () => {
       const { result } = renderHook(() => useAcquisitionConfig(), { wrapper })
       act(() => {
-        result.current.handleLoadPreset({
+        result.current.loadPreset({
           name: 'My Preset',
           profileId: 'crevis-tc-a160k-softtrig-rgb8.cam',
           frameCount: 5,
           intervalMs: 200,
+          outputDirectory: '/data/captures',
+          format: 'bmp',
+          autoSave: false,
         })
       })
-      expect(result.current.selectedProfile).toBe('crevis-tc-a160k-softtrig-rgb8.cam')
-      expect(result.current.frameCount).toBe(5)
-      expect(result.current.intervalMs).toBe(200)
+      expect(result.current.config.profileId).toBe('crevis-tc-a160k-softtrig-rgb8.cam')
+      expect(result.current.config.frameCount).toBe(5)
+      expect(result.current.config.intervalMs).toBe(200)
+      expect(result.current.config.outputDirectory).toBe('/data/captures')
+      expect(result.current.config.format).toBe('bmp')
+      expect(result.current.config.autoSave).toBe(false)
     })
 
-    it('handles preset with null optional fields', () => {
+    it('keeps existing values for fields not in preset', () => {
       const { result } = renderHook(() => useAcquisitionConfig(), { wrapper })
+      act(() => { result.current.updateConfig('outputDirectory', '/my/path') })
       act(() => {
-        result.current.handleLoadPreset({
+        result.current.loadPreset({
           name: 'Minimal',
           profileId: 'crevis-tc-a160k-freerun-rgb8.cam',
         })
       })
-      expect(result.current.frameCount).toBeNull()
-      expect(result.current.intervalMs).toBeNull()
+      expect(result.current.config.frameCount).toBeNull()
+      expect(result.current.config.intervalMs).toBeNull()
+      // outputDirectory not in preset → keeps existing value
+      expect(result.current.config.outputDirectory).toBe('/my/path')
     })
   })
 })

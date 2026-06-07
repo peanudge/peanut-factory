@@ -10,13 +10,13 @@ import type { AcquisitionConfigPreset } from '@/api/types'
 import { getPresets, savePreset, deletePreset } from '@/api/client'
 import { queryKeys } from '@/api/queryKeys'
 import { useToast } from '@/contexts/ToastContext'
-import type { AcquisitionConfig } from '@/hooks/useAcquisitionConfig'
+import type { UseAcquisitionConfig } from '@/hooks/useAcquisitionConfig'
 import type { AcquisitionSession } from '@/hooks/useAcquisitionSession'
 import type { InputMode } from './index'
 import cx from './cx'
 
 interface Props {
-  config: AcquisitionConfig
+  acqConfig: UseAcquisitionConfig
   session: AcquisitionSession
   inputMode: InputMode
   onInputModeChange: (mode: InputMode) => void
@@ -55,6 +55,10 @@ function ActiveView({ session }: { session: AcquisitionSession }) {
           <dt>Interval</dt>
           <dd>{s?.activeIntervalMs != null ? `${s.activeIntervalMs} ms` : 'manual'}</dd>
         </div>
+        <div className={cx('infoRow')}>
+          <dt>Save to</dt>
+          <dd title={s?.outputDirectory}>{s?.outputDirectory ?? '—'}</dd>
+        </div>
         {s?.statistics && (
           <>
             <div className={cx('infoRow')}><dt>Frames</dt><dd>{s.statistics.frameCount}</dd></div>
@@ -82,12 +86,12 @@ function ActiveView({ session }: { session: AcquisitionSession }) {
 
 // ── 대기 중: 입력 모드 선택 ──────────────────────────────────────────────────
 
-function IdleView({ config, session, inputMode, onInputModeChange, selectedPreset, onPresetSelect }: Props) {
+function IdleView({ acqConfig, session, inputMode, onInputModeChange, selectedPreset, onPresetSelect }: Props) {
   return (
     <>
       <InputModeToggle mode={inputMode} onChange={onInputModeChange} />
       {inputMode === 'manual'
-        ? <ManualForm config={config} session={session} />
+        ? <ManualForm acqConfig={acqConfig} session={session} />
         : <PresetForm session={session} selected={selectedPreset} onSelect={onPresetSelect} />
       }
     </>
@@ -99,18 +103,10 @@ function IdleView({ config, session, inputMode, onInputModeChange, selectedPrese
 function InputModeToggle({ mode, onChange }: { mode: InputMode; onChange: (m: InputMode) => void }) {
   return (
     <div className={cx('modeToggle')}>
-      <button
-        type="button"
-        className={cx('modeBtn', { active: mode === 'manual' })}
-        onClick={() => onChange('manual')}
-      >
+      <button type="button" className={cx('modeBtn', { active: mode === 'manual' })} onClick={() => onChange('manual')}>
         Manual
       </button>
-      <button
-        type="button"
-        className={cx('modeBtn', { active: mode === 'preset' })}
-        onClick={() => onChange('preset')}
-      >
+      <button type="button" className={cx('modeBtn', { active: mode === 'preset' })} onClick={() => onChange('preset')}>
         Preset
       </button>
     </div>
@@ -119,7 +115,8 @@ function InputModeToggle({ mode, onChange }: { mode: InputMode; onChange: (m: In
 
 // ── Manual 모드: 폼 입력 ───────────────────────────────────────────────────
 
-function ManualForm({ config, session }: { config: AcquisitionConfig; session: AcquisitionSession }) {
+function ManualForm({ acqConfig, session }: { acqConfig: UseAcquisitionConfig; session: AcquisitionSession }) {
+  const { config, updateConfig, cameras } = acqConfig
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [saveOpen, setSaveOpen] = useState(false)
@@ -140,7 +137,7 @@ function ManualForm({ config, session }: { config: AcquisitionConfig; session: A
     if (!presetName.trim()) return
     saveMutation.mutate({
       name: presetName.trim(),
-      profileId: config.selectedProfile,
+      profileId: config.profileId,
       frameCount: config.frameCount,
       intervalMs: config.intervalMs,
       outputDirectory: config.outputDirectory,
@@ -152,14 +149,14 @@ function ManualForm({ config, session }: { config: AcquisitionConfig; session: A
   return (
     <>
       <CameraProfileSelector
-        cameras={config.cameras}
-        selectedProfile={config.selectedProfile}
-        onProfileChange={config.setSelectedProfile}
+        cameras={cameras}
+        selectedProfile={config.profileId}
+        onProfileChange={(v) => updateConfig('profileId', v)}
         disabled={false}
       />
       <AcquisitionActionBar
         isActive={false}
-        profileLabel={config.selectedProfile}
+        profileLabel={config.profileId}
         canStart={session.canStart}
         canStop={session.canStop}
         canTrigger={session.canTrigger}
@@ -174,25 +171,15 @@ function ManualForm({ config, session }: { config: AcquisitionConfig; session: A
         hasErrors={session.hasErrors}
       />
       <AcquisitionSettings
-        acquisitionMode={config.acquisitionMode}
-        onAcquisitionModeChange={config.setAcquisitionMode}
-        frameCount={config.frameCount}
-        onFrameCountChange={config.setFrameCount}
-        intervalMs={config.intervalMs}
-        onIntervalMsChange={config.setIntervalMs}
-        outputDirectory={config.outputDirectory}
-        onOutputDirectoryChange={config.setOutputDirectory}
-        format={config.format}
-        onFormatChange={config.setFormat}
-        autoSave={config.autoSave}
-        onAutoSaveChange={config.setAutoSave}
+        config={config}
+        onChange={updateConfig}
         disabled={false}
       />
       <button
         type="button"
         className={cx('savePresetBtn')}
         onClick={() => setSaveOpen(true)}
-        disabled={!config.selectedProfile}
+        disabled={!config.profileId}
       >
         <Save size={13} /> Save as Preset
       </button>
@@ -226,7 +213,7 @@ function ManualForm({ config, session }: { config: AcquisitionConfig; session: A
         />
         <p className={cx('meta')}>
           {[
-            config.selectedProfile || 'none',
+            config.profileId || 'none',
             config.frameCount != null ? `${config.frameCount} frames` : null,
             config.intervalMs != null ? `${config.intervalMs}ms` : null,
           ].filter(Boolean).join(' | ')}
@@ -250,10 +237,7 @@ function PresetForm({
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  const { data: presets = [] } = useQuery({
-    queryKey: queryKeys.presets,
-    queryFn: getPresets,
-  })
+  const { data: presets = [] } = useQuery({ queryKey: queryKeys.presets, queryFn: getPresets })
 
   const deleteMutation = useMutation({
     mutationFn: (name: string) => deletePreset(name),

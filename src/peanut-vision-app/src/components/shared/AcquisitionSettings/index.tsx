@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { FolderSearch } from 'lucide-react'
-import type { AcquisitionMode, SaveImageFormat } from '@/api/types'
+import type { AcquisitionFormConfig, SaveImageFormat } from '@/api/types'
 import DirectoryBrowser from '@/components/shared/DirectoryBrowser'
 import cx from './cx'
 
@@ -11,36 +11,12 @@ const FORMAT_OPTIONS: { value: SaveImageFormat; label: string }[] = [
 ]
 
 interface Props {
-  acquisitionMode: AcquisitionMode
-  onAcquisitionModeChange: (value: AcquisitionMode) => void
-  frameCount: number | null
-  onFrameCountChange: (value: number | null) => void
-  intervalMs: number | null
-  onIntervalMsChange: (value: number | null) => void
-  outputDirectory: string
-  onOutputDirectoryChange: (value: string) => void
-  format: SaveImageFormat
-  onFormatChange: (value: SaveImageFormat) => void
-  autoSave: boolean
-  onAutoSaveChange: (value: boolean) => void
+  config: AcquisitionFormConfig
+  onChange: <K extends keyof AcquisitionFormConfig>(key: K, value: AcquisitionFormConfig[K]) => void
   disabled?: boolean
 }
 
-export default function AcquisitionSettings({
-  acquisitionMode,
-  onAcquisitionModeChange,
-  frameCount,
-  onFrameCountChange,
-  intervalMs,
-  onIntervalMsChange,
-  outputDirectory,
-  onOutputDirectoryChange,
-  format,
-  onFormatChange,
-  autoSave,
-  onAutoSaveChange,
-  disabled,
-}: Props) {
+export default function AcquisitionSettings({ config, onChange, disabled }: Props) {
   const [browserOpen, setBrowserOpen] = useState(false)
 
   return (
@@ -49,8 +25,8 @@ export default function AcquisitionSettings({
       <div className={cx('modeRow')}>
         <button
           type="button"
-          className={cx('modeCard', { active: acquisitionMode === 'auto' })}
-          onClick={() => onAcquisitionModeChange('auto')}
+          className={cx('modeCard', { active: config.acquisitionMode === 'auto' })}
+          onClick={() => onChange('acquisitionMode', 'auto')}
           disabled={disabled}
         >
           <span className={cx('modeIcon')}>🔄</span>
@@ -59,8 +35,8 @@ export default function AcquisitionSettings({
         </button>
         <button
           type="button"
-          className={cx('modeCard', { active: acquisitionMode === 'manual' })}
-          onClick={() => onAcquisitionModeChange('manual')}
+          className={cx('modeCard', { active: config.acquisitionMode === 'manual' })}
+          onClick={() => onChange('acquisitionMode', 'manual')}
           disabled={disabled}
         >
           <span className={cx('modeIcon')}>👆</span>
@@ -70,7 +46,7 @@ export default function AcquisitionSettings({
       </div>
 
       {/* Auto settings */}
-      {acquisitionMode === 'auto' && (
+      {config.acquisitionMode === 'auto' && (
         <div className={cx('autoFields')}>
           <div className={cx('field')}>
             <label>Interval</label>
@@ -79,10 +55,10 @@ export default function AcquisitionSettings({
                 type="number"
                 min={50}
                 placeholder="500"
-                value={intervalMs ?? ''}
+                value={config.intervalMs ?? ''}
                 onChange={(e) => {
                   const v = parseInt(e.target.value, 10)
-                  onIntervalMsChange(isNaN(v) || v < 0 ? null : v)
+                  onChange('intervalMs', isNaN(v) || v < 0 ? null : v)
                 }}
                 disabled={disabled}
               />
@@ -97,10 +73,10 @@ export default function AcquisitionSettings({
                 type="number"
                 min={1}
                 placeholder="∞"
-                value={frameCount ?? ''}
+                value={config.frameCount ?? ''}
                 onChange={(e) => {
                   const v = parseInt(e.target.value, 10)
-                  onFrameCountChange(isNaN(v) || v < 1 ? null : v)
+                  onChange('frameCount', isNaN(v) || v < 1 ? null : v)
                 }}
                 disabled={disabled}
               />
@@ -112,7 +88,7 @@ export default function AcquisitionSettings({
       )}
 
       {/* Manual description */}
-      {acquisitionMode === 'manual' && (
+      {config.acquisitionMode === 'manual' && (
         <p className={cx('manualDesc')}>
           Start 후 화면 상단 <strong>Trigger</strong> 버튼으로 한 장씩 촬영합니다.
         </p>
@@ -125,8 +101,8 @@ export default function AcquisitionSettings({
           <div className={cx('dirRow')}>
             <input
               type="text"
-              value={outputDirectory}
-              onChange={(e) => onOutputDirectoryChange(e.target.value)}
+              value={config.outputDirectory}
+              onChange={(e) => onChange('outputDirectory', e.target.value)}
               disabled={disabled}
               placeholder="CapturedImages"
             />
@@ -147,8 +123,8 @@ export default function AcquisitionSettings({
           <div className={cx('field')}>
             <label>포맷</label>
             <select
-              value={format}
-              onChange={(e) => onFormatChange(e.target.value as SaveImageFormat)}
+              value={config.format}
+              onChange={(e) => onChange('format', e.target.value as SaveImageFormat)}
               disabled={disabled}
             >
               {FORMAT_OPTIONS.map((o) => (
@@ -159,8 +135,8 @@ export default function AcquisitionSettings({
           <label className={cx('checkLabel')}>
             <input
               type="checkbox"
-              checked={autoSave}
-              onChange={(e) => onAutoSaveChange(e.target.checked)}
+              checked={config.autoSave}
+              onChange={(e) => onChange('autoSave', e.target.checked)}
               disabled={disabled}
             />
             자동 저장
@@ -170,8 +146,8 @@ export default function AcquisitionSettings({
 
       <DirectoryBrowser
         open={browserOpen}
-        currentPath={outputDirectory}
-        onSelect={onOutputDirectoryChange}
+        currentPath={config.outputDirectory}
+        onSelect={(path) => onChange('outputDirectory', path)}
         onClose={() => setBrowserOpen(false)}
       />
     </div>

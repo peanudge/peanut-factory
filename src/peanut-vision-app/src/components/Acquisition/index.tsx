@@ -3,31 +3,37 @@ import { useLiveStream } from '@/hooks/useLiveStream'
 import { useResizablePanel } from '@/hooks/useResizablePanel'
 import { useAcquisitionConfig } from '@/hooks/useAcquisitionConfig'
 import { useAcquisitionSession } from '@/hooks/useAcquisitionSession'
-import type { AcquisitionConfigPreset, AcquisitionMode } from '@/api/types'
+import type { AcquisitionConfigPreset, AcquisitionFormConfig } from '@/api/types'
+import { DEFAULT_ACQUISITION_FORM_CONFIG } from '@/api/types'
 import CaptureTab from './CaptureTab'
 import ImageViewer from '@/components/shared/ImageViewer'
 import cx from './cx'
 
 export type InputMode = 'manual' | 'preset'
 
+function presetToFormConfig(preset: AcquisitionConfigPreset): AcquisitionFormConfig {
+  return {
+    ...DEFAULT_ACQUISITION_FORM_CONFIG,
+    profileId: preset.profileId,
+    frameCount: preset.frameCount ?? null,
+    intervalMs: preset.intervalMs ?? null,
+    acquisitionMode: preset.intervalMs != null ? 'auto' : 'manual',
+    outputDirectory: preset.outputDirectory ?? DEFAULT_ACQUISITION_FORM_CONFIG.outputDirectory,
+    format: preset.format ?? DEFAULT_ACQUISITION_FORM_CONFIG.format,
+    autoSave: preset.autoSave ?? DEFAULT_ACQUISITION_FORM_CONFIG.autoSave,
+  }
+}
+
 export default function Acquisition() {
-  const config = useAcquisitionConfig()
+  const acqConfig = useAcquisitionConfig()
   const [inputMode, setInputMode] = useState<InputMode>('manual')
   const [selectedPreset, setSelectedPreset] = useState<AcquisitionConfigPreset | null>(null)
 
-  const sessionConfig = inputMode === 'preset' && selectedPreset
-    ? {
-        selectedProfile: selectedPreset.profileId,
-        frameCount: selectedPreset.frameCount ?? null,
-        intervalMs: selectedPreset.intervalMs ?? null,
-        acquisitionMode: (selectedPreset.intervalMs != null ? 'auto' : 'manual') as AcquisitionMode,
-        outputDirectory: selectedPreset.outputDirectory ?? 'CapturedImages',
-        format: selectedPreset.format ?? 'png',
-        autoSave: selectedPreset.autoSave ?? true,
-      }
-    : config
+  const activeFormConfig = inputMode === 'preset' && selectedPreset
+    ? presetToFormConfig(selectedPreset)
+    : acqConfig.config
 
-  const session = useAcquisitionSession(sessionConfig)
+  const session = useAcquisitionSession(activeFormConfig)
   const live = useLiveStream()
   const { panelRef: sidebarRef, onResizerMouseDown } = useResizablePanel({
     defaultWidth: 340,
@@ -40,7 +46,7 @@ export default function Acquisition() {
     <div className={cx('Acquisition')}>
       <div ref={sidebarRef} className={cx('sidebar')}>
         <CaptureTab
-          config={config}
+          acqConfig={acqConfig}
           session={session}
           inputMode={inputMode}
           onInputModeChange={setInputMode}
