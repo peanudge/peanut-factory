@@ -8,6 +8,7 @@ vi.mock('@/api/client', () => ({
     { fileName: 'crevis-tc-a160k-freerun-rgb8.cam', width: 4160, height: 3120 },
     { fileName: 'crevis-tc-a160k-softtrig-rgb8.cam', width: 4160, height: 3120 },
   ]),
+  getFilesystemDefaults: vi.fn().mockResolvedValue({ desktopPath: '' }),
 }))
 
 describe('useAcquisitionConfig', () => {
