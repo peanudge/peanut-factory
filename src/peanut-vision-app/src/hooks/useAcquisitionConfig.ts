@@ -11,7 +11,7 @@ import { queryKeys } from '@/api/queryKeys'
 export function useAcquisitionConfig() {
   const [config, setConfig] = useState<AcquisitionFormConfig>(DEFAULT_ACQUISITION_FORM_CONFIG)
 
-  const { data: cameras = [] } = useQuery({
+  const { data: cameras = [], isLoading: camerasLoading } = useQuery({
     queryKey: queryKeys.cameras,
     queryFn: getCameras,
   })
@@ -52,7 +52,7 @@ export function useAcquisitionConfig() {
     }))
   }, [])
 
-  return { cameras, config, updateConfig, loadPreset }
+  return { cameras, camerasLoading, config, updateConfig, loadPreset }
 }
 
 export type UseAcquisitionConfig = ReturnType<typeof useAcquisitionConfig>
