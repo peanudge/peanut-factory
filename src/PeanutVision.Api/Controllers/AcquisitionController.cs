@@ -12,11 +12,16 @@ public class AcquisitionController : ControllerBase
 {
     private readonly IAcquisitionSession _acquisition;
     private readonly AcquisitionConfigValidator _validator;
+    private readonly IHostApplicationLifetime _appLifetime;
 
-    public AcquisitionController(IAcquisitionSession acquisition, AcquisitionConfigValidator validator)
+    public AcquisitionController(
+        IAcquisitionSession acquisition,
+        AcquisitionConfigValidator validator,
+        IHostApplicationLifetime appLifetime)
     {
         _acquisition = acquisition;
         _validator = validator;
+        _appLifetime = appLifetime;
     }
 
     [HttpPost("start")]
@@ -114,6 +119,10 @@ public class AcquisitionController : ControllerBase
         Response.Headers["Cache-Control"] = "no-cache";
         Response.Headers["X-Accel-Buffering"] = "no";
 
+        // Link request abort with host shutdown so the SSE loop exits immediately on app stop
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct, _appLifetime.ApplicationStopping);
+        var token = cts.Token;
+
         var channel = Channel.CreateUnbounded<string>(
             new UnboundedChannelOptions { SingleReader = true });
 
@@ -130,10 +139,10 @@ public class AcquisitionController : ControllerBase
 
         try
         {
-            await foreach (var text in channel.Reader.ReadAllAsync(ct))
+            await foreach (var text in channel.Reader.ReadAllAsync(token))
             {
-                await Response.WriteAsync(text, ct);
-                await Response.Body.FlushAsync(ct);
+                await Response.WriteAsync(text, token);
+                await Response.Body.FlushAsync(token);
             }
         }
         catch (OperationCanceledException) { }
