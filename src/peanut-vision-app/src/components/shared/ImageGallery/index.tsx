@@ -6,6 +6,7 @@ import {
   getSortedRowModel,
   useReactTable,
   type ColumnFiltersState,
+  type RowSelectionState,
   type SortingState,
 } from '@tanstack/react-table'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -39,8 +40,8 @@ export default function ImageGallery({ selectedId, onRowSelect }: Props) {
   const [filterOpen, setFilterOpen] = useState(false)
   const [sorting, setSorting] = useState<SortingState>([{ id: 'capturedAt', desc: true }])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
 
-  // Derive server query params from TanStack Table column filter state
   const dateRange = (columnFilters.find(f => f.id === 'capturedAt')?.value ?? {}) as DateRangeFilter
   const isFiltered = !!(dateRange.from || dateRange.to)
 
@@ -59,26 +60,45 @@ export default function ImageGallery({ selectedId, onRowSelect }: Props) {
 
   const images = data?.items ?? []
 
-  // Keep selection in sync: clear if selected image disappears after filter
   useEffect(() => {
     if (selectedId && images.length > 0 && !images.find(i => i.id === selectedId)) {
       onRowSelect(null, null)
     }
-    // Auto-select first row when data arrives and nothing is selected
     if (!selectedId && images.length > 0) {
       onRowSelect(images[0].id, images[0])
     }
   }, [images, selectedId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Clear row selection when images list changes (e.g. after delete)
+  useEffect(() => {
+    setRowSelection({})
+  }, [images.length])
 
   const deleteMutation = useMutation({
     mutationFn: deleteImage,
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.images() })
       if (selectedId === id) onRowSelect(null, null)
-      toast('이미지가 삭제되었습니다', 'info')
     },
     onError: () => toast('삭제에 실패했습니다', 'error'),
   })
+
+  const handleDeleteSelected = async () => {
+    const selectedIds = Object.keys(rowSelection)
+      .filter(rowIdx => rowSelection[rowIdx])
+      .map(rowIdx => images[Number(rowIdx)]?.id)
+      .filter(Boolean) as string[]
+
+    if (selectedIds.length === 0) return
+
+    for (const id of selectedIds) {
+      await deleteMutation.mutateAsync(id).catch(() => {})
+    }
+
+    toast(`${selectedIds.length}개 이미지가 삭제되었습니다`, 'info')
+    setRowSelection({})
+    queryClient.invalidateQueries({ queryKey: queryKeys.images() })
+  }
 
   const setDateFilter = (range: Partial<DateRangeFilter>) => {
     setColumnFilters(prev => {
@@ -94,6 +114,32 @@ export default function ImageGallery({ selectedId, onRowSelect }: Props) {
   }
 
   const columns = [
+    columnHelper.display({
+      id: 'select',
+      size: 36,
+      header: ({ table }) => (
+        <input
+          type="checkbox"
+          className={cx('checkbox')}
+          checked={table.getIsAllRowsSelected()}
+          ref={el => {
+            if (el) el.indeterminate = table.getIsSomeRowsSelected()
+          }}
+          onChange={table.getToggleAllRowsSelectedHandler()}
+          onClick={e => e.stopPropagation()}
+          title="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          className={cx('checkbox')}
+          checked={row.getIsSelected()}
+          onChange={row.getToggleSelectedHandler()}
+          onClick={e => e.stopPropagation()}
+        />
+      ),
+    }),
     columnHelper.display({
       id: 'thumbnail',
       header: '',
@@ -136,34 +182,22 @@ export default function ImageGallery({ selectedId, onRowSelect }: Props) {
       header: 'Captured',
       cell: ({ getValue }) => formatTime(new Date(getValue())),
     }),
-    columnHelper.display({
-      id: 'delete',
-      header: '',
-      size: 36,
-      enableSorting: false,
-      cell: ({ row }) => (
-        <button
-          type="button"
-          className={cx('rowDeleteBtn')}
-          onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(row.original.id) }}
-          title="Delete"
-        >
-          <X size={12} />
-        </button>
-      ),
-    }),
   ]
 
   const table = useReactTable({
     data: images,
     columns,
-    state: { sorting, columnFilters },
+    state: { sorting, columnFilters, rowSelection },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    manualFiltering: true, // server handles filtering
+    onRowSelectionChange: setRowSelection,
+    manualFiltering: true,
+    enableRowSelection: true,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
+
+  const selectedCount = Object.values(rowSelection).filter(Boolean).length
 
   const handleToggleFilter = () => {
     if (filterOpen && isFiltered) clearDateFilter()
@@ -176,27 +210,40 @@ export default function ImageGallery({ selectedId, onRowSelect }: Props) {
     <div className={cx('wrap')}>
       {/* Toolbar */}
       <div className={cx('toolbar')}>
-        <button
-          type="button"
-          className={cx('iconBtn', { active: isFiltered })}
-          onClick={handleToggleFilter}
-          title={isFiltered ? 'Clear date filter' : 'Filter by date'}
-        >
-          <Filter size={14} />
-          {isFiltered && <span className={cx('badge')} />}
-        </button>
-        <button
-          type="button"
-          className={cx('iconBtn')}
-          onClick={refresh}
-          disabled={isLoading}
-          title="Refresh"
-        >
-          <RefreshCw size={14} />
-        </button>
+        <div className={cx('toolbarLeft')}>
+          <button
+            type="button"
+            className={cx('iconBtn', { active: isFiltered })}
+            onClick={handleToggleFilter}
+            title={isFiltered ? 'Clear date filter' : 'Filter by date'}
+          >
+            <Filter size={14} />
+            {isFiltered && <span className={cx('badge')} />}
+          </button>
+          <button
+            type="button"
+            className={cx('iconBtn')}
+            onClick={refresh}
+            disabled={isLoading}
+            title="Refresh"
+          >
+            <RefreshCw size={14} />
+          </button>
+        </div>
+
+        {selectedCount > 0 && (
+          <button
+            type="button"
+            className={cx('deleteSelectedBtn')}
+            onClick={handleDeleteSelected}
+            disabled={deleteMutation.isPending}
+          >
+            <Trash2 size={13} /> Delete {selectedCount} selected
+          </button>
+        )}
       </div>
 
-      {/* Date range filter — driven by TanStack Table columnFilters */}
+      {/* Date range filter */}
       {filterOpen && (
         <div className={cx('filterRow')}>
           <input
@@ -274,16 +321,20 @@ export default function ImageGallery({ selectedId, onRowSelect }: Props) {
               {table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  className={cx('row', { selected: row.original.id === selectedId })}
+                  className={cx('row', {
+                    selected: row.original.id === selectedId,
+                    checked: row.getIsSelected(),
+                  })}
                   onClick={() => onRowSelect(row.original.id, row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
                       className={cx({
+                        tdSelect: cell.column.id === 'select',
                         tdThumb: cell.column.id === 'thumbnail',
                         tdFilename: cell.column.id === 'filename',
-                        tdMeta: !['thumbnail', 'filename', 'delete'].includes(cell.column.id),
+                        tdMeta: !['select', 'thumbnail', 'filename'].includes(cell.column.id),
                       })}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -299,14 +350,9 @@ export default function ImageGallery({ selectedId, onRowSelect }: Props) {
       {/* Footer */}
       {images.length > 0 && (
         <div className={cx('actions')}>
-          <span className={cx('count')}>{images.length} images</span>
-          <button
-            type="button"
-            className={cx('clearBtn')}
-            onClick={() => images.forEach((img) => deleteMutation.mutate(img.id))}
-          >
-            <Trash2 size={13} /> Clear All
-          </button>
+          <span className={cx('count')}>
+            {selectedCount > 0 ? `${selectedCount} / ${images.length} selected` : `${images.length} images`}
+          </span>
         </div>
       )}
     </div>
