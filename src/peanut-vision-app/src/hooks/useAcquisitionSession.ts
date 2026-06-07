@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { AcquisitionStatus, ContinuousSubMode, TriggerModeOption } from '@/api/types'
+import type { AcquisitionStatus, ShootingMode, TriggerModeOption } from '@/api/types'
 import {
   startAcquisition,
   stopAcquisition,
@@ -16,7 +16,7 @@ interface SessionConfig {
   triggerMode: TriggerModeOption
   frameCount: number | null
   intervalMs: number | null
-  continuousSubMode: ContinuousSubMode
+  shootingMode: ShootingMode
 }
 
 export function useAcquisitionSession(config: SessionConfig) {
@@ -45,7 +45,7 @@ export function useAcquisitionSession(config: SessionConfig) {
         config.selectedProfile,
         config.triggerMode,
         config.frameCount,
-        config.continuousSubMode === 'auto' ? config.intervalMs : null,
+        config.shootingMode === 'auto' ? config.intervalMs : null,
       ),
     onSuccess: () => {
       invalidateStatus()
@@ -85,7 +85,7 @@ export function useAcquisitionSession(config: SessionConfig) {
     !!status?.lastError || (status?.statistics?.errorCount ?? 0) > 0
 
   const handleStart = () => {
-    if (config.continuousSubMode === 'auto' && config.intervalMs === null) {
+    if (config.shootingMode === 'auto' && config.intervalMs === null) {
       toast('Please input interval time', 'warning')
       return
     }

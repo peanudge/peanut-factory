@@ -7,13 +7,13 @@ interface Props {
   disabled?: boolean
 }
 
-export default function AcquisitionModeSelector({
+export default function TriggerModeSelector({
   triggerMode,
   onTriggerModeChange,
   disabled,
 }: Props) {
   return (
-    <div className={cx('AcquisitionModeSelector')}>
+    <div className={cx('TriggerModeSelector')}>
       <select
         value={triggerMode}
         onChange={(e) => onTriggerModeChange(e.target.value as TriggerModeOption)}

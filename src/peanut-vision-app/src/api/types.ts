@@ -61,7 +61,7 @@ export type AcquisitionAction = "start" | "stop" | "trigger";
 
 export type ChannelState = "none" | "idle" | "active";
 
-export type ContinuousSubMode = "auto" | "manual";
+export type ShootingMode = "auto" | "manual";
 
 export interface AcquisitionStatus {
   isActive: boolean;

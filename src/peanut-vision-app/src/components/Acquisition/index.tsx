@@ -3,7 +3,7 @@ import { useLiveStream } from '@/hooks/useLiveStream'
 import { useResizablePanel } from '@/hooks/useResizablePanel'
 import { useAcquisitionConfig } from '@/hooks/useAcquisitionConfig'
 import { useAcquisitionSession } from '@/hooks/useAcquisitionSession'
-import type { AcquisitionConfigPreset, ContinuousSubMode, TriggerModeOption } from '@/api/types'
+import type { AcquisitionConfigPreset, ShootingMode, TriggerModeOption } from '@/api/types'
 import CaptureTab from './CaptureTab'
 import ImageSaveSettingsPanel from '@/components/shared/ImageSaveSettingsPanel'
 import ImageViewer from '@/components/shared/ImageViewer'
@@ -25,7 +25,7 @@ export default function Acquisition() {
         triggerMode: (selectedPreset.triggerMode ?? 'soft') as TriggerModeOption,
         frameCount: selectedPreset.frameCount ?? null,
         intervalMs: selectedPreset.intervalMs ?? null,
-        continuousSubMode: (selectedPreset.intervalMs != null ? 'auto' : 'manual') as ContinuousSubMode,
+        shootingMode: (selectedPreset.intervalMs != null ? 'auto' : 'manual') as ShootingMode,
       }
     : config
 

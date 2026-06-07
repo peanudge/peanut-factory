@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Modal from '@/components/shared/Modal'
 import AcquisitionActionBar from '@/components/shared/AcquisitionActionBar'
 import CameraProfileSelector from '@/components/shared/CameraProfileSelector'
-import AcquisitionModeSelector from '@/components/shared/AcquisitionModeSelector'
+import TriggerModeSelector from '@/components/shared/TriggerModeSelector'
 import ContinuousSettings from '@/components/shared/ContinuousSettings'
 import StatusChip from '@/components/shared/StatusChip'
 import type { AcquisitionConfigPreset } from '@/api/types'
@@ -157,7 +157,7 @@ function ManualForm({ config, session }: { config: AcquisitionConfig; session: A
         onProfileChange={config.setSelectedProfile}
         disabled={false}
       />
-      <AcquisitionModeSelector
+      <TriggerModeSelector
         triggerMode={config.triggerMode}
         onTriggerModeChange={config.setTriggerMode}
         disabled={false}
@@ -168,7 +168,7 @@ function ManualForm({ config, session }: { config: AcquisitionConfig; session: A
         canStart={session.canStart}
         canStop={session.canStop}
         canTrigger={session.canTrigger}
-        continuousSubMode={config.continuousSubMode}
+        shootingMode={config.shootingMode}
         busy={session.busy}
         onStart={session.handleStart}
         onStop={session.handleStop}
@@ -179,8 +179,8 @@ function ManualForm({ config, session }: { config: AcquisitionConfig; session: A
         hasErrors={session.hasErrors}
       />
       <ContinuousSettings
-        subMode={config.continuousSubMode}
-        onSubModeChange={config.setContinuousSubMode}
+        shootingMode={config.shootingMode}
+        onShootingModeChange={config.setShootingMode}
         frameCount={config.frameCount}
         onFrameCountChange={config.setFrameCount}
         intervalMs={config.intervalMs}

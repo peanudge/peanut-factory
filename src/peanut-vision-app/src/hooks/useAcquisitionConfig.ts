@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import type { AcquisitionConfigPreset, ContinuousSubMode, TriggerModeOption } from '@/api/types'
+import type { AcquisitionConfigPreset, ShootingMode, TriggerModeOption } from '@/api/types'
 import { getCameras } from '@/api/client'
 import { queryKeys } from '@/api/queryKeys'
 
 export function useAcquisitionConfig() {
   const [selectedProfile, setSelectedProfile] = useState('')
-  const [continuousSubMode, setContinuousSubMode] = useState<ContinuousSubMode>('auto')
+  const [shootingMode, setShootingMode] = useState<ShootingMode>('auto')
   const [triggerMode, setTriggerMode] = useState<TriggerModeOption>('soft')
   const [frameCount, setFrameCount] = useState<number | null>(null)
   const [intervalMs, setIntervalMs] = useState<number | null>(null)
@@ -33,8 +33,8 @@ export function useAcquisitionConfig() {
     cameras,
     selectedProfile,
     setSelectedProfile,
-    continuousSubMode,
-    setContinuousSubMode,
+    shootingMode,
+    setShootingMode,
     triggerMode,
     setTriggerMode,
     frameCount,

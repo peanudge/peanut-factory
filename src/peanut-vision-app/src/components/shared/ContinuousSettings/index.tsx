@@ -1,9 +1,9 @@
-import type { ContinuousSubMode } from '@/api/types'
+import type { ShootingMode } from '@/api/types'
 import cx from './cx'
 
 interface Props {
-  subMode: ContinuousSubMode
-  onSubModeChange: (value: ContinuousSubMode) => void
+  shootingMode: ShootingMode
+  onShootingModeChange: (value: ShootingMode) => void
   frameCount: number | null
   onFrameCountChange: (value: number | null) => void
   intervalMs: number | null
@@ -12,8 +12,8 @@ interface Props {
 }
 
 export default function ContinuousSettings({
-  subMode,
-  onSubModeChange,
+  shootingMode,
+  onShootingModeChange,
   frameCount,
   onFrameCountChange,
   intervalMs,
@@ -26,8 +26,8 @@ export default function ContinuousSettings({
       <div className={cx('modeRow')}>
         <button
           type="button"
-          className={cx('modeCard', { active: subMode === 'auto' })}
-          onClick={() => onSubModeChange('auto')}
+          className={cx('modeCard', { active: shootingMode === 'auto' })}
+          onClick={() => onShootingModeChange('auto')}
           disabled={disabled}
         >
           <span className={cx('modeIcon')}>🔄</span>
@@ -36,8 +36,8 @@ export default function ContinuousSettings({
         </button>
         <button
           type="button"
-          className={cx('modeCard', { active: subMode === 'manual' })}
-          onClick={() => onSubModeChange('manual')}
+          className={cx('modeCard', { active: shootingMode === 'manual' })}
+          onClick={() => onShootingModeChange('manual')}
           disabled={disabled}
         >
           <span className={cx('modeIcon')}>👆</span>
@@ -47,7 +47,7 @@ export default function ContinuousSettings({
       </div>
 
       {/* Auto settings */}
-      {subMode === 'auto' && (
+      {shootingMode === 'auto' && (
         <div className={cx('autoFields')}>
           <div className={cx('field')}>
             <label>Interval</label>
@@ -89,7 +89,7 @@ export default function ContinuousSettings({
       )}
 
       {/* Manual description */}
-      {subMode === 'manual' && (
+      {shootingMode === 'manual' && (
         <p className={cx('manualDesc')}>
           Start 후 화면 상단 <strong>Trigger</strong> 버튼으로 한 장씩 촬영합니다.
         </p>
