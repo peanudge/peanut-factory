@@ -5,13 +5,8 @@ import AcquisitionActionBar from '@/components/shared/AcquisitionActionBar'
 vi.mock('@/components/shared/AcquisitionActionBar/cx', () => ({
   default: (...args: string[]) => args.filter(Boolean).join(' '),
 }))
-vi.mock('@/components/shared/StatusChip', () => ({
-  default: ({ label }: { label: string }) => <span>{label}</span>,
-}))
 
 const defaultProps = {
-  isActive: false,
-  profileLabel: undefined,
   canStart: true,
   canStop: false,
   canTrigger: false,
@@ -20,8 +15,6 @@ const defaultProps = {
   onStart: vi.fn(),
   onStop: vi.fn(),
   onTrigger: vi.fn(),
-  onRefresh: vi.fn(),
-  refreshThrottled: false,
 }
 
 describe('AcquisitionActionBar', () => {
@@ -85,35 +78,6 @@ describe('AcquisitionActionBar', () => {
       render(<AcquisitionActionBar {...defaultProps} canTrigger={true} acquisitionMode="manual" onTrigger={onTrigger} />)
       fireEvent.click(screen.getByText(/Trigger/))
       expect(onTrigger).toHaveBeenCalledOnce()
-    })
-  })
-
-  describe('Refresh button', () => {
-    it('calls onRefresh when clicked', () => {
-      const onRefresh = vi.fn()
-      render(<AcquisitionActionBar {...defaultProps} onRefresh={onRefresh} />)
-      // Refresh is the last button in the bar
-      const buttons = screen.getAllByRole('button')
-      fireEvent.click(buttons[buttons.length - 1])
-      expect(onRefresh).toHaveBeenCalledOnce()
-    })
-
-    it('is disabled when refreshThrottled=true', () => {
-      render(<AcquisitionActionBar {...defaultProps} refreshThrottled />)
-      const buttons = screen.getAllByRole('button')
-      expect(buttons[buttons.length - 1]).toBeDisabled()
-    })
-  })
-
-  describe('StatusChip', () => {
-    it('shows Active label when isActive', () => {
-      render(<AcquisitionActionBar {...defaultProps} isActive={true} profileLabel="cam.cam" />)
-      expect(screen.getByText('Active (cam.cam)')).toBeInTheDocument()
-    })
-
-    it('shows Inactive when not active', () => {
-      render(<AcquisitionActionBar {...defaultProps} isActive={false} />)
-      expect(screen.getByText('Inactive')).toBeInTheDocument()
     })
   })
 })

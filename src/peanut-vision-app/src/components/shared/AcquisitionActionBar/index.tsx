@@ -1,11 +1,8 @@
-import { Play, Square, Crosshair, RefreshCw } from 'lucide-react'
-import StatusChip from '@/components/shared/StatusChip'
+import { Play, Square, Crosshair } from 'lucide-react'
 import type { AcquisitionMode } from '@/api/types'
 import cx from './cx'
 
 interface Props {
-  isActive: boolean
-  profileLabel?: string
   canStart: boolean
   canStop: boolean
   canTrigger: boolean
@@ -14,15 +11,9 @@ interface Props {
   onStart: () => void
   onStop: () => void
   onTrigger: () => void
-  onRefresh: () => void
-  refreshThrottled: boolean
-  hasWarnings?: boolean
-  hasErrors?: boolean
 }
 
 export default function AcquisitionActionBar({
-  isActive,
-  profileLabel,
   canStart,
   canStop,
   canTrigger,
@@ -31,10 +22,6 @@ export default function AcquisitionActionBar({
   onStart,
   onStop,
   onTrigger,
-  onRefresh,
-  refreshThrottled,
-  hasWarnings,
-  hasErrors,
 }: Props) {
   return (
     <div className={cx('bar')}>
@@ -69,22 +56,6 @@ export default function AcquisitionActionBar({
           </button>
         )}
       </div>
-
-      <StatusChip
-        active={isActive}
-        label={isActive ? `Active (${profileLabel ?? ''})` : 'Inactive'}
-        hasWarnings={hasWarnings}
-        hasErrors={hasErrors}
-      />
-
-      <button
-        type="button"
-        className={cx('iconBtn')}
-        onClick={onRefresh}
-        disabled={refreshThrottled}
-      >
-        <RefreshCw size={14} />
-      </button>
     </div>
   )
 }

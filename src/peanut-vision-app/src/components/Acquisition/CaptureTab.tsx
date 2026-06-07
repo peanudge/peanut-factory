@@ -155,8 +155,6 @@ function ManualForm({ acqConfig, session }: { acqConfig: UseAcquisitionConfig; s
         disabled={false}
       />
       <AcquisitionActionBar
-        isActive={false}
-        profileLabel={config.profileId}
         canStart={session.canStart}
         canStop={session.canStop}
         canTrigger={session.canTrigger}
@@ -165,10 +163,6 @@ function ManualForm({ acqConfig, session }: { acqConfig: UseAcquisitionConfig; s
         onStart={session.handleStart}
         onStop={session.handleStop}
         onTrigger={session.handleTrigger}
-        onRefresh={session.refresh}
-        refreshThrottled={false}
-        hasWarnings={session.hasWarnings}
-        hasErrors={session.hasErrors}
       />
       <AcquisitionSettings
         config={config}

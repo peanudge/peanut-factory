@@ -86,10 +86,6 @@ export function useAcquisitionSession(config: AcquisitionFormConfig) {
     startMutation.mutate()
   }
 
-  const refresh = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.acquisitionStatus })
-  }, [queryClient])
-
   return {
     status,
     isActive,
@@ -102,7 +98,6 @@ export function useAcquisitionSession(config: AcquisitionFormConfig) {
     handleStart,
     handleStop: () => stopMutation.mutate(),
     handleTrigger: () => triggerMutation.mutate(),
-    refresh,
   }
 }
 

@@ -50,7 +50,8 @@ describe('AcquisitionSettings', () => {
     it('calls onChange("intervalMs", 300) when interval input changes', () => {
       const onChange = vi.fn()
       render(<AcquisitionSettings config={makeConfig({ acquisitionMode: 'auto' })} onChange={onChange} />)
-      fireEvent.change(screen.getByPlaceholderText('500'), { target: { value: '300' } })
+      // Input is in seconds; placeholder is '1', value 0.3s → 300ms
+      fireEvent.change(screen.getByPlaceholderText('1'), { target: { value: '0.3' } })
       expect(onChange).toHaveBeenCalledWith('intervalMs', 300)
     })
 
@@ -64,7 +65,7 @@ describe('AcquisitionSettings', () => {
 
     it('shows hint text for interval and stop after', () => {
       render(<AcquisitionSettings config={makeConfig({ acquisitionMode: 'auto' })} onChange={vi.fn()} />)
-      expect(screen.getByText('최소 50ms')).toBeInTheDocument()
+      expect(screen.getByText('최소 0.05s (50ms)')).toBeInTheDocument()
       expect(screen.getByText('비우면 제한없음')).toBeInTheDocument()
     })
   })
