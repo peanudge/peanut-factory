@@ -1,198 +1,156 @@
 .wrap {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 0;
 }
 
-// ── Mode selector ──
+// ── Sections ──
 
-.modeRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.modeCard {
+.section {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 12px 8px;
-  background: var(--bg-surface);
-  border: 1.5px solid var(--border-default);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-  text-align: center;
-
-  &:hover:not(:disabled) {
-    border-color: var(--color-accent);
-    background: var(--bg-hover);
-  }
-
-  &.active {
-    border-color: var(--color-accent);
-    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
-  }
-
-  &:disabled { opacity: 0.4; cursor: not-allowed; }
-}
-
-.modeIcon  { font-size: 1.2rem; line-height: 1; }
-.modeLabel { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); }
-.modeDesc  { font-size: 0.7rem; color: var(--text-muted); }
-
-// ── Auto fields ──
-
-.autoFields {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1 1 110px;
-
-  label {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-
-  small {
-    font-size: 0.68rem;
-    color: var(--text-hint);
-  }
-}
-
-.inputRow {
-  display: flex;
-  align-items: stretch;
-  border: 1px solid var(--border-default);
-  border-radius: 6px;
-  overflow: hidden;
-  background: var(--bg-input);
-
-  &:focus-within { border-color: var(--color-accent); }
-
-  input {
-    flex: 1;
-    min-width: 0;
-    padding: 7px 10px;
-    background: transparent;
-    border: none;
-    color: var(--text-primary);
-    font-size: 0.85rem;
-
-    &::placeholder { color: var(--text-hint); }
-    &:focus { outline: none; }
-    &:disabled { opacity: 0.4; }
-  }
-}
-
-.unit {
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  background: var(--bg-surface-raised);
-  border-left: 1px solid var(--border-default);
-  white-space: nowrap;
-}
-
-// ── Manual description ──
-
-.manualDesc {
-  margin: 0;
-  padding: 12px 14px;
-  background: var(--bg-surface-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  line-height: 1.6;
-
-  strong { color: var(--text-primary); }
-}
-
-// ── Save settings ──
-
-.saveSection {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding-top: 16px;
+  gap: 10px;
+  padding: 16px 0;
   border-top: 1px solid var(--border-subtle);
+
+  &:first-child {
+    padding-top: 0;
+    border-top: none;
+  }
 }
 
-.saveSectionLabel {
-  font-size: 0.72rem;
+.sectionLabel {
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em;
 }
 
-.saveRow {
+// ── Presets ──
+
+.chips {
   display: flex;
-  align-items: flex-end;
-  gap: 12px;
   flex-wrap: wrap;
+  gap: 6px;
 }
 
-.dirRow {
-  display: flex;
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  border-radius: 4px;
+  cursor: pointer;
   border: 1px solid var(--border-default);
-  border-radius: 6px;
-  overflow: hidden;
-  background: var(--bg-input);
+  background: var(--bg-surface);
+  color: var(--text-primary);
 
-  &:focus-within { border-color: var(--color-accent); }
+  &:hover:not(:disabled) { background: var(--bg-hover); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
 
-  input {
-    flex: 1;
-    min-width: 0;
-    padding: 7px 10px;
-    background: transparent;
-    border: none;
-    color: var(--text-primary);
-    font-size: 0.82rem;
+.skeletons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
-    &::placeholder { color: var(--text-hint); }
-    &:focus { outline: none; }
-    &:disabled { opacity: 0.4; }
+.skeleton {
+  height: 26px;
+  border-radius: 4px;
+  background: var(--bg-hover);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+// ── Form labels ──
+
+.section label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.section fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  legend {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    padding: 0;
+    margin-bottom: 4px;
+    float: left;
+    width: 100%;
+  }
+
+  label {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
   }
 }
 
-.browseBtn {
+// ── Dir row ──
+
+.dirRow {
+  display: flex;
+  gap: 4px;
+
+  input { flex: 1; min-width: 0; }
+}
+
+// ── Start button ──
+
+.startBtn {
   display: flex;
   align-items: center;
-  padding: 0 10px;
-  background: var(--bg-surface-raised);
-  border: none;
-  border-left: 1px solid var(--border-default);
-  color: var(--text-muted);
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
   cursor: pointer;
-  flex-shrink: 0;
+  border: none;
+  border-radius: 6px;
+  background: var(--color-accent);
+  color: #fff;
 
-  &:hover:not(:disabled) { color: var(--color-accent); }
+  &:hover:not(:disabled) { opacity: 0.9; }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
-.checkLabel {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.82rem;
-  color: var(--text-secondary);
+.saveLinkBtn {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  color: var(--text-muted);
   cursor: pointer;
-  padding-bottom: 3px;
+  align-self: flex-start;
+  padding: 0;
 
-  input[type='checkbox'] { accent-color: var(--color-accent); }
+  &:hover:not(:disabled) { color: var(--text-primary); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
+
+// ── Spinner ──
+
+.spin {
+  animation: spin-kf 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin-kf { to { transform: rotate(360deg); } }
