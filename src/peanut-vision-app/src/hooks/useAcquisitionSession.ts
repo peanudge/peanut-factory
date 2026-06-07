@@ -32,13 +32,13 @@ export function useAcquisitionSession(config: AcquisitionFormConfig) {
   }, [toast])
 
   const startMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (cfg: AcquisitionFormConfig) =>
       startAcquisition({
-        profileId: config.profileId,
-        frameCount: config.frameCount,
-        intervalMs: config.acquisitionMode === 'auto' ? config.intervalMs : null,
-        outputDirectory: config.outputDirectory,
-        format: config.format,
+        profileId: cfg.profileId,
+        frameCount: cfg.frameCount,
+        intervalMs: cfg.acquisitionMode === 'auto' ? cfg.intervalMs : null,
+        outputDirectory: cfg.outputDirectory,
+        format: cfg.format,
       }),
     onSuccess: () => {
       invalidateStatus()
@@ -82,7 +82,15 @@ export function useAcquisitionSession(config: AcquisitionFormConfig) {
       toast('Please input interval time', 'warning')
       return
     }
-    startMutation.mutate()
+    startMutation.mutate(config)
+  }
+
+  const handleStartWithConfig = (cfg: AcquisitionFormConfig) => {
+    if (cfg.acquisitionMode === 'auto' && cfg.intervalMs === null) {
+      toast('Please input interval time', 'warning')
+      return
+    }
+    startMutation.mutate(cfg)
   }
 
   return {
@@ -95,6 +103,7 @@ export function useAcquisitionSession(config: AcquisitionFormConfig) {
     hasWarnings,
     hasErrors,
     handleStart,
+    handleStartWithConfig,
     handleStop: () => stopMutation.mutate(),
     handleTrigger: () => triggerMutation.mutate(),
   }
