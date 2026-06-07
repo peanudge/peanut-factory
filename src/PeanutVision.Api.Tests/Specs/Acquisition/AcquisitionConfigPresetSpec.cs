@@ -4,12 +4,12 @@ using PeanutVision.Api.Tests.Infrastructure;
 
 namespace PeanutVision.Api.Tests.Specs.Acquisition;
 
-public class AcquisitionPresetSpec : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
+public class AcquisitionConfigPresetSpec : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
 {
     private readonly HttpClient _client;
     private readonly string _testPresetName = $"test-preset-{Guid.NewGuid():N}";
 
-    public AcquisitionPresetSpec(PeanutVisionApiFactory factory)
+    public AcquisitionConfigPresetSpec(PeanutVisionApiFactory factory)
     {
         _client = factory.CreateClient();
     }
