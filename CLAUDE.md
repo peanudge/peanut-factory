@@ -419,3 +419,52 @@ McCloseDriver();
 - `AcquisitionConfig` 필드가 `AcquisitionManager`를 거쳐 `GetStatus().ActiveConfig`에 올바르게 전달되는지
 - `AutoSaveService`가 실제 ActiveConfig의 설정(OutputDirectory, Format, AutoSave)을 사용하는지
 - FE의 `AcquisitionFormConfig`가 서버로 올바르게 직렬화되는지
+
+---
+
+## 개발 가이드라인: DB 스키마 변경 워크플로
+
+이 프로젝트는 **EF Core Migrations**로 스키마를 추적하고, 동시에 **SQL 스크립트**(`migrations.sql`)를 항상 함께 유지한다.
+
+### 모델(Entity) 변경 시 반드시 아래 순서를 따른다
+
+**1단계 — EF Core 마이그레이션 생성**
+```bash
+dotnet tool run dotnet-ef migrations add <MigrationName> \
+  --project src/PeanutVision.Api
+```
+
+**2단계 — SQL 스크립트 재생성** (반드시 1단계 직후 실행)
+```bash
+dotnet tool run dotnet-ef migrations script \
+  --project src/PeanutVision.Api \
+  --output src/PeanutVision.Api/Migrations/sql/migrations.sql
+```
+
+**3단계 — 두 변경을 같은 커밋에 포함**
+```bash
+git add src/PeanutVision.Api/Migrations/
+git commit
+```
+
+> `migrations.sql`이 없거나 마이그레이션과 불일치하는 PR은 불완전한 것으로 간주한다.
+
+### 구조 요약
+
+| 경로 | 역할 |
+|------|------|
+| `src/PeanutVision.Api/Migrations/*.cs` | EF Core 마이그레이션 (C#, 자동 생성) |
+| `src/PeanutVision.Api/Migrations/sql/migrations.sql` | 전체 스키마 SQL 스크립트 (신규 DB 초기화용) |
+| `dotnet-tools.json` | `dotnet-ef` 버전 고정 (EF Core 버전과 일치) |
+
+### 런타임 동작
+
+- 앱 시작 시 `db.Database.Migrate()`가 pending 마이그레이션을 자동 적용한다.
+- `migrations.sql`은 신규 DB를 스크립트로 직접 초기화할 때 사용한다:
+  ```bash
+  sqlite3 peanut-vision.db < src/PeanutVision.Api/Migrations/sql/migrations.sql
+  ```
+
+### 주의
+
+- SQLite는 EF Core의 `--idempotent` 옵션을 지원하지 않는다. `migrations.sql`은 누적 전체 스크립트이므로 기존 DB에 재실행하면 오류가 발생한다. 기존 DB 업그레이드는 `Migrate()`가 담당한다.
