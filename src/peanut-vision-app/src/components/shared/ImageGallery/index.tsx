@@ -1,30 +1,28 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
   useReactTable,
+  type ColumnFiltersState,
   type SortingState,
 } from '@tanstack/react-table'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Filter, RefreshCw, Trash2, X, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
-import { thumbnailUrl } from '@/api/client'
+import { listImages, deleteImage, thumbnailUrl } from '@/api/client'
+import { queryKeys } from '@/api/queryKeys'
+import { useToast } from '@/contexts/ToastContext'
 import type { CapturedImageRecord } from '@/api/types'
 import { formatTime } from '@/utils/formatTimestamp'
 import cx from './cx'
 
 interface Props {
-  images: CapturedImageRecord[]
   selectedId: string | null
-  onSelect: (id: string) => void
-  onDelete: (id: string) => void
-  dateFrom: string | null
-  dateTo: string | null
-  onDateFromChange: (v: string | null) => void
-  onDateToChange: (v: string | null) => void
-  isLoading: boolean
-  onRefresh: () => void
+  onRowSelect: (id: string | null, image: CapturedImageRecord | null) => void
 }
+
+type DateRangeFilter = { from: string | null; to: string | null }
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -34,23 +32,66 @@ function formatBytes(bytes: number): string {
 
 const columnHelper = createColumnHelper<CapturedImageRecord>()
 
-export default function ImageGallery({
-  images,
-  selectedId,
-  onSelect,
-  onDelete,
-  dateFrom,
-  dateTo,
-  onDateFromChange,
-  onDateToChange,
-  isLoading,
-  onRefresh,
-}: Props) {
+export default function ImageGallery({ selectedId, onRowSelect }: Props) {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
   const [filterOpen, setFilterOpen] = useState(false)
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: 'capturedAt', desc: true },
-  ])
-  const isFiltered = !!(dateFrom || dateTo)
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'capturedAt', desc: true }])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+
+  // Derive server query params from TanStack Table column filter state
+  const dateRange = (columnFilters.find(f => f.id === 'capturedAt')?.value ?? {}) as DateRangeFilter
+  const isFiltered = !!(dateRange.from || dateRange.to)
+
+  const { data, isLoading } = useQuery({
+    queryKey: queryKeys.images({
+      dateFrom: dateRange.from ?? undefined,
+      dateTo: dateRange.to ?? undefined,
+    }),
+    queryFn: () => listImages({
+      page: 1,
+      pageSize: 100,
+      dateFrom: dateRange.from ?? undefined,
+      dateTo: dateRange.to ?? undefined,
+    }),
+  })
+
+  const images = data?.items ?? []
+
+  // Keep selection in sync: clear if selected image disappears after filter
+  useEffect(() => {
+    if (selectedId && images.length > 0 && !images.find(i => i.id === selectedId)) {
+      onRowSelect(null, null)
+    }
+    // Auto-select first row when data arrives and nothing is selected
+    if (!selectedId && images.length > 0) {
+      onRowSelect(images[0].id, images[0])
+    }
+  }, [images, selectedId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteImage,
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.images() })
+      if (selectedId === id) onRowSelect(null, null)
+      toast('이미지가 삭제되었습니다', 'info')
+    },
+    onError: () => toast('삭제에 실패했습니다', 'error'),
+  })
+
+  const setDateFilter = (range: Partial<DateRangeFilter>) => {
+    setColumnFilters(prev => {
+      const current = (prev.find(f => f.id === 'capturedAt')?.value ?? {}) as DateRangeFilter
+      const next = { ...current, ...range }
+      const without = prev.filter(f => f.id !== 'capturedAt')
+      return (!next.from && !next.to) ? without : [...without, { id: 'capturedAt', value: next }]
+    })
+  }
+
+  const clearDateFilter = () => {
+    setColumnFilters(prev => prev.filter(f => f.id !== 'capturedAt'))
+  }
 
   const columns = [
     columnHelper.display({
@@ -80,6 +121,7 @@ export default function ImageGallery({
     columnHelper.display({
       id: 'resolution',
       header: 'Resolution',
+      enableSorting: false,
       cell: ({ row }) => `${row.original.width} × ${row.original.height}`,
     }),
     columnHelper.accessor('fileSizeBytes', {
@@ -98,11 +140,12 @@ export default function ImageGallery({
       id: 'delete',
       header: '',
       size: 36,
+      enableSorting: false,
       cell: ({ row }) => (
         <button
           type="button"
           className={cx('rowDeleteBtn')}
-          onClick={(e) => { e.stopPropagation(); onDelete(row.original.id) }}
+          onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(row.original.id) }}
           title="Delete"
         >
           <X size={12} />
@@ -114,19 +157,20 @@ export default function ImageGallery({
   const table = useReactTable({
     data: images,
     columns,
-    state: { sorting },
+    state: { sorting, columnFilters },
     onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    manualFiltering: true, // server handles filtering
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
 
   const handleToggleFilter = () => {
-    if (filterOpen && isFiltered) {
-      onDateFromChange(null)
-      onDateToChange(null)
-    }
-    setFilterOpen((prev) => !prev)
+    if (filterOpen && isFiltered) clearDateFilter()
+    setFilterOpen(prev => !prev)
   }
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.images() })
 
   return (
     <div className={cx('wrap')}>
@@ -144,7 +188,7 @@ export default function ImageGallery({
         <button
           type="button"
           className={cx('iconBtn')}
-          onClick={onRefresh}
+          onClick={refresh}
           disabled={isLoading}
           title="Refresh"
         >
@@ -152,27 +196,27 @@ export default function ImageGallery({
         </button>
       </div>
 
-      {/* Date range inputs */}
+      {/* Date range filter — driven by TanStack Table columnFilters */}
       {filterOpen && (
         <div className={cx('filterRow')}>
           <input
             type="date"
             className={cx('dateInput')}
-            value={dateFrom ?? ''}
-            onChange={(e) => onDateFromChange(e.target.value || null)}
+            value={dateRange.from ?? ''}
+            onChange={(e) => setDateFilter({ from: e.target.value || null })}
           />
           <span>–</span>
           <input
             type="date"
             className={cx('dateInput')}
-            value={dateTo ?? ''}
-            onChange={(e) => onDateToChange(e.target.value || null)}
+            value={dateRange.to ?? ''}
+            onChange={(e) => setDateFilter({ to: e.target.value || null })}
           />
           {isFiltered && (
             <button
               type="button"
               className={cx('clearBtn', 'clearFilter')}
-              onClick={() => { onDateFromChange(null); onDateToChange(null) }}
+              onClick={clearDateFilter}
               title="Clear filter"
             >
               <X size={14} />
@@ -231,7 +275,7 @@ export default function ImageGallery({
                 <tr
                   key={row.id}
                   className={cx('row', { selected: row.original.id === selectedId })}
-                  onClick={() => onSelect(row.original.id)}
+                  onClick={() => onRowSelect(row.original.id, row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td
@@ -252,14 +296,14 @@ export default function ImageGallery({
         </div>
       )}
 
-      {/* Clear all */}
+      {/* Footer */}
       {images.length > 0 && (
         <div className={cx('actions')}>
           <span className={cx('count')}>{images.length} images</span>
           <button
             type="button"
             className={cx('clearBtn')}
-            onClick={() => images.forEach((img) => onDelete(img.id))}
+            onClick={() => images.forEach((img) => deleteMutation.mutate(img.id))}
           >
             <Trash2 size={13} /> Clear All
           </button>

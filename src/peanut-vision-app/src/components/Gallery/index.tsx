@@ -4,34 +4,24 @@ import ImageGallery from '@/components/shared/ImageGallery'
 import cx from './cx'
 
 export default function Gallery() {
-  const gallery = useImageGallery()
+  const { selectedId, selectedImage, selectedImageUrl, handleRowSelect } = useImageGallery()
 
   return (
     <div className={cx('Gallery')}>
       <div className={cx('viewer')}>
         <ImageViewer
-          url={gallery.selectedImageUrl}
-          filename={gallery.selectedImage?.filename}
-          savedPath={gallery.selectedImage?.filePath}
+          url={selectedImageUrl}
+          filename={selectedImage?.filename}
+          savedPath={selectedImage?.filePath}
           isLive={false}
-          capturedAt={
-            gallery.selectedImage ? new Date(gallery.selectedImage.capturedAt) : null
-          }
+          capturedAt={selectedImage ? new Date(selectedImage.capturedAt) : null}
         />
       </div>
 
       <div className={cx('gridPane')}>
         <ImageGallery
-          images={gallery.images}
-          selectedId={gallery.selectedId}
-          onSelect={gallery.setSelectedId}
-          onDelete={gallery.handleDelete}
-          dateFrom={gallery.dateFrom}
-          dateTo={gallery.dateTo}
-          onDateFromChange={gallery.setDateFrom}
-          onDateToChange={gallery.setDateTo}
-          isLoading={gallery.isLoading}
-          onRefresh={gallery.refresh}
+          selectedId={selectedId}
+          onRowSelect={handleRowSelect}
         />
       </div>
     </div>

@@ -1,68 +1,17 @@
-import { useCallback, useEffect, useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { listImages, deleteImage, imageFileUrl } from '@/api/client'
-import { queryKeys } from '@/api/queryKeys'
-import { useToast } from '@/contexts/ToastContext'
+import { useState } from 'react'
+import { imageFileUrl } from '@/api/client'
 import type { CapturedImageRecord } from '@/api/types'
 
-const PAGE_SIZE = 100
-
 export function useImageGallery() {
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
-  const [dateFrom, setDateFrom] = useState<string | null>(null)
-  const [dateTo, setDateTo] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedImage, setSelectedImage] = useState<CapturedImageRecord | null>(null)
 
-  const queryParams = {
-    page: 1,
-    pageSize: PAGE_SIZE,
-    ...(dateFrom ? { dateFrom } : {}),
-    ...(dateTo ? { dateTo } : {}),
-  }
-
-  const { data, isLoading } = useQuery({
-    queryKey: queryKeys.images(queryParams),
-    queryFn: () => listImages(queryParams),
-  })
-
-  useEffect(() => {
-    if (data?.items.length && selectedId === null) {
-      setSelectedId(data.items[0].id)
-    }
-  }, [data, selectedId])
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteImage,
-    onSuccess: (_: void, id: string) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.images() })
-      if (selectedId === id) setSelectedId(null)
-      toast('이미지가 삭제되었습니다', 'info')
-    },
-    onError: (e: unknown) =>
-      toast(e instanceof Error ? e.message : '삭제에 실패했습니다', 'error'),
-  })
-
-  const refresh = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.images() })
-  }, [queryClient])
-
-  const images: CapturedImageRecord[] = data?.items ?? []
-  const selectedImage = images.find((i) => i.id === selectedId) ?? null
   const selectedImageUrl = selectedId ? imageFileUrl(selectedId) : null
 
-  return {
-    images,
-    isLoading,
-    dateFrom,
-    setDateFrom,
-    dateTo,
-    setDateTo,
-    selectedId,
-    setSelectedId,
-    selectedImage,
-    selectedImageUrl,
-    refresh,
-    handleDelete: (id: string) => deleteMutation.mutate(id),
+  const handleRowSelect = (id: string | null, image: CapturedImageRecord | null) => {
+    setSelectedId(id)
+    setSelectedImage(image)
   }
+
+  return { selectedId, selectedImage, selectedImageUrl, handleRowSelect }
 }
