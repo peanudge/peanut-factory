@@ -77,11 +77,6 @@ export interface AcquisitionStatus {
   recentEvents?: ChannelEvent[];
 }
 
-export interface ExposureInfo {
-  exposureUs: number;
-  exposureRange?: { min: number; max: number };
-}
-
 export interface ApiMessage {
   message: string;
 }

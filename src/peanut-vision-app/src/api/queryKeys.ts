@@ -7,6 +7,5 @@ export const queryKeys = {
   presets:           ["presets"]                         as const,
   histogram:         ["histogram"]                       as const,
   imageSaveSettings: ["imageSaveSettings"]               as const,
-  exposure:          ["exposure"]                        as const,
   images:            (params?: object) => params ? ["images", params] as const : ["images"] as const,
 };

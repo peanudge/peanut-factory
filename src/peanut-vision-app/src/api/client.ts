@@ -4,7 +4,6 @@ import type {
   BoardStatus,
   CamFileInfo,
   AcquisitionStatus,
-  ExposureInfo,
   ApiMessage,
   ImageSaveSettings,
   HistogramData,
@@ -202,36 +201,3 @@ export function clearLatencyRecords(): Promise<ApiMessage> {
   return request("/latency/records", { method: "DELETE" });
 }
 
-// ── Calibration ──
-
-export function blackCalibration(): Promise<ApiMessage> {
-  return request("/calibration/black", { method: "POST" });
-}
-
-export function whiteCalibration(): Promise<ApiMessage> {
-  return request("/calibration/white", { method: "POST" });
-}
-
-export function whiteBalance(): Promise<ApiMessage> {
-  return request("/calibration/white-balance", { method: "POST" });
-}
-
-export function setFfc(enable: boolean): Promise<ApiMessage> {
-  return request("/calibration/ffc", {
-    method: "POST",
-    body: JSON.stringify({ enable }),
-  });
-}
-
-export function getExposure(): Promise<ExposureInfo> {
-  return request("/calibration/exposure");
-}
-
-export function setExposure(
-  exposureUs?: number,
-): Promise<ApiMessage & { exposureUs: number }> {
-  return request("/calibration/exposure", {
-    method: "PUT",
-    body: JSON.stringify({ exposureUs }),
-  });
-}

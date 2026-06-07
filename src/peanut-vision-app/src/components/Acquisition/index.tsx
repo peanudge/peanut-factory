@@ -3,19 +3,16 @@ import { useLiveStream } from '@/hooks/useLiveStream'
 import { useResizablePanel } from '@/hooks/useResizablePanel'
 import { useAcquisitionConfig } from '@/hooks/useAcquisitionConfig'
 import { useAcquisitionSession } from '@/hooks/useAcquisitionSession'
-import { useCameraCalibration } from '@/hooks/useCameraCalibration'
 import CaptureTab from './CaptureTab'
-import CameraTab from './CameraTab'
 import ImageSaveSettingsPanel from '@/components/shared/ImageSaveSettingsPanel'
 import ImageViewer from '@/components/shared/ImageViewer'
 import cx from './cx'
 
-const TABS = ['Capture', 'Camera', 'Settings'] as const
+const TABS = ['Capture', 'Settings'] as const
 
 export default function Acquisition() {
   const config = useAcquisitionConfig()
   const session = useAcquisitionSession(config)
-  const calibration = useCameraCalibration()
   const live = useLiveStream()
   const { panelRef: sidebarRef, onResizerMouseDown } = useResizablePanel({
     defaultWidth: 340,
@@ -46,10 +43,6 @@ export default function Acquisition() {
         </div>
 
         <div className={cx('tabPanel', { hidden: activeTab !== 1 })}>
-          <CameraTab calibration={calibration} />
-        </div>
-
-        <div className={cx('tabPanel', { hidden: activeTab !== 2 })}>
           <ImageSaveSettingsPanel />
         </div>
       </div>
