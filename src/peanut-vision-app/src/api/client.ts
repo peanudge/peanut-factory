@@ -58,6 +58,10 @@ export interface DirectoryEntry {
   hasChildren: boolean
 }
 
+export function getFilesystemDefaults(): Promise<{ desktopPath: string }> {
+  return request("/filesystem/defaults")
+}
+
 export function getFilesystemRoots(): Promise<string[]> {
   return request("/filesystem/roots")
 }

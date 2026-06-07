@@ -6,6 +6,13 @@ namespace PeanutVision.Api.Controllers;
 [Route("api/filesystem")]
 public class FilesystemController : ControllerBase
 {
+    [HttpGet("defaults")]
+    public ActionResult GetDefaults()
+    {
+        var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+        return Ok(new { desktopPath = desktop });
+    }
+
     [HttpGet("roots")]
     public ActionResult GetRoots()
     {

@@ -5,7 +5,7 @@ import type {
   AcquisitionFormConfig,
 } from '@/api/types'
 import { DEFAULT_ACQUISITION_FORM_CONFIG } from '@/api/types'
-import { getCameras } from '@/api/client'
+import { getCameras, getFilesystemDefaults } from '@/api/client'
 import { queryKeys } from '@/api/queryKeys'
 
 export function useAcquisitionConfig() {
@@ -16,11 +16,25 @@ export function useAcquisitionConfig() {
     queryFn: getCameras,
   })
 
+  const { data: fsDefaults } = useQuery({
+    queryKey: ['filesystem', 'defaults'],
+    queryFn: getFilesystemDefaults,
+    staleTime: Infinity, // desktop path doesn't change at runtime
+  })
+
+  // Auto-select first camera profile
   useEffect(() => {
     if (cameras.length > 0 && !config.profileId) {
       setConfig(prev => ({ ...prev, profileId: cameras[0].fileName }))
     }
   }, [cameras, config.profileId])
+
+  // Set desktop as default outputDirectory once fetched
+  useEffect(() => {
+    if (fsDefaults?.desktopPath && config.outputDirectory === DEFAULT_ACQUISITION_FORM_CONFIG.outputDirectory) {
+      setConfig(prev => ({ ...prev, outputDirectory: fsDefaults.desktopPath }))
+    }
+  }, [fsDefaults, config.outputDirectory])
 
   const updateConfig = useCallback(<K extends keyof AcquisitionFormConfig>(
     key: K,
