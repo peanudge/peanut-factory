@@ -11,16 +11,24 @@ namespace PeanutVision.Api.Controllers;
 public class AcquisitionController : ControllerBase
 {
     private readonly IAcquisitionSession _acquisition;
+    private readonly AcquisitionConfigValidator _validator;
 
-    public AcquisitionController(IAcquisitionSession acquisition)
+    public AcquisitionController(IAcquisitionSession acquisition, AcquisitionConfigValidator validator)
     {
         _acquisition = acquisition;
+        _validator = validator;
     }
 
     [HttpPost("start")]
     public ActionResult Start([FromBody] StartAcquisitionRequest request)
     {
-        var format = Enum.TryParse<SaveImageFormat>(request.Format, ignoreCase: true, out var f)
+        if (string.IsNullOrWhiteSpace(request.ProfileId))
+            return BadRequest(new { error = "profileId is required." });
+
+        if (request.Format is not null && !Enum.TryParse<SaveImageFormat>(request.Format, ignoreCase: true, out _))
+            return BadRequest(new { error = $"Invalid format '{request.Format}'. Valid values: png, bmp, raw." });
+
+        var format = request.Format is not null && Enum.TryParse<SaveImageFormat>(request.Format, ignoreCase: true, out var f)
             ? f : SaveImageFormat.Png;
 
         var config = new AcquisitionConfig(
@@ -30,6 +38,17 @@ public class AcquisitionController : ControllerBase
             request.OutputDirectory ?? "CapturedImages",
             format,
             request.AutoSave ?? true);
+
+        var validation = _validator.Validate(config);
+        if (!validation.IsValid)
+            return BadRequest(new
+            {
+                error = "Invalid acquisition configuration.",
+                errors = validation.Errors.Select(e => new { field = e.Field, message = e.Message }),
+            });
+
+        if (_acquisition.GetStatus().ChannelState == ChannelState.Active)
+            return Conflict(new { error = "Acquisition is already running. Stop it first." });
 
         _acquisition.Start(config);
         return Ok(new { message = "Acquisition started", profileId = config.ProfileId.Value });

@@ -100,10 +100,6 @@ public sealed class AcquisitionManager : IAcquisitionSession
 
     public void Start(AcquisitionConfig config)
     {
-        const int minIntervalMs = 50;
-        if (config.IntervalMs is > 0 and < minIntervalMs)
-            throw new ArgumentException($"intervalMs must be at least {minIntervalMs}ms.");
-
         // Capture idle channel for release OUTSIDE lock to avoid potential deadlock with channel Dispose
         GrabChannel? toRelease = null;
         lock (_lock)

@@ -33,14 +33,14 @@ public class AcquisitionStartSpec : IClassFixture<PeanutVisionApiFactory>, IAsyn
     }
 
     [Fact]
-    public async Task Start_with_unknown_profile_returns_404()
+    public async Task Start_with_unknown_profile_returns_400()
     {
         var response = await _client.PostJsonAsync("/api/acquisition/start",
             new { profileId = "nonexistent-camera" });
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         using var doc = await response.ReadJsonDocumentAsync();
-        Assert.True(doc.RootElement.TryGetProperty("error", out _));
+        Assert.True(doc.RootElement.TryGetProperty("errors", out _));
     }
 
     [Fact]
@@ -107,12 +107,13 @@ public class AcquisitionStartSpec : IClassFixture<PeanutVisionApiFactory>, IAsyn
     }
 
     [Fact]
-    public async Task Start_with_intervalMs_zero_returns_ok()
+    public async Task Start_with_intervalMs_zero_returns_bad_request()
     {
+        // intervalMs=0 is invalid; use null to mean "no interval"
         var response = await _client.PostJsonAsync("/api/acquisition/start",
             new { profileId = "crevis-tc-a160k-freerun-rgb8.cam", intervalMs = 0 });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]

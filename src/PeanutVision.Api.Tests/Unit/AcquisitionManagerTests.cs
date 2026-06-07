@@ -318,32 +318,7 @@ public class AcquisitionManagerTests : IDisposable
         }
     }
 
-    public class Given_intervalMs_validation : AcquisitionManagerTests
-    {
-        [Fact]
-        public void Then_intervalMs_below_minimum_throws_ArgumentException()
-        {
-            Assert.Throws<ArgumentException>(
-                () => _manager.Start(new AcquisitionConfig(new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"), IntervalMs: 1)));
-        }
-
-        [Fact]
-        public void Then_intervalMs_at_minimum_succeeds()
-        {
-            _manager.Start(new AcquisitionConfig(new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"), IntervalMs: 50));
-            Assert.True(_manager.GetStatus().IsActive);
-        }
-
-        [Fact]
-        public void Then_intervalMs_zero_does_not_create_timer()
-        {
-            _manager.Start(new AcquisitionConfig(new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"), IntervalMs: 0));
-            Assert.True(_manager.GetStatus().IsActive);
-            _mockHal.CallLog.Reset();
-            Thread.Sleep(100);
-            Assert.Equal(0, _mockHal.CallLog.SoftwareTriggerCount);
-        }
-    }
+    // intervalMs validation moved to AcquisitionConfigValidator (controller layer)
 
     public class Given_channel_start_stop_cycle : AcquisitionManagerTests
     {
