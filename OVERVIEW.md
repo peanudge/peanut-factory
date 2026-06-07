@@ -31,15 +31,13 @@ graph TB
 
     subgraph API["PeanutVision.Api (ASP.NET Core)"]
         ACQC["AcquisitionController\n(start / stop / trigger / latest-frame)"]
-        CALC["CalibrationController"]
         SYSC["SystemController"]
         IMGC["ImagesController"]
         LATC["LatencyController"]
-        ACQM["AcquisitionManager\n(채널 상태 머신)"]
+        ACQM["AcquisitionManager\nimplements IAcquisitionSession"]
         AUTOSAVE["AutoSaveService\n(IHostedService)\nFrameAcquired 구독 → 자동 저장"]
 
         ACQC --> ACQM
-        CALC --> ACQM
         SYSC --> ACQM
         ACQM --> GS
         ACQM -->|"FrameAcquired 이벤트"| AUTOSAVE
@@ -54,17 +52,17 @@ graph TB
 
     subgraph UI["peanut-vision-app (React + SCSS)"]
         ROUTER["TanStack Router\n(file-based routing)"]
-        ACQPAGE["AcquisitionPage\n(Continuous 모드 전용)"]
+        ACQPAGE["AcquisitionPage\n(Capture / Settings 2탭)"]
         GALPAGE["GalleryPage"]
         LATPAGE["LatencyPage"]
         SYSPAGE["SystemPage"]
-        SHARED["Shared Components\nAcquisitionControls / ContinuousSettings\nImageViewer / ExposureControl / ..."]
+        HOOKS["Focused Hooks\nuseAcquisitionConfig\nuseAcquisitionSession"]
 
         ROUTER --> ACQPAGE
         ROUTER --> GALPAGE
         ROUTER --> LATPAGE
         ROUTER --> SYSPAGE
-        ACQPAGE --> SHARED
+        ACQPAGE --> HOOKS
     end
 
     subgraph Tests["Tests"]
@@ -118,42 +116,44 @@ peanut-factory/
 │   │   ├── Program.cs
 │   │   ├── Controllers/
 │   │   │   ├── AcquisitionController.cs     #   start / stop / trigger / latest-frame
-│   │   │   ├── CalibrationController.cs     #   FFC & 화이트 밸런스
 │   │   │   ├── SystemController.cs          #   보드 & 카메라 정보
 │   │   │   ├── ImagesController.cs          #   저장 이미지 목록/조회/삭제
 │   │   │   ├── LatencyController.cs         #   레이턴시 분석
-│   │   │   ├── SessionController.cs         #   촬영 세션 관리
 │   │   │   ├── SettingsController.cs        #   이미지 저장 설정
 │   │   │   └── PresetController.cs          #   촬영 프리셋
 │   │   └── Services/
-│   │       ├── AcquisitionManager.cs        #   채널 상태 머신 (None→Idle→Active)
+│   │       ├── IAcquisitionSession.cs       #   촬영 세션 인터페이스 (7 members)
+│   │       ├── AcquisitionManager.cs        #   IAcquisitionSession 구현, 상태 머신
+│   │       ├── AcquisitionConfig.cs         #   촬영 설정 값 객체 (ProfileId, TriggerMode, ...)
+│   │       ├── AcquisitionStatus.cs         #   촬영 상태 스냅샷 (단일 GetStatus() 호출)
 │   │       ├── AutoSaveService.cs           #   FrameAcquired 구독 → headless 자동 저장
-│   │       ├── CalibrationManager.cs        #   캘리브레이션 조율
 │   │       ├── LatencyService.cs            #   레이턴시 측정 및 기록
 │   │       ├── ImageSaveSettingsService.cs  #   저장 설정 영속화
-│   │       ├── FilenameGenerator.cs         #   파일명 생성 전략
+│   │       ├── FilenameGenerator.cs         #   {date}/{profile} 토큰 기반 경로 생성
 │   │       ├── FrameSaveTracker.cs          #   중복 저장 방지
-│   │       ├── ThumbnailService.cs          #   썸네일 생성
-│   │       └── SessionRepository.cs        #   세션 DB 레포지토리
+│   │       └── ThumbnailService.cs          #   썸네일 생성
 │   │
 │   ├── peanut-vision-app/                    # React 대시보드 (Vite + TanStack Router + SCSS)
 │   │   └── src/
 │   │       ├── routes/                       # 파일 기반 라우팅
 │   │       ├── components/
-│   │       │   ├── Acquisition/             #   촬영 페이지 (Continuous 모드 전용)
-│   │       │   ├── Gallery/                 #   이미지 갤러리
+│   │       │   ├── Acquisition/             #   촬영 페이지
+│   │       │   │   ├── index.tsx            #     레이아웃 (Capture / Settings 2탭)
+│   │       │   │   └── CaptureTab.tsx       #     촬영 중 readonly 뷰 / 설정 폼
+│   │       │   ├── Gallery/                 #   이미지 갤러리 (날짜 범위 필터)
 │   │       │   ├── Latency/                 #   레이턴시 분석
 │   │       │   ├── SystemState/             #   시스템 상태
-│   │       │   └── shared/                  #   AcquisitionControls, ContinuousSettings,
-│   │       │                                #   ImageViewer, ExposureControl, ...
+│   │       │   └── shared/                  #   ContinuousSettings, ImageViewer,
+│   │       │                                #   ImageSaveSettingsPanel, PresetSelector, ...
 │   │       ├── hooks/
-│   │       │   ├── useAcquisitionActions.ts #   촬영 액션 (Continuous 모드)
+│   │       │   ├── useAcquisitionConfig.ts  #   폼 상태 (profile, triggerMode, frameCount)
+│   │       │   ├── useAcquisitionSession.ts #   실행 + 상태 (start/stop/trigger, canStart...)
 │   │       │   └── useLiveStream.ts         #   SSE 기반 라이브 뷰
 │   │       └── api/                         #   REST API 클라이언트 & 타입 정의
 │   │
 │   ├── PeanutVision.MultiCamDriver.Tests/            # 유닛 테스트
 │   ├── PeanutVision.MultiCamDriver.IntegrationTests/ # HW 통합 테스트
-│   └── PeanutVision.Api.Tests/                       # API 스펙 테스트 (354개)
+│   └── PeanutVision.Api.Tests/                       # API 스펙 테스트
 │
 ├── doc/                                      # SDK 문서 (마크다운)
 ├── setup/                                    # 카메라 파일 & SDK 헤더
@@ -174,15 +174,15 @@ sequenceDiagram
     participant HW as Grablink + Camera
     participant SAVE as AutoSaveService
 
-    UI->>API: POST /acquisition/start\n{profileId, frameCount?, intervalMs?}
-    API->>ACQM: CreateChannel() + Start()
+    UI->>API: POST /acquisition/start\n{profileId, triggerMode?, frameCount?, intervalMs?}
+    API->>ACQM: Start(AcquisitionConfig)
     ACQM->>CH: StartAcquisition()
-    CH->>HAL: McCreate / McSetParam / ChannelState=ACTIVE
-    HAL->>HW: Configure & activate
+    CH->>HAL: McCreate / McSetParam(CamFile) / ChannelState=ACTIVE
+    HAL->>HW: Configure & activate\n(cam file 설정 자동 적용)
 
     Note over UI,SAVE: Continuous 모드 — 소프트 트리거 예시
     UI->>API: POST /acquisition/trigger
-    API->>ACQM: TriggerAndWaitAsync()
+    API->>ACQM: TriggerAsync()
     ACQM->>CH: SendSoftwareTrigger()
     CH->>HAL: McSetParam(ForceTrig=TRIG)
     HAL->>HW: Trigger capture
@@ -191,7 +191,7 @@ sequenceDiagram
     HAL-->>CH: Native callback (< 1ms)
     CH-->>CH: 내부 큐 → ProcessingLoopAsync
     CH-->>ACQM: FrameAcquired 이벤트
-    ACQM-->>API: ImageData 반환 (TriggerAndWaitAsync 완료)
+    ACQM-->>API: ImageData 반환 (TriggerAsync 완료)
     API-->>UI: PNG image bytes
 
     Note over ACQM,SAVE: AutoSave 활성화 시 병렬 저장
@@ -213,6 +213,27 @@ sequenceDiagram
 
 단발 촬영(`frameCount=1`)은 프레임 수신 후 채널이 자동으로 Idle 상태로 돌아갑니다.
 
+## Camera Profile (.cam 파일) 설계 원칙
+
+캘리브레이션은 서비스 UI에서 제거되었습니다. 대신 **cam 파일이 이미 보정된 설정을 포함**한다고 가정합니다.
+
+**근거:**
+- 땅콩 검사 시스템은 조명·카메라 위치가 고정된 통제된 환경
+- 초기 설치 시 1회 캘리브레이션 후 결과를 cam 파일에 저장
+- 이후 동일 환경에서 재보정 불필요
+
+**cam 파일에 포함되는 설정:**
+```
+BalanceRatioRed   = 1.25    ← 화이트 밸런스 (초기 캘리브레이션 결과)
+BalanceRatioGreen = 1.00
+BalanceRatioBlue  = 1.18
+FlatFieldCorrection = ON    ← FFC 활성화
+Expose_us = 8000            ← 최적 노출값
+```
+
+**재캘리브레이션이 필요한 경우** (카메라 교체, 조명 변경 등):
+MultiCam Studio 또는 별도 초기화 CLI 툴을 통해 처리합니다. 서비스 UI 역할이 아닙니다.
+
 ## AutoSave 동작
 
 `AutoSaveService`(`IHostedService`)가 `FrameAcquired` 이벤트를 구독하여 AutoSave 설정이 켜져 있으면 HTTP 요청 없이 자동으로 저장합니다.
@@ -221,7 +242,7 @@ sequenceDiagram
 FrameAcquired 이벤트
   → AutoSave 설정 확인
   → FrameSaveTracker (중복 방지)
-  → ImageWriter.Save() → 디스크
+  → ImageWriter.Save() → 디스크 ({date}/{profile} 토큰 기반 경로)
   → ThumbnailService.GenerateAsync()
   → ICapturedImageRepository.AddAsync() → DB
 ```
@@ -237,4 +258,4 @@ FrameAcquired 이벤트
 | Background Service | IHostedService (AutoSaveService) |
 | Database | SQLite (EF Core) |
 | Frontend | React 19, TypeScript, Vite, TanStack Router, SCSS Modules |
-| Testing | xUnit, WebApplicationFactory, 354 tests |
+| Testing | xUnit, WebApplicationFactory |
