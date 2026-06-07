@@ -1,6 +1,9 @@
 namespace PeanutVision.Api.Services;
 
-public sealed record AcquisitionPreset
+/// <summary>
+/// A named snapshot of AcquisitionConfig for reuse across acquisition sessions.
+/// </summary>
+public sealed record AcquisitionConfigPreset
 {
     public string Name { get; init; } = string.Empty;
     public string ProfileId { get; init; } = string.Empty;

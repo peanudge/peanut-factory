@@ -7,7 +7,7 @@ import type {
   ApiMessage,
   ImageSaveSettings,
   HistogramData,
-  AcquisitionPreset,
+  AcquisitionConfigPreset,
   ImagePage,
   LatencyRecord,
   LatencyStats,
@@ -128,11 +128,11 @@ export function updateImageSaveSettings(
 
 // ── Presets ──
 
-export function getPresets(): Promise<AcquisitionPreset[]> {
+export function getPresets(): Promise<AcquisitionConfigPreset[]> {
   return request("/presets");
 }
 
-export function savePreset(preset: AcquisitionPreset): Promise<AcquisitionPreset> {
+export function savePreset(preset: AcquisitionConfigPreset): Promise<AcquisitionConfigPreset> {
   return request("/presets", {
     method: "PUT",
     body: JSON.stringify(preset),

@@ -2,34 +2,34 @@ using System.Text.Json;
 
 namespace PeanutVision.Api.Services;
 
-public interface IAcquisitionPresetService
+public interface IAcquisitionConfigPresetService
 {
-    IReadOnlyList<AcquisitionPreset> GetAll();
-    AcquisitionPreset? GetByName(string name);
-    Task SaveAsync(AcquisitionPreset preset);
+    IReadOnlyList<AcquisitionConfigPreset> GetAll();
+    AcquisitionConfigPreset? GetByName(string name);
+    Task SaveAsync(AcquisitionConfigPreset preset);
     Task DeleteAsync(string name);
 }
 
-public sealed class AcquisitionPresetService : IAcquisitionPresetService
+public sealed class AcquisitionConfigPresetService : IAcquisitionConfigPresetService
 {
     private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
     private readonly string _filePath;
     private readonly SemaphoreSlim _lock = new(1, 1);
-    private List<AcquisitionPreset> _presets;
+    private List<AcquisitionConfigPreset> _presets;
 
-    public AcquisitionPresetService(string filePath)
+    public AcquisitionConfigPresetService(string filePath)
     {
         _filePath = filePath;
         _presets = Load();
     }
 
-    public IReadOnlyList<AcquisitionPreset> GetAll() => _presets.AsReadOnly();
+    public IReadOnlyList<AcquisitionConfigPreset> GetAll() => _presets.AsReadOnly();
 
-    public AcquisitionPreset? GetByName(string name)
+    public AcquisitionConfigPreset? GetByName(string name)
         => _presets.FirstOrDefault(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
 
-    public async Task SaveAsync(AcquisitionPreset preset)
+    public async Task SaveAsync(AcquisitionConfigPreset preset)
     {
         await _lock.WaitAsync();
         try
@@ -70,13 +70,13 @@ public sealed class AcquisitionPresetService : IAcquisitionPresetService
         await File.WriteAllTextAsync(_filePath, json);
     }
 
-    private List<AcquisitionPreset> Load()
+    private List<AcquisitionConfigPreset> Load()
     {
         if (!File.Exists(_filePath)) return [];
         try
         {
             var json = File.ReadAllText(_filePath);
-            return JsonSerializer.Deserialize<List<AcquisitionPreset>>(json) ?? [];
+            return JsonSerializer.Deserialize<List<AcquisitionConfigPreset>>(json) ?? [];
         }
         catch
         {

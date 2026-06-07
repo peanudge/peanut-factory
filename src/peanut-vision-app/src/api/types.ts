@@ -108,7 +108,8 @@ export type ColorFormat =
   | "RGB24PL" | "RGB30PL" | "RGB36PL" | "RGB48PL"
   | (string & Record<never, never>); // allow unknown formats from server
 
-export interface AcquisitionPreset {
+/** Named snapshot of AcquisitionConfig for reuse across sessions. */
+export interface AcquisitionConfigPreset {
   name: string;
   profileId: string;
   triggerMode?: TriggerModeOption | null;

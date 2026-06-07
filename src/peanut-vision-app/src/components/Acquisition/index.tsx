@@ -3,16 +3,33 @@ import { useLiveStream } from '@/hooks/useLiveStream'
 import { useResizablePanel } from '@/hooks/useResizablePanel'
 import { useAcquisitionConfig } from '@/hooks/useAcquisitionConfig'
 import { useAcquisitionSession } from '@/hooks/useAcquisitionSession'
+import type { AcquisitionConfigPreset, ContinuousSubMode, TriggerModeOption } from '@/api/types'
 import CaptureTab from './CaptureTab'
 import ImageSaveSettingsPanel from '@/components/shared/ImageSaveSettingsPanel'
 import ImageViewer from '@/components/shared/ImageViewer'
 import cx from './cx'
 
+export type InputMode = 'manual' | 'preset'
+
 const TABS = ['Capture', 'Settings'] as const
 
 export default function Acquisition() {
   const config = useAcquisitionConfig()
-  const session = useAcquisitionSession(config)
+  const [inputMode, setInputMode] = useState<InputMode>('manual')
+  const [selectedPreset, setSelectedPreset] = useState<AcquisitionConfigPreset | null>(null)
+
+  // When preset mode is active, override the session config with the selected preset
+  const sessionConfig = inputMode === 'preset' && selectedPreset
+    ? {
+        selectedProfile: selectedPreset.profileId,
+        triggerMode: (selectedPreset.triggerMode ?? 'soft') as TriggerModeOption,
+        frameCount: selectedPreset.frameCount ?? null,
+        intervalMs: selectedPreset.intervalMs ?? null,
+        continuousSubMode: (selectedPreset.intervalMs != null ? 'auto' : 'manual') as ContinuousSubMode,
+      }
+    : config
+
+  const session = useAcquisitionSession(sessionConfig)
   const live = useLiveStream()
   const { panelRef: sidebarRef, onResizerMouseDown } = useResizablePanel({
     defaultWidth: 340,
@@ -39,7 +56,14 @@ export default function Acquisition() {
         </div>
 
         <div className={cx('tabPanel', { hidden: activeTab !== 0 })}>
-          <CaptureTab config={config} session={session} />
+          <CaptureTab
+            config={config}
+            session={session}
+            inputMode={inputMode}
+            onInputModeChange={setInputMode}
+            selectedPreset={selectedPreset}
+            onPresetSelect={setSelectedPreset}
+          />
         </div>
 
         <div className={cx('tabPanel', { hidden: activeTab !== 1 })}>

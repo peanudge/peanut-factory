@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import type { AcquisitionPreset, ContinuousSubMode, TriggerModeOption } from '@/api/types'
+import type { AcquisitionConfigPreset, ContinuousSubMode, TriggerModeOption } from '@/api/types'
 import { getCameras } from '@/api/client'
 import { queryKeys } from '@/api/queryKeys'
 
@@ -22,7 +22,7 @@ export function useAcquisitionConfig() {
     }
   }, [cameras, selectedProfile])
 
-  const handleLoadPreset = useCallback((preset: AcquisitionPreset) => {
+  const handleLoadPreset = useCallback((preset: AcquisitionConfigPreset) => {
     setSelectedProfile(preset.profileId)
     setTriggerMode(preset.triggerMode ?? 'soft')
     setFrameCount(preset.frameCount ?? null)

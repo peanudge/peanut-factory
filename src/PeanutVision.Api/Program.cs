@@ -50,7 +50,7 @@ builder.Services.AddScoped<ICapturedImageRepository, CapturedImageRepository>();
 builder.Services.AddSingleton<IThumbnailService, ThumbnailService>();
 
 var presetsPath = Path.Combine(builder.Environment.ContentRootPath, "acquisition-presets.json");
-builder.Services.AddSingleton<IAcquisitionPresetService>(new AcquisitionPresetService(presetsPath));
+builder.Services.AddSingleton<IAcquisitionConfigPresetService>(new AcquisitionConfigPresetService(presetsPath));
 
 builder.Services.Configure<LatencyRepositoryOptions>(
     builder.Configuration.GetSection("LatencyRepository"));

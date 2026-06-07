@@ -82,6 +82,170 @@
   flex-direction: column;
 }
 
+// ── Input mode toggle ──
+
+.modeToggle {
+  display: flex;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.modeBtn {
+  flex: 1;
+  padding: 7px 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+
+  &.active {
+    background: var(--color-accent);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  &:hover:not(.active) { background: var(--bg-hover); }
+}
+
+// ── Preset list ──
+
+.presetList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.presetItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+
+  &:hover { background: var(--bg-hover); }
+
+  &.selected {
+    border-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  }
+}
+
+.presetInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.presetName {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.presetMeta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.deleteBtn {
+  flex-shrink: 0;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+
+  &:hover:not(:disabled) { color: var(--color-danger, #ef4444); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.savePresetBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  background: none;
+  border: 1px solid var(--border-default);
+  border-radius: 5px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  align-self: flex-start;
+
+  &:hover:not(:disabled) { border-color: var(--color-accent); color: var(--color-accent); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.startBtn {
+  width: 100%;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.empty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 16px 0;
+}
+
+.field {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 5px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  box-sizing: border-box;
+
+  &:focus { outline: none; border-color: var(--color-accent); }
+}
+
+.meta {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.btn {
+  padding: 7px 14px;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  cursor: pointer;
+
+  &.primary {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  &.success {
+    background: var(--color-success, #22c55e);
+    border-color: transparent;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  &:hover:not(:disabled) { opacity: 0.88; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
 // ── Active view (readonly) ──
 
 .activeView {

@@ -7,23 +7,23 @@ namespace PeanutVision.Api.Controllers;
 [Route("api/presets")]
 public class PresetController : ControllerBase
 {
-    private readonly IAcquisitionPresetService _presets;
+    private readonly IAcquisitionConfigPresetService _presets;
 
-    public PresetController(IAcquisitionPresetService presets) => _presets = presets;
+    public PresetController(IAcquisitionConfigPresetService presets) => _presets = presets;
 
     [HttpGet]
-    public ActionResult<IReadOnlyList<AcquisitionPreset>> GetAll()
+    public ActionResult<IReadOnlyList<AcquisitionConfigPreset>> GetAll()
         => Ok(_presets.GetAll());
 
     [HttpGet("{name}")]
-    public ActionResult<AcquisitionPreset> GetByName(string name)
+    public ActionResult<AcquisitionConfigPreset> GetByName(string name)
     {
         var preset = _presets.GetByName(name);
         return preset is null ? NotFound(new { error = $"Preset '{name}' not found" }) : Ok(preset);
     }
 
     [HttpPut]
-    public async Task<ActionResult<AcquisitionPreset>> Save([FromBody] AcquisitionPreset preset)
+    public async Task<ActionResult<AcquisitionConfigPreset>> Save([FromBody] AcquisitionConfigPreset preset)
     {
         if (string.IsNullOrWhiteSpace(preset.Name))
             return BadRequest(new { error = "Preset name is required" });
