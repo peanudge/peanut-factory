@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useLiveStream } from '@/hooks/useLiveStream'
-import { useResizablePanel } from '@/hooks/useResizablePanel'
 import { useAcquisitionConfig } from '@/hooks/useAcquisitionConfig'
 import { useAcquisitionSession } from '@/hooks/useAcquisitionSession'
 import type { AcquisitionConfigPreset, AcquisitionFormConfig } from '@/api/types'
@@ -34,16 +33,10 @@ export default function Acquisition() {
 
   const session = useAcquisitionSession(activeFormConfig)
   const live = useLiveStream()
-  const { panelRef: sidebarRef, onResizerMouseDown } = useResizablePanel({
-    defaultWidth: 340,
-    min: 260,
-    max: 480,
-    direction: 'left',
-  })
 
   return (
     <div className={cx('Acquisition')}>
-      <div ref={sidebarRef} className={cx('sidebar')}>
+      <div className={cx('sidebar')}>
         <CaptureTab
           acqConfig={acqConfig}
           session={session}
@@ -53,8 +46,6 @@ export default function Acquisition() {
           onPresetSelect={setSelectedPreset}
         />
       </div>
-
-      <div className={cx('resizer')} onMouseDown={onResizerMouseDown} />
 
       <div className={cx('canvas')}>
         <div className={cx('imageArea')}>
