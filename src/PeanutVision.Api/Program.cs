@@ -83,11 +83,17 @@ if (useMock)
 // Shutdown phase timing — remove after diagnosis
 var shutdownLogger = app.Logger;
 var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
-var shutdownSw = System.Diagnostics.Stopwatch.StartNew();
+
+System.Diagnostics.Stopwatch? shutdownSw = null;
 lifetime.ApplicationStopping.Register(() =>
-    shutdownLogger.LogWarning("[SHUTDOWN] ApplicationStopping fired (+{Elapsed}ms)", shutdownSw.ElapsedMilliseconds));
+{
+    shutdownSw = System.Diagnostics.Stopwatch.StartNew();
+    shutdownLogger.LogWarning("[SHUTDOWN] ApplicationStopping fired (+{Elapsed}ms)", shutdownSw.ElapsedMilliseconds);
+});
 lifetime.ApplicationStopped.Register(() =>
-    shutdownLogger.LogWarning("[SHUTDOWN] ApplicationStopped fired (+{Elapsed}ms — IHostedService phase done)", shutdownSw.ElapsedMilliseconds));
+{
+    shutdownLogger.LogWarning("[SHUTDOWN] ApplicationStopped fired (+{Elapsed}ms — IHostedService phase done)", shutdownSw?.ElapsedMilliseconds);
+});
 
 // Apply pending EF Core migrations on startup
 using (var scope = app.Services.CreateScope())
