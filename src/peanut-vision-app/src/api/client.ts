@@ -51,6 +51,26 @@ async function request<T>(
   return res.json();
 }
 
+// ── Filesystem ──
+
+export interface DirectoryEntry {
+  name: string
+  path: string
+  hasChildren: boolean
+}
+
+export function getFilesystemRoots(): Promise<string[]> {
+  return request("/filesystem/roots")
+}
+
+export function listDirectory(path: string): Promise<DirectoryEntry[]> {
+  return request(`/filesystem/list?path=${encodeURIComponent(path)}`)
+}
+
+export function validatePath(path: string): Promise<{ writable: boolean; path: string }> {
+  return request(`/filesystem/validate?path=${encodeURIComponent(path)}`)
+}
+
 // ── System ──
 
 export function getBoards(): Promise<BoardInfo[]> {

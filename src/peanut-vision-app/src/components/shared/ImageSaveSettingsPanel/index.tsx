@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Folder } from 'lucide-react'
+import { Folder, FolderSearch } from 'lucide-react'
 import type { ImageSaveSettings, SaveImageFormat } from '@/api/types'
 import { getImageSaveSettings, updateImageSaveSettings } from '@/api/client'
 import { queryKeys } from '@/api/queryKeys'
+import DirectoryBrowser from '@/components/shared/DirectoryBrowser'
 import cx from './cx'
 
 const FORMAT_OPTIONS: { value: SaveImageFormat; label: string }[] = [
@@ -22,6 +23,7 @@ export default function ImageSaveSettingsPanel() {
   const queryClient = useQueryClient()
   const [localSettings, setLocalSettings] = useState<ImageSaveSettings>(DEFAULT_SETTINGS)
   const [saved, setSaved] = useState(false)
+  const [browserOpen, setBrowserOpen] = useState(false)
 
   const { data: serverSettings } = useQuery({
     queryKey: queryKeys.imageSaveSettings,
@@ -55,11 +57,21 @@ export default function ImageSaveSettingsPanel() {
         <div className={cx('row')}>
           <div className={cx('field')} style={{ flexGrow: 1, minWidth: 220 }}>
             <label>Output Directory</label>
-            <input
-              type="text"
-              value={localSettings.outputDirectory}
-              onChange={(e) => update('outputDirectory', e.target.value)}
-            />
+            <div className={cx('dirRow')}>
+              <input
+                type="text"
+                value={localSettings.outputDirectory}
+                onChange={(e) => update('outputDirectory', e.target.value)}
+              />
+              <button
+                type="button"
+                className={cx('browseBtn')}
+                onClick={() => setBrowserOpen(true)}
+                title="Browse directory"
+              >
+                <FolderSearch size={14} />
+              </button>
+            </div>
             <small>Tokens: {'{date}'} → yyyy-MM-dd, {'{profile}'} → cam file name</small>
           </div>
           <div className={cx('field')} style={{ width: 110 }}>
@@ -109,6 +121,13 @@ export default function ImageSaveSettingsPanel() {
         )}
         {saved && <div className={cx('alert', 'success')}>Settings saved</div>}
       </div>
+
+      <DirectoryBrowser
+        open={browserOpen}
+        currentPath={localSettings.outputDirectory}
+        onSelect={(path) => update('outputDirectory', path)}
+        onClose={() => setBrowserOpen(false)}
+      />
     </details>
   )
 }
