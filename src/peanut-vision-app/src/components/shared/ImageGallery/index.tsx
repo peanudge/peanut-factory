@@ -1,4 +1,5 @@
-import { RefreshCw, Trash2, X } from 'lucide-react'
+import { useState } from 'react'
+import { Filter, RefreshCw, Trash2, X } from 'lucide-react'
 import { thumbnailUrl } from '@/api/client'
 import type { CapturedImageRecord } from '@/api/types'
 import { formatTime } from '@/utils/formatTimestamp'
@@ -29,35 +30,33 @@ export default function ImageGallery({
   isLoading,
   onRefresh,
 }: Props) {
+  const [filterOpen, setFilterOpen] = useState(false)
+  const isFiltered = !!(dateFrom || dateTo)
+
+  const handleToggleFilter = () => {
+    if (filterOpen && isFiltered) {
+      onDateFromChange(null)
+      onDateToChange(null)
+    }
+    setFilterOpen((prev) => !prev)
+  }
+
   return (
     <div className={cx('wrap')}>
-      {/* Date range filter + refresh */}
-      <div className={cx('filterRow')}>
-        <input
-          type="date"
-          className={cx('dateInput')}
-          value={dateFrom ?? ''}
-          onChange={(e) => onDateFromChange(e.target.value || null)}
-        />
-        <span>–</span>
-        <input
-          type="date"
-          className={cx('dateInput')}
-          value={dateTo ?? ''}
-          onChange={(e) => onDateToChange(e.target.value || null)}
-        />
-        {(dateFrom || dateTo) && (
-          <button
-            type="button"
-            className={cx('clearBtn')}
-            onClick={() => { onDateFromChange(null); onDateToChange(null) }}
-          >
-            <X size={14} />
-          </button>
-        )}
+      {/* Toolbar */}
+      <div className={cx('toolbar')}>
         <button
           type="button"
-          className={cx('refreshBtn')}
+          className={cx('iconBtn', { active: isFiltered })}
+          onClick={handleToggleFilter}
+          title={isFiltered ? 'Clear date filter' : 'Filter by date'}
+        >
+          <Filter size={14} />
+          {isFiltered && <span className={cx('badge')} />}
+        </button>
+        <button
+          type="button"
+          className={cx('iconBtn')}
           onClick={onRefresh}
           disabled={isLoading}
           title="Refresh"
@@ -65,6 +64,35 @@ export default function ImageGallery({
           <RefreshCw size={14} />
         </button>
       </div>
+
+      {/* Date range inputs — visible only when filter is open */}
+      {filterOpen && (
+        <div className={cx('filterRow')}>
+          <input
+            type="date"
+            className={cx('dateInput')}
+            value={dateFrom ?? ''}
+            onChange={(e) => onDateFromChange(e.target.value || null)}
+          />
+          <span>–</span>
+          <input
+            type="date"
+            className={cx('dateInput')}
+            value={dateTo ?? ''}
+            onChange={(e) => onDateToChange(e.target.value || null)}
+          />
+          {isFiltered && (
+            <button
+              type="button"
+              className={cx('clearBtn')}
+              onClick={() => { onDateFromChange(null); onDateToChange(null) }}
+              title="Clear filter"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Loading */}
       {isLoading && (
