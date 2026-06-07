@@ -166,6 +166,21 @@
   max-width: 100%;
 }
 
+.presetActionBtn {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  background: none;
+  border: none;
+  border-left: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.12s, background 0.1s;
+
+  &:hover:not(:disabled) { color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 6%, transparent); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
 .presetDeleteBtn {
   display: flex;
   align-items: center;
@@ -207,6 +222,99 @@
     text-align: right;
     word-break: break-all;
   }
+}
+
+// ── Edit form (inside Modal) ──
+
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.editLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.editFieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+
+  legend {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    padding: 0;
+    margin-bottom: 6px;
+    float: left;
+    width: 100%;
+  }
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+}
+
+.editDirRow {
+  display: flex;
+  gap: 4px;
+
+  input { flex: 1; min-width: 0; }
+}
+
+.editIntervalRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  input {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+  }
+
+  button {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--bg-surface-raised);
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    &:hover:not(:disabled) { color: var(--text-primary); }
+    &:disabled { opacity: 0.35; cursor: not-allowed; }
+  }
+
+  span {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+}
+
+.inputError {
+  border-color: var(--color-error, #ef4444) !important;
+}
+
+.editError {
+  font-size: 0.72rem;
+  color: var(--color-error, #ef4444);
 }
 
 .canvas {
