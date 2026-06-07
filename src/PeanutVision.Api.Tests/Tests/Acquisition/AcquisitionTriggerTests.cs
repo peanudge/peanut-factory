@@ -1,14 +1,14 @@
 using System.Net;
 using PeanutVision.Api.Tests.Infrastructure;
 
-namespace PeanutVision.Api.Tests.Specs.Acquisition;
+namespace PeanutVision.Api.Tests.Tests.Acquisition;
 
-public class AcquisitionTriggerSpec : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
+public class AcquisitionTriggerTests : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
 {
     private readonly PeanutVisionApiFactory _factory;
     private readonly HttpClient _client;
 
-    public AcquisitionTriggerSpec(PeanutVisionApiFactory factory)
+    public AcquisitionTriggerTests(PeanutVisionApiFactory factory)
     {
         _factory = factory;
         _client = factory.CreateClient();

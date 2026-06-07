@@ -2,14 +2,14 @@ using System.Net;
 using System.Text.Json;
 using PeanutVision.Api.Tests.Infrastructure;
 
-namespace PeanutVision.Api.Tests.Specs.Acquisition;
+namespace PeanutVision.Api.Tests.Tests.Acquisition;
 
-public class AcquisitionConfigPresetSpec : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
+public class AcquisitionConfigPresetTests : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
 {
     private readonly HttpClient _client;
     private readonly string _testPresetName = $"test-preset-{Guid.NewGuid():N}";
 
-    public AcquisitionConfigPresetSpec(PeanutVisionApiFactory factory)
+    public AcquisitionConfigPresetTests(PeanutVisionApiFactory factory)
     {
         _client = factory.CreateClient();
     }

@@ -1,13 +1,13 @@
 using System.Net;
 using PeanutVision.Api.Tests.Infrastructure;
 
-namespace PeanutVision.Api.Tests.Specs.Acquisition;
+namespace PeanutVision.Api.Tests.Tests.Acquisition;
 
-public class AcquisitionLatestFrameSpec : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
+public class AcquisitionLatestFrameTests : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
 {
     private readonly HttpClient _client;
 
-    public AcquisitionLatestFrameSpec(PeanutVisionApiFactory factory)
+    public AcquisitionLatestFrameTests(PeanutVisionApiFactory factory)
     {
         _client = factory.CreateClient();
     }

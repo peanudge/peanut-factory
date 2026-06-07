@@ -2,16 +2,16 @@ using System.Net;
 using System.Text.Json;
 using PeanutVision.Api.Tests.Infrastructure;
 
-namespace PeanutVision.Api.Tests.Specs.Acquisition;
+namespace PeanutVision.Api.Tests.Tests.Acquisition;
 
 /// <summary>
 /// Verifies GET /api/images date range filter (replaced session filter).
 /// </summary>
-public class ImagesDateFilterSpec : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
+public class ImagesDateFilterTests : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
 {
     private readonly HttpClient _client;
 
-    public ImagesDateFilterSpec(PeanutVisionApiFactory factory)
+    public ImagesDateFilterTests(PeanutVisionApiFactory factory)
     {
         _client = factory.CreateClient();
     }

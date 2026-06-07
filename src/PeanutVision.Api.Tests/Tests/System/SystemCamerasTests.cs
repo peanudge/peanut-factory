@@ -1,13 +1,13 @@
 using System.Net;
 using PeanutVision.Api.Tests.Infrastructure;
 
-namespace PeanutVision.Api.Tests.Specs.System;
+namespace PeanutVision.Api.Tests.Tests.System;
 
-public class SystemCamerasSpec : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
+public class SystemCamerasTests : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
 {
     private readonly HttpClient _client;
 
-    public SystemCamerasSpec(PeanutVisionApiFactory factory)
+    public SystemCamerasTests(PeanutVisionApiFactory factory)
     {
         _client = factory.CreateClient();
     }

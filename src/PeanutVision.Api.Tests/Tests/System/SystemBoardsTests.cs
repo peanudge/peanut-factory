@@ -2,14 +2,14 @@ using System.Net;
 using System.Text.Json;
 using PeanutVision.Api.Tests.Infrastructure;
 
-namespace PeanutVision.Api.Tests.Specs.System;
+namespace PeanutVision.Api.Tests.Tests.System;
 
-public class SystemBoardsSpec : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
+public class SystemBoardsTests : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
 {
     private readonly PeanutVisionApiFactory _factory;
     private readonly HttpClient _client;
 
-    public SystemBoardsSpec(PeanutVisionApiFactory factory)
+    public SystemBoardsTests(PeanutVisionApiFactory factory)
     {
         _factory = factory;
         _client = factory.CreateClient();

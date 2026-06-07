@@ -2,17 +2,17 @@ using System.Net;
 using System.Text.Json;
 using PeanutVision.Api.Tests.Infrastructure;
 
-namespace PeanutVision.Api.Tests.Specs.Acquisition;
+namespace PeanutVision.Api.Tests.Tests.Acquisition;
 
 /// <summary>
 /// Verifies the headless save flow that replaced the removed Snapshot endpoint:
 /// POST /start {frameCount:1} → frame arrives → AutoSaveService saves to disk + DB.
 /// </summary>
-public class AcquisitionAutoSaveSpec : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
+public class AcquisitionAutoSaveTests : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
 {
     private readonly HttpClient _client;
 
-    public AcquisitionAutoSaveSpec(PeanutVisionApiFactory factory)
+    public AcquisitionAutoSaveTests(PeanutVisionApiFactory factory)
     {
         _client = factory.CreateClient();
     }

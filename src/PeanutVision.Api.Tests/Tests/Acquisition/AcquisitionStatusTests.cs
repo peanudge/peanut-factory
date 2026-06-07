@@ -2,13 +2,13 @@ using System.Net;
 using System.Text.Json;
 using PeanutVision.Api.Tests.Infrastructure;
 
-namespace PeanutVision.Api.Tests.Specs.Acquisition;
+namespace PeanutVision.Api.Tests.Tests.Acquisition;
 
-public class AcquisitionStatusSpec : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
+public class AcquisitionStatusTests : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
 {
     private readonly HttpClient _client;
 
-    public AcquisitionStatusSpec(PeanutVisionApiFactory factory)
+    public AcquisitionStatusTests(PeanutVisionApiFactory factory)
     {
         _client = factory.CreateClient();
     }

@@ -1,14 +1,14 @@
 using System.Net;
 using PeanutVision.Api.Tests.Infrastructure;
 
-namespace PeanutVision.Api.Tests.Specs.Acquisition;
+namespace PeanutVision.Api.Tests.Tests.Acquisition;
 
-public class AcquisitionStartSpec : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
+public class AcquisitionStartTests : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
 {
     private readonly PeanutVisionApiFactory _factory;
     private readonly HttpClient _client;
 
-    public AcquisitionStartSpec(PeanutVisionApiFactory factory)
+    public AcquisitionStartTests(PeanutVisionApiFactory factory)
     {
         _factory = factory;
         _client = factory.CreateClient();
