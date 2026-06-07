@@ -100,12 +100,12 @@ describe('Trigger mode', () => {
 
   it('shows interval input when 자동 selected', () => {
     renderSettings({ config: { ...BASE_CONFIG, acquisitionMode: 'auto' } })
-    expect(screen.getByPlaceholderText('1')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('1000')).toBeInTheDocument()
   })
 
   it('hides interval input when 수동 selected', () => {
     renderSettings({ config: { ...BASE_CONFIG, acquisitionMode: 'manual' } })
-    expect(screen.queryByPlaceholderText('1')).not.toBeInTheDocument()
+    expect(screen.queryByPlaceholderText('1000')).not.toBeInTheDocument()
   })
 
   it('calls onChange("acquisitionMode", "auto") when 자동 clicked', () => {
@@ -115,10 +115,10 @@ describe('Trigger mode', () => {
     expect(onChange).toHaveBeenCalledWith('acquisitionMode', 'auto')
   })
 
-  it('calls onChange("intervalMs", 500) when interval set to 0.5', () => {
+  it('calls onChange("intervalMs", 500) when interval set to 500', () => {
     const onChange = vi.fn()
     renderSettings({ onChange, config: { ...BASE_CONFIG, acquisitionMode: 'auto' } })
-    fireEvent.change(screen.getByPlaceholderText('1'), { target: { value: '0.5' } })
+    fireEvent.change(screen.getByPlaceholderText('1000'), { target: { value: '500' } })
     expect(onChange).toHaveBeenCalledWith('intervalMs', 500)
   })
 })

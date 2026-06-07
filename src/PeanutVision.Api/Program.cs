@@ -5,6 +5,8 @@ using PeanutVision.Api.Services;
 using PeanutVision.FakeCamDriver;
 using PeanutVision.MultiCamDriver;
 
+System.Diagnostics.Trace.Listeners.Add(new System.Diagnostics.ConsoleTraceListener());
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure cam file directory from appsettings.json (relative to project root)
