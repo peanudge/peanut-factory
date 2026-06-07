@@ -5,18 +5,17 @@ import { queryKeys } from '@/api/queryKeys'
 import { useToast } from '@/contexts/ToastContext'
 import type { CapturedImageRecord } from '@/api/types'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 100
 
 export function useImageGallery() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
-  const [page, setPage] = useState(1)
   const [dateFrom, setDateFrom] = useState<string | null>(null)
   const [dateTo, setDateTo] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const queryParams = {
-    page,
+    page: 1,
     pageSize: PAGE_SIZE,
     ...(dateFrom ? { dateFrom } : {}),
     ...(dateTo ? { dateTo } : {}),
@@ -54,10 +53,6 @@ export function useImageGallery() {
 
   return {
     images,
-    totalCount: data?.totalCount ?? 0,
-    totalPages: data?.totalPages ?? 0,
-    page,
-    setPage,
     isLoading,
     dateFrom,
     setDateFrom,

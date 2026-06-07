@@ -1,4 +1,4 @@
-import { ChevronDown, RefreshCw, Trash2, X } from 'lucide-react'
+import { RefreshCw, Trash2, X } from 'lucide-react'
 import { thumbnailUrl } from '@/api/client'
 import type { CapturedImageRecord } from '@/api/types'
 import { formatTime } from '@/utils/formatTimestamp'
@@ -9,9 +9,6 @@ interface Props {
   selectedId: string | null
   onSelect: (id: string) => void
   onDelete: (id: string) => void
-  page: number
-  totalPages: number
-  onPageChange: (p: number) => void
   dateFrom: string | null
   dateTo: string | null
   onDateFromChange: (v: string | null) => void
@@ -25,9 +22,6 @@ export default function ImageGallery({
   selectedId,
   onSelect,
   onDelete,
-  page,
-  totalPages,
-  onPageChange,
   dateFrom,
   dateTo,
   onDateFromChange,
@@ -98,9 +92,7 @@ export default function ImageGallery({
                 <img
                   src={thumbnailUrl(img.id)}
                   alt={img.filename}
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none'
-                  }}
+                  onError={(e) => { e.currentTarget.style.display = 'none' }}
                 />
               ) : (
                 <div className={cx('placeholder')}>{img.format}</div>
@@ -108,10 +100,7 @@ export default function ImageGallery({
               <button
                 type="button"
                 className={cx('deleteBtn')}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onDelete(img.id)
-                }}
+                onClick={(e) => { e.stopPropagation(); onDelete(img.id) }}
               >
                 <X size={10} />
               </button>
@@ -120,20 +109,10 @@ export default function ImageGallery({
         </div>
       )}
 
-      {/* Bottom actions */}
-      <div className={cx('actions')}>
-        {page < totalPages ? (
-          <button
-            type="button"
-            className={cx('loadMoreBtn')}
-            onClick={() => onPageChange(page + 1)}
-          >
-            <ChevronDown size={13} /> Load more
-          </button>
-        ) : (
+      {/* Clear all */}
+      {images.length > 0 && (
+        <div className={cx('actions')}>
           <span />
-        )}
-        {images.length > 0 && page === 1 && (
           <button
             type="button"
             className={cx('clearBtn')}
@@ -141,8 +120,8 @@ export default function ImageGallery({
           >
             <Trash2 size={13} /> Clear All
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

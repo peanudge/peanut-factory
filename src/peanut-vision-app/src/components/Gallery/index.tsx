@@ -8,7 +8,6 @@ export default function Gallery() {
 
   return (
     <div className={cx('Gallery')}>
-      {/* Left: selected image viewer */}
       <div className={cx('viewer')}>
         <ImageViewer
           url={gallery.selectedImageUrl}
@@ -21,16 +20,12 @@ export default function Gallery() {
         />
       </div>
 
-      {/* Right: gallery grid */}
       <div className={cx('gridPane')}>
         <ImageGallery
           images={gallery.images}
           selectedId={gallery.selectedId}
           onSelect={gallery.setSelectedId}
           onDelete={gallery.handleDelete}
-          page={gallery.page}
-          totalPages={gallery.totalPages}
-          onPageChange={gallery.setPage}
           dateFrom={gallery.dateFrom}
           dateTo={gallery.dateTo}
           onDateFromChange={gallery.setDateFrom}
