@@ -16,6 +16,9 @@ interface SessionConfig {
   frameCount: number | null
   intervalMs: number | null
   acquisitionMode: AcquisitionMode
+  outputDirectory: string
+  format: string
+  autoSave: boolean
 }
 
 export function useAcquisitionSession(config: SessionConfig) {
@@ -40,11 +43,14 @@ export function useAcquisitionSession(config: SessionConfig) {
 
   const startMutation = useMutation({
     mutationFn: () =>
-      startAcquisition(
-        config.selectedProfile,
-        config.frameCount,
-        config.acquisitionMode === 'auto' ? config.intervalMs : null,
-      ),
+      startAcquisition({
+        profileId: config.selectedProfile,
+        frameCount: config.frameCount,
+        intervalMs: config.acquisitionMode === 'auto' ? config.intervalMs : null,
+        outputDirectory: config.outputDirectory,
+        format: config.format,
+        autoSave: config.autoSave,
+      }),
     onSuccess: () => {
       invalidateStatus()
       toast('촬영이 시작되었습니다', 'success')

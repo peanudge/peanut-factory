@@ -10,7 +10,6 @@ public class AutoSaveServiceTests : IDisposable
 {
     private readonly string _tempDir;
     private readonly FakeAcquisitionService _acquisition;
-    private readonly FakeSaveSettingsService _saveSettings;
     private readonly FrameSaveTracker _tracker;
     private readonly FilenameGenerator _filenameGenerator;
     private readonly FakeThumbnailService _thumbnailService;
@@ -22,8 +21,7 @@ public class AutoSaveServiceTests : IDisposable
         _tempDir = Path.Combine(Path.GetTempPath(), $"autosave_test_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempDir);
 
-        _acquisition = new FakeAcquisitionService();
-        _saveSettings = new FakeSaveSettingsService(_tempDir);
+        _acquisition = new FakeAcquisitionService(_tempDir);
         _tracker = new FrameSaveTracker();
         _filenameGenerator = new FilenameGenerator();
         _thumbnailService = new FakeThumbnailService();
@@ -38,7 +36,7 @@ public class AutoSaveServiceTests : IDisposable
     }
 
     private AutoSaveService BuildService() =>
-        new(_acquisition, _saveSettings, _filenameGenerator, _tracker,
+        new(_acquisition, _filenameGenerator, _tracker,
             _thumbnailService, _scopeFactory, _environment);
 
     private static ImageData MakeFrame() =>
@@ -52,7 +50,7 @@ public class AutoSaveServiceTests : IDisposable
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
 
-        _saveSettings.AutoSave = false; // prevent actual save
+        _acquisition.AutoSave = false; // prevent actual save
         _acquisition.SimulateFrame(MakeFrame());
 
         // If subscribed, OnFrameAcquired ran — no exception means event handler was wired
@@ -66,7 +64,7 @@ public class AutoSaveServiceTests : IDisposable
         await svc.StartAsync(CancellationToken.None);
         await svc.StopAsync(CancellationToken.None);
 
-        _saveSettings.AutoSave = true;
+        _acquisition.AutoSave = true;
         _acquisition.SimulateFrame(MakeFrame());
 
         await Task.Delay(100); // give fire-and-forget time to run if it leaked
@@ -78,7 +76,7 @@ public class AutoSaveServiceTests : IDisposable
     [Fact]
     public async Task When_autosave_disabled_no_file_is_written()
     {
-        _saveSettings.AutoSave = false;
+        _acquisition.AutoSave = false;
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
 
@@ -93,7 +91,7 @@ public class AutoSaveServiceTests : IDisposable
     [Fact]
     public async Task When_latest_frame_is_null_no_file_is_written()
     {
-        _saveSettings.AutoSave = true;
+        _acquisition.AutoSave = true;
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
 
@@ -108,7 +106,7 @@ public class AutoSaveServiceTests : IDisposable
     [Fact]
     public async Task Same_frame_reference_saved_only_once()
     {
-        _saveSettings.AutoSave = true;
+        _acquisition.AutoSave = true;
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
 
@@ -124,7 +122,7 @@ public class AutoSaveServiceTests : IDisposable
     [Fact]
     public async Task Different_frames_each_saved()
     {
-        _saveSettings.AutoSave = true;
+        _acquisition.AutoSave = true;
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
 
@@ -141,7 +139,7 @@ public class AutoSaveServiceTests : IDisposable
     [Fact]
     public async Task When_autosave_enabled_new_frame_writes_png_file()
     {
-        _saveSettings.AutoSave = true;
+        _acquisition.AutoSave = true;
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
 
@@ -156,7 +154,7 @@ public class AutoSaveServiceTests : IDisposable
     [Fact]
     public async Task Saved_file_has_valid_png_magic_bytes()
     {
-        _saveSettings.AutoSave = true;
+        _acquisition.AutoSave = true;
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
 
@@ -171,7 +169,7 @@ public class AutoSaveServiceTests : IDisposable
     [Fact]
     public async Task Repository_AddAsync_called_after_save()
     {
-        _saveSettings.AutoSave = true;
+        _acquisition.AutoSave = true;
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
 
@@ -186,7 +184,7 @@ public class AutoSaveServiceTests : IDisposable
     [Fact]
     public async Task Save_failure_does_not_throw_or_crash()
     {
-        _saveSettings.AutoSave = true;
+        _acquisition.AutoSave = true;
         _scopeFactory.FakeImageRepo.ThrowOnAdd = true;
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
@@ -203,7 +201,12 @@ public class AutoSaveServiceTests : IDisposable
 
 internal sealed class FakeAcquisitionService : IAcquisitionSession
 {
+    private readonly string _outputDir;
     private ImageData? _frame;
+
+    public bool AutoSave { get; set; } = true;
+
+    public FakeAcquisitionService(string outputDir) => _outputDir = outputDir;
 
     public event EventHandler? FrameAcquired;
     public event EventHandler? StatusChanged { add { } remove { } }
@@ -218,7 +221,12 @@ internal sealed class FakeAcquisitionService : IAcquisitionSession
 
     public AcquisitionStatus GetStatus() => new(
         ChannelState: ChannelState.None,
-        ActiveConfig: null,
+        ActiveConfig: new AcquisitionConfig(
+            new ProfileId("cam.cam"),
+            OutputDirectory: _outputDir,
+            Format: SaveImageFormat.Png,
+            AutoSave: AutoSave
+        ),
         HasFrame: _frame != null,
         LastError: null,
         Statistics: null,
@@ -232,23 +240,6 @@ internal sealed class FakeAcquisitionService : IAcquisitionSession
     public Task<ImageData> TriggerAsync(int timeoutMs = 5000) =>
         Task.FromResult(new ImageData(new byte[3], 1, 1, 3));
     public void Dispose() { }
-}
-
-internal sealed class FakeSaveSettingsService : IImageSaveSettingsService
-{
-    private readonly string _outputDir;
-    public bool AutoSave { get; set; } = true;
-
-    public FakeSaveSettingsService(string outputDir) => _outputDir = outputDir;
-
-    public ImageSaveSettings GetSettings() => new()
-    {
-        AutoSave = AutoSave,
-        OutputDirectory = _outputDir,
-        Format = SaveImageFormat.Png,
-    };
-
-    public Task SaveSettingsAsync(ImageSaveSettings settings) => Task.CompletedTask;
 }
 
 internal sealed class FakeThumbnailService : IThumbnailService

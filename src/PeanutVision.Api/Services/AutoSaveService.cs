@@ -5,7 +5,6 @@ namespace PeanutVision.Api.Services;
 public sealed class AutoSaveService : IHostedService
 {
     private readonly IAcquisitionSession _acquisition;
-    private readonly IImageSaveSettingsService _saveSettings;
     private readonly FilenameGenerator _filenameGenerator;
     private readonly FrameSaveTracker _frameSaveTracker;
     private readonly IThumbnailService _thumbnailService;
@@ -14,7 +13,6 @@ public sealed class AutoSaveService : IHostedService
 
     public AutoSaveService(
         IAcquisitionSession acquisition,
-        IImageSaveSettingsService saveSettings,
         FilenameGenerator filenameGenerator,
         FrameSaveTracker frameSaveTracker,
         IThumbnailService thumbnailService,
@@ -22,7 +20,6 @@ public sealed class AutoSaveService : IHostedService
         IWebHostEnvironment environment)
     {
         _acquisition = acquisition;
-        _saveSettings = saveSettings;
         _filenameGenerator = filenameGenerator;
         _frameSaveTracker = frameSaveTracker;
         _thumbnailService = thumbnailService;
@@ -44,23 +41,22 @@ public sealed class AutoSaveService : IHostedService
 
     private void OnFrameAcquired(object? sender, EventArgs e)
     {
-        var settings = _saveSettings.GetSettings();
-        if (!settings.AutoSave)
+        var config = _acquisition.GetStatus().ActiveConfig;
+        if (config == null || !config.AutoSave)
             return;
 
         var frame = _acquisition.GetLatestFrame();
         if (frame == null || !_frameSaveTracker.ShouldSave(frame))
             return;
 
-        var profileId = _acquisition.GetStatus().ActiveConfig?.ProfileId.Value;
-        _ = SaveAsync(frame, settings, profileId);
+        _ = SaveAsync(frame, config);
     }
 
-    private async Task SaveAsync(ImageData image, ImageSaveSettings settings, string? profileId)
+    private async Task SaveAsync(ImageData image, AcquisitionConfig config)
     {
         try
         {
-            var filePath = _filenameGenerator.Generate(settings, _environment.ContentRootPath, profileId);
+            var filePath = _filenameGenerator.Generate(config, _environment.ContentRootPath);
             new ImageWriter().Save(image, filePath);
 
             var thumbPath = await _thumbnailService.GenerateAsync(filePath);
@@ -77,7 +73,7 @@ public sealed class AutoSaveService : IHostedService
                 Width = image.Width,
                 Height = image.Height,
                 FileSizeBytes = fileInfo.Exists ? fileInfo.Length : 0,
-                Format = settings.Format.ToString().ToLower(),
+                Format = config.Format.ToString().ToLower(),
                 CapturedAt = DateTime.UtcNow,
             });
         }

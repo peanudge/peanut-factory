@@ -6,6 +6,9 @@ import AcquisitionSettings from '@/components/shared/AcquisitionSettings'
 vi.mock('@/components/shared/AcquisitionSettings/cx', () => ({
   default: (...args: string[]) => args.filter(Boolean).join(' '),
 }))
+vi.mock('@/components/shared/DirectoryBrowser', () => ({
+  default: () => null,
+}))
 
 const defaultProps = {
   acquisitionMode: 'auto' as const,
@@ -14,6 +17,12 @@ const defaultProps = {
   onFrameCountChange: vi.fn(),
   intervalMs: null,
   onIntervalMsChange: vi.fn(),
+  outputDirectory: 'CapturedImages',
+  onOutputDirectoryChange: vi.fn(),
+  format: 'png' as const,
+  onFormatChange: vi.fn(),
+  autoSave: true,
+  onAutoSaveChange: vi.fn(),
   disabled: false,
 }
 

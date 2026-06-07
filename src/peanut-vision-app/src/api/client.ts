@@ -5,7 +5,6 @@ import type {
   CamFileInfo,
   AcquisitionStatus,
   ApiMessage,
-  ImageSaveSettings,
   HistogramData,
   AcquisitionConfigPreset,
   ImagePage,
@@ -87,14 +86,19 @@ export function getCameras(): Promise<CamFileInfo[]> {
 
 // ── Acquisition ──
 
-export function startAcquisition(
-  profileId: string,
-  frameCount?: number | null,
-  intervalMs?: number | null,
-): Promise<ApiMessage & { profileId: string }> {
+export interface StartAcquisitionParams {
+  profileId: string
+  frameCount?: number | null
+  intervalMs?: number | null
+  outputDirectory?: string
+  format?: string
+  autoSave?: boolean
+}
+
+export function startAcquisition(params: StartAcquisitionParams): Promise<ApiMessage & { profileId: string }> {
   return request("/acquisition/start", {
     method: "POST",
-    body: JSON.stringify({ profileId, frameCount, intervalMs }),
+    body: JSON.stringify(params),
   });
 }
 
@@ -128,21 +132,6 @@ export async function getHistogram(): Promise<HistogramData | null> {
   if (res.status === 204) return null;
   if (!res.ok) await handleErrorResponse(res);
   return res.json();
-}
-
-// ── Settings ──
-
-export function getImageSaveSettings(): Promise<ImageSaveSettings> {
-  return request("/settings/image-save");
-}
-
-export function updateImageSaveSettings(
-  settings: ImageSaveSettings,
-): Promise<ImageSaveSettings> {
-  return request("/settings/image-save", {
-    method: "PUT",
-    body: JSON.stringify(settings),
-  });
 }
 
 // ── Presets ──

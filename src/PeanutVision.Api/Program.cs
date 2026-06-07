@@ -38,8 +38,6 @@ else
     builder.Services.AddGrabService(autoInitialize: true);
 }
 
-var saveSettingsPath = Path.Combine(builder.Environment.ContentRootPath, "image-save-settings.json");
-builder.Services.AddSingleton<IImageSaveSettingsService>(new ImageSaveSettingsService(saveSettingsPath));
 builder.Services.AddSingleton<FilenameGenerator>();
 builder.Services.AddSingleton<FrameSaveTracker>();
 

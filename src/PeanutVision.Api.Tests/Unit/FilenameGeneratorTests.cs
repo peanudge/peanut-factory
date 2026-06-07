@@ -18,12 +18,12 @@ public sealed class FilenameGeneratorTests : IDisposable
             Directory.Delete(_root, recursive: true);
     }
 
-    private static ImageSaveSettings PngSettings(string outputDir) => new()
-    {
-        OutputDirectory = outputDir,
-        Format = SaveImageFormat.Png,
-        AutoSave = true,
-    };
+    private static AcquisitionConfig PngConfig(string outputDir, string? profileId = null) => new(
+        new ProfileId(profileId ?? "cam.cam"),
+        OutputDirectory: outputDir,
+        Format: SaveImageFormat.Png,
+        AutoSave: true
+    );
 
     // ── 디렉토리 경로 ──
 
@@ -31,7 +31,7 @@ public sealed class FilenameGeneratorTests : IDisposable
     public void Empty_outputDirectory_uses_CapturedImages_under_root()
     {
         var gen = new FilenameGenerator();
-        var path = gen.Generate(PngSettings(""), _root);
+        var path = gen.Generate(PngConfig(""), _root);
 
         Assert.StartsWith(Path.Combine(_root, "CapturedImages"), path);
     }
@@ -40,7 +40,7 @@ public sealed class FilenameGeneratorTests : IDisposable
     public void Whitespace_outputDirectory_uses_CapturedImages_under_root()
     {
         var gen = new FilenameGenerator();
-        var path = gen.Generate(PngSettings("   "), _root);
+        var path = gen.Generate(PngConfig("   "), _root);
 
         Assert.StartsWith(Path.Combine(_root, "CapturedImages"), path);
     }
@@ -50,7 +50,7 @@ public sealed class FilenameGeneratorTests : IDisposable
     {
         var absDir = Path.Combine(_root, "absolute");
         var gen = new FilenameGenerator();
-        var path = gen.Generate(PngSettings(absDir), _root);
+        var path = gen.Generate(PngConfig(absDir), _root);
 
         Assert.StartsWith(absDir, path);
     }
@@ -59,7 +59,7 @@ public sealed class FilenameGeneratorTests : IDisposable
     public void Relative_outputDirectory_is_combined_with_root()
     {
         var gen = new FilenameGenerator();
-        var path = gen.Generate(PngSettings("relative/sub"), _root);
+        var path = gen.Generate(PngConfig("relative/sub"), _root);
 
         Assert.StartsWith(Path.Combine(_root, "relative", "sub"), path);
     }
@@ -68,7 +68,7 @@ public sealed class FilenameGeneratorTests : IDisposable
     public void Date_token_expands_to_yyyy_MM_dd()
     {
         var gen = new FilenameGenerator();
-        var path = gen.Generate(PngSettings("{date}"), _root);
+        var path = gen.Generate(PngConfig("{date}"), _root);
 
         var today = DateTime.Now.ToString("yyyy-MM-dd");
         Assert.Contains(today, path);
@@ -78,18 +78,9 @@ public sealed class FilenameGeneratorTests : IDisposable
     public void Profile_token_expands_to_sanitized_profileId()
     {
         var gen = new FilenameGenerator();
-        var path = gen.Generate(PngSettings("{profile}"), _root, "crevis-tc-a160k");
+        var path = gen.Generate(PngConfig("{profile}", "crevis-tc-a160k"), _root);
 
         Assert.Contains("crevis-tc-a160k", path);
-    }
-
-    [Fact]
-    public void Profile_token_with_null_profileId_uses_unknown()
-    {
-        var gen = new FilenameGenerator();
-        var path = gen.Generate(PngSettings("{profile}"), _root, null);
-
-        Assert.Contains("unknown", path);
     }
 
     [Fact]
@@ -97,7 +88,7 @@ public sealed class FilenameGeneratorTests : IDisposable
     {
         var gen = new FilenameGenerator();
         // Forward slash is invalid in file names on all platforms (Unix + Windows)
-        var path = gen.Generate(PngSettings("{profile}"), _root, "cam/file");
+        var path = gen.Generate(PngConfig("{profile}", "cam/file"), _root);
 
         Assert.Contains("cam_file", path);
     }
@@ -106,7 +97,7 @@ public sealed class FilenameGeneratorTests : IDisposable
     public void Date_and_profile_tokens_combined()
     {
         var gen = new FilenameGenerator();
-        var path = gen.Generate(PngSettings("{date}/{profile}"), _root, "rgb8");
+        var path = gen.Generate(PngConfig("{date}/{profile}", "rgb8"), _root);
 
         var today = DateTime.Now.ToString("yyyy-MM-dd");
         Assert.Contains(today, path);
@@ -117,7 +108,7 @@ public sealed class FilenameGeneratorTests : IDisposable
     public void Generate_creates_directory_on_disk()
     {
         var gen = new FilenameGenerator();
-        var path = gen.Generate(PngSettings("{date}"), _root);
+        var path = gen.Generate(PngConfig("{date}"), _root);
 
         var dir = Path.GetDirectoryName(path)!;
         Assert.True(Directory.Exists(dir));
@@ -129,7 +120,7 @@ public sealed class FilenameGeneratorTests : IDisposable
     public void Filename_starts_with_capture_prefix()
     {
         var gen = new FilenameGenerator();
-        var path = gen.Generate(PngSettings("out"), _root);
+        var path = gen.Generate(PngConfig("out"), _root);
 
         Assert.StartsWith("capture_", Path.GetFileName(path));
     }
@@ -138,12 +129,12 @@ public sealed class FilenameGeneratorTests : IDisposable
     public void Png_format_produces_png_extension()
     {
         var gen = new FilenameGenerator();
-        var path = gen.Generate(new ImageSaveSettings
-        {
-            OutputDirectory = "out",
-            Format = SaveImageFormat.Png,
-            AutoSave = true,
-        }, _root);
+        var path = gen.Generate(new AcquisitionConfig(
+            new ProfileId("cam.cam"),
+            OutputDirectory: "out",
+            Format: SaveImageFormat.Png,
+            AutoSave: true
+        ), _root);
 
         Assert.EndsWith(".png", path);
     }
@@ -152,12 +143,12 @@ public sealed class FilenameGeneratorTests : IDisposable
     public void Bmp_format_produces_bmp_extension()
     {
         var gen = new FilenameGenerator();
-        var path = gen.Generate(new ImageSaveSettings
-        {
-            OutputDirectory = "out",
-            Format = SaveImageFormat.Bmp,
-            AutoSave = true,
-        }, _root);
+        var path = gen.Generate(new AcquisitionConfig(
+            new ProfileId("cam.cam"),
+            OutputDirectory: "out",
+            Format: SaveImageFormat.Bmp,
+            AutoSave: true
+        ), _root);
 
         Assert.EndsWith(".bmp", path);
     }
@@ -166,12 +157,12 @@ public sealed class FilenameGeneratorTests : IDisposable
     public void Raw_format_produces_raw_extension()
     {
         var gen = new FilenameGenerator();
-        var path = gen.Generate(new ImageSaveSettings
-        {
-            OutputDirectory = "out",
-            Format = SaveImageFormat.Raw,
-            AutoSave = true,
-        }, _root);
+        var path = gen.Generate(new AcquisitionConfig(
+            new ProfileId("cam.cam"),
+            OutputDirectory: "out",
+            Format: SaveImageFormat.Raw,
+            AutoSave: true
+        ), _root);
 
         Assert.EndsWith(".raw", path);
     }
@@ -180,7 +171,7 @@ public sealed class FilenameGeneratorTests : IDisposable
     public void Filename_contains_five_digit_sequence_number()
     {
         var gen = new FilenameGenerator();
-        var path = gen.Generate(PngSettings("out"), _root);
+        var path = gen.Generate(PngConfig("out"), _root);
         var name = Path.GetFileNameWithoutExtension(path);
 
         // Format: capture_yyyyMMdd_HHmmss_fff_NNNNN
@@ -194,8 +185,8 @@ public sealed class FilenameGeneratorTests : IDisposable
     public void Sequence_number_increments_across_calls()
     {
         var gen = new FilenameGenerator();
-        var path1 = gen.Generate(PngSettings("out"), _root);
-        var path2 = gen.Generate(PngSettings("out"), _root);
+        var path1 = gen.Generate(PngConfig("out"), _root);
+        var path2 = gen.Generate(PngConfig("out"), _root);
 
         var seq1 = int.Parse(Path.GetFileNameWithoutExtension(path1).Split('_')[^1]);
         var seq2 = int.Parse(Path.GetFileNameWithoutExtension(path2).Split('_')[^1]);
@@ -207,7 +198,7 @@ public sealed class FilenameGeneratorTests : IDisposable
     public void New_instance_sequence_starts_from_one()
     {
         var gen = new FilenameGenerator();
-        var path = gen.Generate(PngSettings("out"), _root);
+        var path = gen.Generate(PngConfig("out"), _root);
 
         var seq = int.Parse(Path.GetFileNameWithoutExtension(path).Split('_')[^1]);
         Assert.Equal(1, seq);
@@ -221,14 +212,14 @@ public sealed class FilenameGeneratorTests : IDisposable
         var gen1 = new FilenameGenerator();
         var gen2 = new FilenameGenerator();
 
-        var path1 = gen1.Generate(PngSettings("out"), _root);
-        var path2 = gen2.Generate(PngSettings("out"), _root);
+        var path1 = gen1.Generate(PngConfig("out"), _root);
+        var path2 = gen2.Generate(PngConfig("out"), _root);
 
         // Both start at seq 1 — could collide if same ms, but filenames are distinct objects
         // The important invariant: within one instance, paths are unique
         var gen = new FilenameGenerator();
-        var a = gen.Generate(PngSettings("out"), _root);
-        var b = gen.Generate(PngSettings("out"), _root);
+        var a = gen.Generate(PngConfig("out"), _root);
+        var b = gen.Generate(PngConfig("out"), _root);
         Assert.NotEqual(a, b);
     }
 }

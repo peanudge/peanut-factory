@@ -1,5 +1,14 @@
-import type { AcquisitionMode } from '@/api/types'
+import { useState } from 'react'
+import { FolderSearch } from 'lucide-react'
+import type { AcquisitionMode, SaveImageFormat } from '@/api/types'
+import DirectoryBrowser from '@/components/shared/DirectoryBrowser'
 import cx from './cx'
+
+const FORMAT_OPTIONS: { value: SaveImageFormat; label: string }[] = [
+  { value: 'png', label: 'PNG' },
+  { value: 'bmp', label: 'BMP' },
+  { value: 'raw', label: 'RAW' },
+]
 
 interface Props {
   acquisitionMode: AcquisitionMode
@@ -8,6 +17,12 @@ interface Props {
   onFrameCountChange: (value: number | null) => void
   intervalMs: number | null
   onIntervalMsChange: (value: number | null) => void
+  outputDirectory: string
+  onOutputDirectoryChange: (value: string) => void
+  format: SaveImageFormat
+  onFormatChange: (value: SaveImageFormat) => void
+  autoSave: boolean
+  onAutoSaveChange: (value: boolean) => void
   disabled?: boolean
 }
 
@@ -18,8 +33,16 @@ export default function AcquisitionSettings({
   onFrameCountChange,
   intervalMs,
   onIntervalMsChange,
+  outputDirectory,
+  onOutputDirectoryChange,
+  format,
+  onFormatChange,
+  autoSave,
+  onAutoSaveChange,
   disabled,
 }: Props) {
+  const [browserOpen, setBrowserOpen] = useState(false)
+
   return (
     <div className={cx('wrap')}>
       {/* Mode selector */}
@@ -94,6 +117,63 @@ export default function AcquisitionSettings({
           Start 후 화면 상단 <strong>Trigger</strong> 버튼으로 한 장씩 촬영합니다.
         </p>
       )}
+
+      {/* Save settings */}
+      <div className={cx('saveSection')}>
+        <div className={cx('field')}>
+          <label>저장 경로</label>
+          <div className={cx('dirRow')}>
+            <input
+              type="text"
+              value={outputDirectory}
+              onChange={(e) => onOutputDirectoryChange(e.target.value)}
+              disabled={disabled}
+              placeholder="CapturedImages"
+            />
+            <button
+              type="button"
+              className={cx('browseBtn')}
+              onClick={() => setBrowserOpen(true)}
+              disabled={disabled}
+              title="Browse"
+            >
+              <FolderSearch size={14} />
+            </button>
+          </div>
+          <small>Tokens: {'{date}'} → yyyy-MM-dd, {'{profile}'} → cam file name</small>
+        </div>
+
+        <div className={cx('saveRow')}>
+          <div className={cx('field')}>
+            <label>포맷</label>
+            <select
+              value={format}
+              onChange={(e) => onFormatChange(e.target.value as SaveImageFormat)}
+              disabled={disabled}
+            >
+              {FORMAT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+          <label className={cx('checkLabel')}>
+            <input
+              type="checkbox"
+              checked={autoSave}
+              onChange={(e) => onAutoSaveChange(e.target.checked)}
+              disabled={disabled}
+            />
+            자동 저장
+          </label>
+        </div>
+      </div>
+
+      <DirectoryBrowser
+        open={browserOpen}
+        currentPath={outputDirectory}
+        onSelect={onOutputDirectoryChange}
+        onClose={() => setBrowserOpen(false)}
+      />
     </div>
   )
 }

@@ -69,6 +69,9 @@ export interface AcquisitionStatus {
   profileId?: string;
   activeFrameCount?: number | null;
   activeIntervalMs?: number | null;
+  outputDirectory?: string;
+  format?: SaveImageFormat;
+  autoSave?: boolean;
   hasFrame?: boolean;
   lastError?: string | null;
   allowedActions?: AcquisitionAction[];
@@ -112,6 +115,9 @@ export interface AcquisitionConfigPreset {
   profileId: string;
   frameCount?: number | null;
   intervalMs?: number | null;
+  outputDirectory?: string;
+  format?: SaveImageFormat;
+  autoSave?: boolean;
 }
 
 // ── Latency Analysis ──
@@ -158,8 +164,3 @@ export interface ImagePage {
   totalPages: number;
 }
 
-export interface ImageSaveSettings {
-  outputDirectory: string;
-  format: SaveImageFormat;
-  autoSave: boolean;
-}

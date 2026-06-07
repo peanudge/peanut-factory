@@ -143,6 +143,9 @@ function ManualForm({ config, session }: { config: AcquisitionConfig; session: A
       profileId: config.selectedProfile,
       frameCount: config.frameCount,
       intervalMs: config.intervalMs,
+      outputDirectory: config.outputDirectory,
+      format: config.format,
+      autoSave: config.autoSave,
     })
   }
 
@@ -177,6 +180,12 @@ function ManualForm({ config, session }: { config: AcquisitionConfig; session: A
         onFrameCountChange={config.setFrameCount}
         intervalMs={config.intervalMs}
         onIntervalMsChange={config.setIntervalMs}
+        outputDirectory={config.outputDirectory}
+        onOutputDirectoryChange={config.setOutputDirectory}
+        format={config.format}
+        onFormatChange={config.setFormat}
+        autoSave={config.autoSave}
+        onAutoSaveChange={config.setAutoSave}
         disabled={false}
       />
       <button

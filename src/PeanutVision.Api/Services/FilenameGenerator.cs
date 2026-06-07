@@ -10,14 +10,14 @@ public sealed class FilenameGenerator
     ///   {profile} → profileId에서 특수문자를 _로 치환한 값
     /// 파일명 고정: capture_yyyyMMdd_HHmmss_fff_NNNNN.ext
     /// </summary>
-    public string Generate(ImageSaveSettings settings, string contentRootPath, string? profileId = null)
+    public string Generate(AcquisitionConfig config, string contentRootPath)
     {
         var now = DateTime.Now;
-        var dir = ExpandDirectory(settings.OutputDirectory, contentRootPath, now, profileId);
+        var dir = ExpandDirectory(config.OutputDirectory, contentRootPath, now, config.ProfileId.Value);
         Directory.CreateDirectory(dir);
 
         var seq = Interlocked.Increment(ref _sequenceCounter);
-        var ext = settings.Format switch
+        var ext = config.Format switch
         {
             SaveImageFormat.Bmp => ".bmp",
             SaveImageFormat.Raw => ".raw",

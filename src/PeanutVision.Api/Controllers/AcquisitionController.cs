@@ -20,10 +20,16 @@ public class AcquisitionController : ControllerBase
     [HttpPost("start")]
     public ActionResult Start([FromBody] StartAcquisitionRequest request)
     {
+        var format = Enum.TryParse<SaveImageFormat>(request.Format, ignoreCase: true, out var f)
+            ? f : SaveImageFormat.Png;
+
         var config = new AcquisitionConfig(
             new ProfileId(request.ProfileId),
             request.FrameCount,
-            request.IntervalMs);
+            request.IntervalMs,
+            request.OutputDirectory ?? "CapturedImages",
+            format,
+            request.AutoSave ?? true);
 
         _acquisition.Start(config);
         return Ok(new { message = "Acquisition started", profileId = config.ProfileId.Value });
@@ -54,6 +60,9 @@ public class AcquisitionController : ControllerBase
             profileId = s.ActiveConfig?.ProfileId.Value,
             activeFrameCount = s.IsActive ? s.ActiveConfig?.FrameCount : null,
             activeIntervalMs = s.IsActive ? s.ActiveConfig?.IntervalMs : null,
+            outputDirectory = s.ActiveConfig?.OutputDirectory,
+            format = s.ActiveConfig?.Format.ToString().ToLower(),
+            autoSave = s.ActiveConfig?.AutoSave,
             hasFrame = s.HasFrame,
             lastError = s.LastError,
             allowedActions = s.AllowedActions,
@@ -163,6 +172,9 @@ public class AcquisitionController : ControllerBase
             profileId = s.ActiveConfig?.ProfileId.Value,
             activeFrameCount = s.IsActive ? s.ActiveConfig?.FrameCount : (int?)null,
             activeIntervalMs = s.IsActive ? s.ActiveConfig?.IntervalMs : (int?)null,
+            outputDirectory = s.ActiveConfig?.OutputDirectory,
+            format = s.ActiveConfig?.Format.ToString().ToLower(),
+            autoSave = s.ActiveConfig?.AutoSave,
             hasFrame = s.HasFrame,
             lastError = s.LastError,
             allowedActions = s.AllowedActions.Select(a => a.ToString().ToLowerInvariant()).ToArray(),
@@ -197,4 +209,7 @@ public class StartAcquisitionRequest
     public required string ProfileId { get; set; }
     public int? FrameCount { get; set; }
     public int? IntervalMs { get; set; }
+    public string? OutputDirectory { get; set; }
+    public string? Format { get; set; }
+    public bool? AutoSave { get; set; }
 }

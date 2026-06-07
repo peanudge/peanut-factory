@@ -6,6 +6,5 @@ export const queryKeys = {
   boardStatus:       (index: number) => ["boardStatus", index] as const,
   presets:           ["presets"]                         as const,
   histogram:         ["histogram"]                       as const,
-  imageSaveSettings: ["imageSaveSettings"]               as const,
   images:            (params?: object) => params ? ["images", params] as const : ["images"] as const,
 };

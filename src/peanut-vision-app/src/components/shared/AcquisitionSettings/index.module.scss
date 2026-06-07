@@ -109,3 +109,54 @@
 
   strong { color: var(--text-primary); }
 }
+
+// ── Save settings ──
+
+.saveSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.saveRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dirRow {
+  display: flex;
+  gap: 4px;
+
+  input { flex: 1; min-width: 0; }
+}
+
+.browseBtn {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) { color: var(--color-accent); border-color: var(--color-accent); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.checkLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding-bottom: 4px;
+
+  input[type='checkbox'] { accent-color: var(--color-accent); }
+}
