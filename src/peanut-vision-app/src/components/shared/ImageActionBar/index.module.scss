@@ -23,14 +23,42 @@
   &:hover { background: var(--bg-hover); }
 }
 
-.savedPath {
+.savedPathWrap {
   display: flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.saveIcon {
+  color: var(--color-success);
+  flex-shrink: 0;
+}
+
+.savedPath {
   font-size: 0.75rem;
   color: var(--color-success);
-  max-width: 300px;
+  font-family: monospace;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+}
+
+.copyBtn {
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-radius: 3px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+
+  &:hover { color: var(--text-primary); }
+  &.copied { color: var(--color-success); }
 }

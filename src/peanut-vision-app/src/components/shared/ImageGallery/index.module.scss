@@ -20,6 +20,37 @@
   gap: 4px;
 }
 
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pageBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+
+  &:hover:not(:disabled) { color: var(--text-primary); border-color: var(--text-muted); }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+}
+
+.pageInfo {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  min-width: 40px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
 .deleteSelectedBtn {
   display: inline-flex;
   align-items: center;
@@ -191,45 +222,27 @@
   td { padding: 4px 8px; vertical-align: middle; }
 }
 
-.thThumb { width: 40px; }
-
 .tdSelect { width: 36px; padding: 4px 8px; }
 
-.tdThumb { padding: 4px 6px; }
-
 .tdFilename {
-  max-width: 140px;
+  max-width: 180px;
+  overflow: hidden;
+  color: var(--text-primary);
+}
+
+.filedir {
+  font-size: 0.68rem;
+  color: var(--text-hint);
+  font-family: monospace;
+  margin-top: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--text-primary);
 }
 
 .tdMeta {
   white-space: nowrap;
   color: var(--text-muted);
-}
-
-.rowThumb {
-  width: 32px;
-  height: 32px;
-  object-fit: cover;
-  border-radius: 3px;
-  display: block;
-}
-
-.rowThumbPlaceholder {
-  width: 32px;
-  height: 32px;
-  background: var(--bg-hover);
-  border-radius: 3px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.55rem;
-  font-weight: 700;
-  color: var(--text-hint);
-  text-transform: uppercase;
 }
 
 .rowDeleteBtn {

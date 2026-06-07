@@ -10,8 +10,8 @@ import {
   type SortingState,
 } from '@tanstack/react-table'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Filter, RefreshCw, Trash2, X, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
-import { listImages, deleteImage, thumbnailUrl } from '@/api/client'
+import { Filter, RefreshCw, Trash2, X, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { listImages, deleteImage } from '@/api/client'
 import { queryKeys } from '@/api/queryKeys'
 import { useToast } from '@/contexts/ToastContext'
 import type { CapturedImageRecord } from '@/api/types'
@@ -41,6 +41,8 @@ export default function ImageGallery({ selectedId, onRowSelect }: Props) {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'capturedAt', desc: true }])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const [page, setPage] = useState(1)
+  const pageSize = 50
 
   const dateRange = (columnFilters.find(f => f.id === 'capturedAt')?.value ?? {}) as DateRangeFilter
   const isFiltered = !!(dateRange.from || dateRange.to)
@@ -49,14 +51,18 @@ export default function ImageGallery({ selectedId, onRowSelect }: Props) {
     queryKey: queryKeys.images({
       dateFrom: dateRange.from ?? undefined,
       dateTo: dateRange.to ?? undefined,
+      page,
     }),
     queryFn: () => listImages({
-      page: 1,
-      pageSize: 100,
+      page,
+      pageSize,
       dateFrom: dateRange.from ?? undefined,
       dateTo: dateRange.to ?? undefined,
     }),
   })
+
+  const totalPages = data?.totalPages ?? 1
+  const totalCount = data?.totalCount ?? 0
 
   const images = data?.items ?? []
 
@@ -101,6 +107,7 @@ export default function ImageGallery({ selectedId, onRowSelect }: Props) {
   }
 
   const setDateFilter = (range: Partial<DateRangeFilter>) => {
+    setPage(1)
     setColumnFilters(prev => {
       const current = (prev.find(f => f.id === 'capturedAt')?.value ?? {}) as DateRangeFilter
       const next = { ...current, ...range }
@@ -110,6 +117,7 @@ export default function ImageGallery({ selectedId, onRowSelect }: Props) {
   }
 
   const clearDateFilter = () => {
+    setPage(1)
     setColumnFilters(prev => prev.filter(f => f.id !== 'capturedAt'))
   }
 
@@ -140,29 +148,19 @@ export default function ImageGallery({ selectedId, onRowSelect }: Props) {
         />
       ),
     }),
-    columnHelper.display({
-      id: 'thumbnail',
-      header: '',
-      size: 44,
-      cell: ({ row }) => {
-        const img = row.original
-        return img.hasThumbnail ? (
-          <img
-            src={thumbnailUrl(img.id)}
-            alt=""
-            className={cx('rowThumb')}
-            onError={(e) => { e.currentTarget.style.display = 'none' }}
-          />
-        ) : (
-          <div className={cx('rowThumbPlaceholder')}>{img.format}</div>
-        )
-      },
-    }),
     columnHelper.accessor('filename', {
       header: 'Filename',
-      cell: ({ getValue, row }) => (
-        <span title={row.original.filePath}>{getValue()}</span>
-      ),
+      cell: ({ getValue, row }) => {
+        const filePath = row.original.filePath
+        const lastSep = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'))
+        const dir = lastSep > 0 ? filePath.substring(0, lastSep) : ''
+        return (
+          <div title={filePath}>
+            <div>{getValue()}</div>
+            {dir && <div className={cx('filedir')}>{dir}</div>}
+          </div>
+        )
+      },
     }),
     columnHelper.display({
       id: 'resolution',
@@ -228,6 +226,30 @@ export default function ImageGallery({ selectedId, onRowSelect }: Props) {
             title="Refresh"
           >
             <RefreshCw size={14} />
+          </button>
+        </div>
+
+        <div className={cx('pagination')}>
+          <button
+            type="button"
+            className={cx('pageBtn')}
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page <= 1 || isLoading}
+            title="Previous page"
+          >
+            <ChevronLeft size={13} />
+          </button>
+          <span className={cx('pageInfo')}>
+            {totalCount > 0 ? `${page} / ${totalPages}` : '—'}
+          </span>
+          <button
+            type="button"
+            className={cx('pageBtn')}
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages || isLoading}
+            title="Next page"
+          >
+            <ChevronRight size={13} />
           </button>
         </div>
 
@@ -332,9 +354,8 @@ export default function ImageGallery({ selectedId, onRowSelect }: Props) {
                       key={cell.id}
                       className={cx({
                         tdSelect: cell.column.id === 'select',
-                        tdThumb: cell.column.id === 'thumbnail',
                         tdFilename: cell.column.id === 'filename',
-                        tdMeta: !['select', 'thumbnail', 'filename'].includes(cell.column.id),
+                        tdMeta: !['select', 'filename'].includes(cell.column.id),
                       })}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -348,10 +369,12 @@ export default function ImageGallery({ selectedId, onRowSelect }: Props) {
       )}
 
       {/* Footer */}
-      {images.length > 0 && (
+      {totalCount > 0 && (
         <div className={cx('actions')}>
           <span className={cx('count')}>
-            {selectedCount > 0 ? `${selectedCount} / ${images.length} selected` : `${images.length} images`}
+            {selectedCount > 0
+              ? `${selectedCount} selected`
+              : `${images.length} / ${totalCount} images`}
           </span>
         </div>
       )}
