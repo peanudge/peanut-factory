@@ -2,7 +2,7 @@ using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.Api.Services;
 
-public sealed class AutoSaveService : IHostedService
+public sealed class FrameSaveService : IHostedService
 {
     private readonly IAcquisitionSession _acquisition;
     private readonly FilenameGenerator _filenameGenerator;
@@ -11,7 +11,7 @@ public sealed class AutoSaveService : IHostedService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IWebHostEnvironment _environment;
 
-    public AutoSaveService(
+    public FrameSaveService(
         IAcquisitionSession acquisition,
         FilenameGenerator filenameGenerator,
         FrameSaveTracker frameSaveTracker,

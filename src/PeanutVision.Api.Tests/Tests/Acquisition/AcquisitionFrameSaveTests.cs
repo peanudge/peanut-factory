@@ -6,7 +6,7 @@ namespace PeanutVision.Api.Tests.Tests.Acquisition;
 
 /// <summary>
 /// Verifies the headless save flow that replaced the removed Snapshot endpoint:
-/// POST /start {frameCount:1} → frame arrives → AutoSaveService saves to disk + DB.
+/// POST /start {frameCount:1} → frame arrives → FrameSaveService saves to disk + DB.
 /// </summary>
 public class AcquisitionAutoSaveTests : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
 {
@@ -38,12 +38,12 @@ public class AcquisitionAutoSaveTests : IClassFixture<PeanutVisionApiFactory>, I
         // Fire the trigger (MockHAL simulates a frame immediately)
         await _client.PostAsync("/api/acquisition/trigger", null);
 
-        // AutoSaveService.SaveAsync is fire-and-forget — poll until record appears
+        // FrameSaveService.SaveAsync is fire-and-forget — poll until record appears
         var saved = await PollAsync(
             condition: async () => await GetImageCount() > before,
             timeoutMs: 3000);
 
-        Assert.True(saved, "AutoSaveService should have written a DB record within 3 seconds");
+        Assert.True(saved, "FrameSaveService should have written a DB record within 3 seconds");
     }
 
     [Fact]

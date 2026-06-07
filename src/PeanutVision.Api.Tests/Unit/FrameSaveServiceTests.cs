@@ -6,7 +6,7 @@ using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.Api.Tests.Unit;
 
-public class AutoSaveServiceTests : IDisposable
+public class FrameSaveServiceTests : IDisposable
 {
     private readonly string _tempDir;
     private readonly FakeAcquisitionService _acquisition;
@@ -16,7 +16,7 @@ public class AutoSaveServiceTests : IDisposable
     private readonly FakeScopeFactory _scopeFactory;
     private readonly FakeWebHostEnvironment _environment;
 
-    public AutoSaveServiceTests()
+    public FrameSaveServiceTests()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), $"autosave_test_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempDir);
@@ -35,7 +35,7 @@ public class AutoSaveServiceTests : IDisposable
             Directory.Delete(_tempDir, recursive: true);
     }
 
-    private AutoSaveService BuildService() =>
+    private FrameSaveService BuildService() =>
         new(_acquisition, _filenameGenerator, _tracker,
             _thumbnailService, _scopeFactory, _environment);
 

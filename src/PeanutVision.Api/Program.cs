@@ -58,7 +58,7 @@ builder.Services.AddSingleton<ILatencyService, LatencyService>();
 builder.Services.AddSingleton<AcquisitionConfigValidator>();
 builder.Services.AddSingleton<AcquisitionManager>();
 builder.Services.AddSingleton<IAcquisitionSession>(sp => sp.GetRequiredService<AcquisitionManager>());
-builder.Services.AddHostedService<AutoSaveService>();
+builder.Services.AddHostedService<FrameSaveService>();
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 

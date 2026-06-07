@@ -33,7 +33,7 @@ public class ImagesDateFilterTests : IClassFixture<PeanutVisionApiFactory>, IAsy
             new { profileId = "crevis-tc-a160k-softtrig-rgb8.cam", frameCount = 1 });
         await _client.PostAsync("/api/acquisition/trigger", null);
 
-        // Wait for AutoSaveService to write a new DB record
+        // Wait for FrameSaveService to write a new DB record
         await PollAsync(
             condition: async () => await GetImageCount() > before,
             timeoutMs: 8000);
