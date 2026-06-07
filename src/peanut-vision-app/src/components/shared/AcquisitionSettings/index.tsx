@@ -139,15 +139,6 @@ export default function AcquisitionSettings({ config, onChange, disabled }: Prop
               ))}
             </select>
           </div>
-          <label className={cx('checkLabel')}>
-            <input
-              type="checkbox"
-              checked={config.autoSave}
-              onChange={(e) => onChange('autoSave', e.target.checked)}
-              disabled={disabled}
-            />
-            자동 저장
-          </label>
         </div>
       </div>
 

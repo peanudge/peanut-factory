@@ -21,8 +21,7 @@ public sealed class FilenameGeneratorTests : IDisposable
     private static AcquisitionConfig PngConfig(string outputDir, string? profileId = null) => new(
         new ProfileId(profileId ?? "cam.cam"),
         OutputDirectory: outputDir,
-        Format: SaveImageFormat.Png,
-        AutoSave: true
+        Format: SaveImageFormat.Png
     );
 
     // ── 디렉토리 경로 ──
@@ -132,8 +131,7 @@ public sealed class FilenameGeneratorTests : IDisposable
         var path = gen.Generate(new AcquisitionConfig(
             new ProfileId("cam.cam"),
             OutputDirectory: "out",
-            Format: SaveImageFormat.Png,
-            AutoSave: true
+            Format: SaveImageFormat.Png
         ), _root);
 
         Assert.EndsWith(".png", path);
@@ -146,8 +144,7 @@ public sealed class FilenameGeneratorTests : IDisposable
         var path = gen.Generate(new AcquisitionConfig(
             new ProfileId("cam.cam"),
             OutputDirectory: "out",
-            Format: SaveImageFormat.Bmp,
-            AutoSave: true
+            Format: SaveImageFormat.Bmp
         ), _root);
 
         Assert.EndsWith(".bmp", path);
@@ -160,8 +157,7 @@ public sealed class FilenameGeneratorTests : IDisposable
         var path = gen.Generate(new AcquisitionConfig(
             new ProfileId("cam.cam"),
             OutputDirectory: "out",
-            Format: SaveImageFormat.Raw,
-            AutoSave: true
+            Format: SaveImageFormat.Raw
         ), _root);
 
         Assert.EndsWith(".raw", path);

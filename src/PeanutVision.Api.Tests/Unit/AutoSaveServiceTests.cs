@@ -49,12 +49,9 @@ public class AutoSaveServiceTests : IDisposable
     {
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
+        _acquisition.SimulateFrame(null); // fires event; no frame = no save
 
-        _acquisition.AutoSave = false; // prevent actual save
-        _acquisition.SimulateFrame(MakeFrame());
-
-        // If subscribed, OnFrameAcquired ran — no exception means event handler was wired
-        Assert.True(true);
+        Assert.True(true); // no exception = handler was wired
     }
 
     [Fact]
@@ -64,26 +61,10 @@ public class AutoSaveServiceTests : IDisposable
         await svc.StartAsync(CancellationToken.None);
         await svc.StopAsync(CancellationToken.None);
 
-        _acquisition.AutoSave = true;
         _acquisition.SimulateFrame(MakeFrame());
 
         await Task.Delay(100); // give fire-and-forget time to run if it leaked
         Assert.Empty(Directory.GetFiles(_tempDir, "*.png", SearchOption.AllDirectories));
-    }
-
-    // ── AutoSave = false ──
-
-    [Fact]
-    public async Task When_autosave_disabled_no_file_is_written()
-    {
-        _acquisition.AutoSave = false;
-        var svc = BuildService();
-        await svc.StartAsync(CancellationToken.None);
-
-        _acquisition.SimulateFrame(MakeFrame());
-        await Task.Delay(100);
-
-        Assert.Empty(Directory.GetFiles(_tempDir, "*", SearchOption.AllDirectories));
     }
 
     // ── Null frame ──
@@ -91,7 +72,6 @@ public class AutoSaveServiceTests : IDisposable
     [Fact]
     public async Task When_latest_frame_is_null_no_file_is_written()
     {
-        _acquisition.AutoSave = true;
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
 
@@ -106,7 +86,6 @@ public class AutoSaveServiceTests : IDisposable
     [Fact]
     public async Task Same_frame_reference_saved_only_once()
     {
-        _acquisition.AutoSave = true;
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
 
@@ -122,7 +101,6 @@ public class AutoSaveServiceTests : IDisposable
     [Fact]
     public async Task Different_frames_each_saved()
     {
-        _acquisition.AutoSave = true;
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
 
@@ -137,9 +115,8 @@ public class AutoSaveServiceTests : IDisposable
     // ── File written ──
 
     [Fact]
-    public async Task When_autosave_enabled_new_frame_writes_png_file()
+    public async Task New_frame_writes_png_file()
     {
-        _acquisition.AutoSave = true;
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
 
@@ -154,7 +131,6 @@ public class AutoSaveServiceTests : IDisposable
     [Fact]
     public async Task Saved_file_has_valid_png_magic_bytes()
     {
-        _acquisition.AutoSave = true;
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
 
@@ -169,7 +145,6 @@ public class AutoSaveServiceTests : IDisposable
     [Fact]
     public async Task Repository_AddAsync_called_after_save()
     {
-        _acquisition.AutoSave = true;
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
 
@@ -184,13 +159,11 @@ public class AutoSaveServiceTests : IDisposable
     [Fact]
     public async Task Save_failure_does_not_throw_or_crash()
     {
-        _acquisition.AutoSave = true;
         _scopeFactory.FakeImageRepo.ThrowOnAdd = true;
         var svc = BuildService();
         await svc.StartAsync(CancellationToken.None);
 
-        // Should not throw
-        _acquisition.SimulateFrame(MakeFrame());
+        _acquisition.SimulateFrame(MakeFrame()); // Should not throw
         await Task.Delay(300);
 
         Assert.True(true);
@@ -203,8 +176,6 @@ internal sealed class FakeAcquisitionService : IAcquisitionSession
 {
     private readonly string _outputDir;
     private ImageData? _frame;
-
-    public bool AutoSave { get; set; } = true;
 
     public FakeAcquisitionService(string outputDir) => _outputDir = outputDir;
 
@@ -224,8 +195,7 @@ internal sealed class FakeAcquisitionService : IAcquisitionSession
         ActiveConfig: new AcquisitionConfig(
             new ProfileId("cam.cam"),
             OutputDirectory: _outputDir,
-            Format: SaveImageFormat.Png,
-            AutoSave: AutoSave
+            Format: SaveImageFormat.Png
         ),
         HasFrame: _frame != null,
         LastError: null,

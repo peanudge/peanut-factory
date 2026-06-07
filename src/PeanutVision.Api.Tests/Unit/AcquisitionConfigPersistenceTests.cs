@@ -7,11 +7,10 @@ namespace PeanutVision.Api.Tests.Unit;
 
 /// <summary>
 /// Regression tests: AcquisitionManager.GetStatus().ActiveConfig must reflect
-/// the FULL config passed to Start(), including OutputDirectory, Format, AutoSave.
+/// the FULL config passed to Start(), including OutputDirectory and Format.
 ///
 /// Bug: GetStatus() was reconstructing ActiveConfig with only ProfileId/FrameCount/IntervalMs,
-/// so OutputDirectory/Format/AutoSave always fell back to defaults. This caused
-/// AutoSaveService to always save to "CapturedImages" regardless of user config.
+/// so OutputDirectory/Format always fell back to defaults.
 /// </summary>
 public class AcquisitionConfigPersistenceTests : IDisposable
 {
@@ -56,20 +55,6 @@ public class AcquisitionConfigPersistenceTests : IDisposable
     }
 
     [Fact]
-    public void GetStatus_ActiveConfig_reflects_AutoSave_false_from_Start()
-    {
-        var config = new AcquisitionConfig(
-            new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"),
-            AutoSave: false);
-
-        _manager.Start(config);
-
-        var activeConfig = _manager.GetStatus().ActiveConfig;
-        Assert.NotNull(activeConfig);
-        Assert.False(activeConfig!.AutoSave);
-    }
-
-    [Fact]
     public void GetStatus_ActiveConfig_reflects_all_fields_together()
     {
         var config = new AcquisitionConfig(
@@ -77,8 +62,7 @@ public class AcquisitionConfigPersistenceTests : IDisposable
             FrameCount: 5,
             IntervalMs: 200,
             OutputDirectory: "/data/peanut",
-            Format: SaveImageFormat.Raw,
-            AutoSave: false);
+            Format: SaveImageFormat.Raw);
 
         _manager.Start(config);
 
@@ -89,7 +73,6 @@ public class AcquisitionConfigPersistenceTests : IDisposable
         Assert.Equal(200, activeConfig.IntervalMs);
         Assert.Equal("/data/peanut", activeConfig.OutputDirectory);
         Assert.Equal(SaveImageFormat.Raw, activeConfig.Format);
-        Assert.False(activeConfig.AutoSave);
     }
 
     [Fact]
@@ -104,7 +87,6 @@ public class AcquisitionConfigPersistenceTests : IDisposable
     [Fact]
     public void GetStatus_ActiveConfig_defaults_are_not_used_when_explicit_values_given()
     {
-        // Ensure default "CapturedImages" is NOT used when OutputDirectory is explicitly set
         var config = new AcquisitionConfig(
             new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"),
             OutputDirectory: "MyCustomDirectory");

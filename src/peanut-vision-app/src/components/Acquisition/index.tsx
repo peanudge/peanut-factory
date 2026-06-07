@@ -20,7 +20,6 @@ function presetToFormConfig(preset: AcquisitionConfigPreset): AcquisitionFormCon
     acquisitionMode: preset.intervalMs != null ? 'auto' : 'manual',
     outputDirectory: preset.outputDirectory ?? DEFAULT_ACQUISITION_FORM_CONFIG.outputDirectory,
     format: preset.format ?? DEFAULT_ACQUISITION_FORM_CONFIG.format,
-    autoSave: preset.autoSave ?? DEFAULT_ACQUISITION_FORM_CONFIG.autoSave,
   }
 }
 

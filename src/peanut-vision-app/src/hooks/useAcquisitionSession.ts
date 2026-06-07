@@ -39,7 +39,6 @@ export function useAcquisitionSession(config: AcquisitionFormConfig) {
         intervalMs: config.acquisitionMode === 'auto' ? config.intervalMs : null,
         outputDirectory: config.outputDirectory,
         format: config.format,
-        autoSave: config.autoSave,
       }),
     onSuccess: () => {
       invalidateStatus()

@@ -49,7 +49,6 @@ export function useAcquisitionConfig() {
       intervalMs: preset.intervalMs ?? null,
       ...(preset.outputDirectory !== undefined && { outputDirectory: preset.outputDirectory }),
       ...(preset.format !== undefined && { format: preset.format }),
-      ...(preset.autoSave !== undefined && { autoSave: preset.autoSave }),
     }))
   }, [])
 

@@ -7,6 +7,5 @@ public sealed record AcquisitionConfig(
     int? FrameCount = null,
     int? IntervalMs = null,
     string OutputDirectory = "CapturedImages",
-    SaveImageFormat Format = SaveImageFormat.Png,
-    bool AutoSave = true
+    SaveImageFormat Format = SaveImageFormat.Png
 );

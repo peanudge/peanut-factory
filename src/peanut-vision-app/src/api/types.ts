@@ -71,7 +71,6 @@ export interface AcquisitionFormConfig {
   intervalMs: number | null
   outputDirectory: string
   format: SaveImageFormat
-  autoSave: boolean
 }
 
 export const DEFAULT_ACQUISITION_FORM_CONFIG: AcquisitionFormConfig = {
@@ -81,7 +80,6 @@ export const DEFAULT_ACQUISITION_FORM_CONFIG: AcquisitionFormConfig = {
   intervalMs: null,
   outputDirectory: 'CapturedImages',
   format: 'png',
-  autoSave: true,
 }
 
 export interface AcquisitionStatus {
@@ -92,7 +90,6 @@ export interface AcquisitionStatus {
   activeIntervalMs?: number | null;
   outputDirectory?: string;
   format?: SaveImageFormat;
-  autoSave?: boolean;
   hasFrame?: boolean;
   lastError?: string | null;
   allowedActions?: AcquisitionAction[];
@@ -138,7 +135,6 @@ export interface AcquisitionConfigPreset {
   intervalMs?: number | null;
   outputDirectory?: string;
   format?: SaveImageFormat;
-  autoSave?: boolean;
 }
 
 // ── Latency Analysis ──

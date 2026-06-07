@@ -83,7 +83,6 @@ describe('useAcquisitionConfig', () => {
           intervalMs: 200,
           outputDirectory: '/data/captures',
           format: 'bmp',
-          autoSave: false,
         })
       })
       expect(result.current.config.profileId).toBe('crevis-tc-a160k-softtrig-rgb8.cam')
@@ -91,7 +90,6 @@ describe('useAcquisitionConfig', () => {
       expect(result.current.config.intervalMs).toBe(200)
       expect(result.current.config.outputDirectory).toBe('/data/captures')
       expect(result.current.config.format).toBe('bmp')
-      expect(result.current.config.autoSave).toBe(false)
     })
 
     it('keeps existing values for fields not in preset', () => {

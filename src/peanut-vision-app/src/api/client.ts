@@ -96,7 +96,6 @@ export interface StartAcquisitionParams {
   intervalMs?: number | null
   outputDirectory?: string
   format?: string
-  autoSave?: boolean
 }
 
 export function startAcquisition(params: StartAcquisitionParams): Promise<ApiMessage & { profileId: string }> {

@@ -12,5 +12,4 @@ public sealed record AcquisitionConfigPreset
     public int? IntervalMs { get; init; }
     public string OutputDirectory { get; init; } = "CapturedImages";
     public SaveImageFormat Format { get; init; } = SaveImageFormat.Png;
-    public bool AutoSave { get; init; } = true;
 }

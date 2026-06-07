@@ -36,8 +36,7 @@ public class AcquisitionController : ControllerBase
             request.FrameCount,
             request.IntervalMs,
             request.OutputDirectory ?? "CapturedImages",
-            format,
-            request.AutoSave ?? true);
+            format);
 
         var validation = _validator.Validate(config);
         if (!validation.IsValid)
@@ -81,7 +80,6 @@ public class AcquisitionController : ControllerBase
             activeIntervalMs = s.IsActive ? s.ActiveConfig?.IntervalMs : null,
             outputDirectory = s.ActiveConfig?.OutputDirectory,
             format = s.ActiveConfig?.Format.ToString().ToLower(),
-            autoSave = s.ActiveConfig?.AutoSave,
             hasFrame = s.HasFrame,
             lastError = s.LastError,
             allowedActions = s.AllowedActions,
@@ -193,7 +191,6 @@ public class AcquisitionController : ControllerBase
             activeIntervalMs = s.IsActive ? s.ActiveConfig?.IntervalMs : (int?)null,
             outputDirectory = s.ActiveConfig?.OutputDirectory,
             format = s.ActiveConfig?.Format.ToString().ToLower(),
-            autoSave = s.ActiveConfig?.AutoSave,
             hasFrame = s.HasFrame,
             lastError = s.LastError,
             allowedActions = s.AllowedActions.Select(a => a.ToString().ToLowerInvariant()).ToArray(),
@@ -230,5 +227,4 @@ public class StartAcquisitionRequest
     public int? IntervalMs { get; set; }
     public string? OutputDirectory { get; set; }
     public string? Format { get; set; }
-    public bool? AutoSave { get; set; }
 }

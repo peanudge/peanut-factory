@@ -42,7 +42,7 @@ public sealed class AutoSaveService : IHostedService
     private void OnFrameAcquired(object? sender, EventArgs e)
     {
         var config = _acquisition.GetStatus().ActiveConfig;
-        if (config == null || !config.AutoSave)
+        if (config == null)
             return;
 
         var frame = _acquisition.GetLatestFrame();

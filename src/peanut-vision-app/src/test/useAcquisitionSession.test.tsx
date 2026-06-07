@@ -60,17 +60,6 @@ describe('useAcquisitionSession', () => {
       )
     })
 
-    it('sends autoSave=false to server', async () => {
-      const config = makeConfig({ autoSave: false })
-      const { result } = renderHook(() => useAcquisitionSession(config), { wrapper })
-
-      await act(async () => { result.current.handleStart() })
-
-      expect(mockStartAcquisition).toHaveBeenCalledWith(
-        expect.objectContaining({ autoSave: false })
-      )
-    })
-
     it('sends intervalMs=null in manual mode regardless of intervalMs value', async () => {
       const config = makeConfig({ acquisitionMode: 'manual', intervalMs: 500 })
       const { result } = renderHook(() => useAcquisitionSession(config), { wrapper })
@@ -101,7 +90,6 @@ describe('useAcquisitionSession', () => {
         intervalMs: 2000,
         outputDirectory: '/custom/output',
         format: 'raw',
-        autoSave: false,
       })
       const { result } = renderHook(() => useAcquisitionSession(config), { wrapper })
 
@@ -113,7 +101,6 @@ describe('useAcquisitionSession', () => {
         intervalMs: 2000,
         outputDirectory: '/custom/output',
         format: 'raw',
-        autoSave: false,
       })
     })
 
@@ -134,7 +121,6 @@ describe('useAcquisitionSession', () => {
         profileId: 'crevis.cam',
         outputDirectory: '/preset/output/path',
         format: 'bmp',
-        autoSave: true,
       })
       const { result } = renderHook(() => useAcquisitionSession(presetConfig), { wrapper })
 
@@ -144,7 +130,6 @@ describe('useAcquisitionSession', () => {
         expect.objectContaining({
           outputDirectory: '/preset/output/path',
           format: 'bmp',
-          autoSave: true,
         })
       )
     })

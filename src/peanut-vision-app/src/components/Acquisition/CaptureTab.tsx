@@ -142,7 +142,6 @@ function ManualForm({ acqConfig, session }: { acqConfig: UseAcquisitionConfig; s
       intervalMs: config.intervalMs,
       outputDirectory: config.outputDirectory,
       format: config.format,
-      autoSave: config.autoSave,
     })
   }
 
