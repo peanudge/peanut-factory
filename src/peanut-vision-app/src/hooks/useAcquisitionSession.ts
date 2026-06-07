@@ -18,6 +18,7 @@ export function useAcquisitionSession(config: AcquisitionFormConfig) {
   const { data: acquisitionStatus } = useQuery<AcquisitionStatus>({
     queryKey: queryKeys.acquisitionStatus,
     queryFn: getAcquisitionStatus,
+    refetchInterval: (query) => query.state.data?.isActive ? 1000 : false,
   })
 
   const invalidateStatus = useCallback(() =>

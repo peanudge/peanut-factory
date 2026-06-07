@@ -340,6 +340,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
 
         tcs?.TrySetResult(image);
         FrameAcquired?.Invoke(this, EventArgs.Empty);
+        StatusChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void ProcessError(string message, McSignal signal)
