@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import { Filter, LayoutGrid, List, RefreshCw, Trash2, X } from 'lucide-react'
+import { Filter, RefreshCw, Trash2, X } from 'lucide-react'
 import { thumbnailUrl } from '@/api/client'
 import type { CapturedImageRecord } from '@/api/types'
 import { formatTime } from '@/utils/formatTimestamp'
 import cx from './cx'
-
-type ViewMode = 'grid' | 'table'
 
 interface Props {
   images: CapturedImageRecord[]
@@ -39,7 +37,6 @@ export default function ImageGallery({
   onRefresh,
 }: Props) {
   const [filterOpen, setFilterOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const isFiltered = !!(dateFrom || dateTo)
 
   const handleToggleFilter = () => {
@@ -54,45 +51,24 @@ export default function ImageGallery({
     <div className={cx('wrap')}>
       {/* Toolbar */}
       <div className={cx('toolbar')}>
-        <div className={cx('toolbarLeft')}>
-          <button
-            type="button"
-            className={cx('iconBtn', { active: isFiltered })}
-            onClick={handleToggleFilter}
-            title={isFiltered ? 'Clear date filter' : 'Filter by date'}
-          >
-            <Filter size={14} />
-            {isFiltered && <span className={cx('badge')} />}
-          </button>
-          <button
-            type="button"
-            className={cx('iconBtn')}
-            onClick={onRefresh}
-            disabled={isLoading}
-            title="Refresh"
-          >
-            <RefreshCw size={14} />
-          </button>
-        </div>
-
-        <div className={cx('viewToggle')}>
-          <button
-            type="button"
-            className={cx('iconBtn', { active: viewMode === 'grid' })}
-            onClick={() => setViewMode('grid')}
-            title="Grid view"
-          >
-            <LayoutGrid size={14} />
-          </button>
-          <button
-            type="button"
-            className={cx('iconBtn', { active: viewMode === 'table' })}
-            onClick={() => setViewMode('table')}
-            title="Table view"
-          >
-            <List size={14} />
-          </button>
-        </div>
+        <button
+          type="button"
+          className={cx('iconBtn', { active: isFiltered })}
+          onClick={handleToggleFilter}
+          title={isFiltered ? 'Clear date filter' : 'Filter by date'}
+        >
+          <Filter size={14} />
+          {isFiltered && <span className={cx('badge')} />}
+        </button>
+        <button
+          type="button"
+          className={cx('iconBtn')}
+          onClick={onRefresh}
+          disabled={isLoading}
+          title="Refresh"
+        >
+          <RefreshCw size={14} />
+        </button>
       </div>
 
       {/* Date range inputs */}
@@ -136,39 +112,8 @@ export default function ImageGallery({
         <div className={cx('empty')}>No captures yet</div>
       )}
 
-      {/* Grid view */}
-      {!isLoading && images.length > 0 && viewMode === 'grid' && (
-        <div className={cx('grid')}>
-          {images.map((img) => (
-            <div
-              key={img.id}
-              className={cx('thumb', { selected: img.id === selectedId })}
-              onClick={() => onSelect(img.id)}
-              title={`${img.filename}\n${formatTime(new Date(img.capturedAt))}\n${img.width}×${img.height} · ${img.format.toUpperCase()}`}
-            >
-              {img.hasThumbnail ? (
-                <img
-                  src={thumbnailUrl(img.id)}
-                  alt={img.filename}
-                  onError={(e) => { e.currentTarget.style.display = 'none' }}
-                />
-              ) : (
-                <div className={cx('placeholder')}>{img.format}</div>
-              )}
-              <button
-                type="button"
-                className={cx('deleteBtn')}
-                onClick={(e) => { e.stopPropagation(); onDelete(img.id) }}
-              >
-                <X size={10} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Table view */}
-      {!isLoading && images.length > 0 && viewMode === 'table' && (
+      {/* Table */}
+      {!isLoading && images.length > 0 && (
         <div className={cx('tableWrap')}>
           <table className={cx('table')}>
             <thead>
