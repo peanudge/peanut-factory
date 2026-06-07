@@ -1,146 +1,232 @@
 import { useState } from 'react'
-import { FolderSearch } from 'lucide-react'
-import type { AcquisitionFormConfig, SaveImageFormat } from '@/api/types'
+import { Loader2, FolderSearch } from 'lucide-react'
+import type { AcquisitionFormConfig, SaveImageFormat, AcquisitionConfigPreset, CamFileInfo } from '@/api/types'
 import DirectoryBrowser from '@/components/shared/DirectoryBrowser'
+import Modal from '@/components/shared/Modal'
 import cx from './cx'
 
-const FORMAT_OPTIONS: { value: SaveImageFormat; label: string }[] = [
+interface Props {
+  config: AcquisitionFormConfig
+  onChange: <K extends keyof AcquisitionFormConfig>(key: K, value: AcquisitionFormConfig[K]) => void
+  cameras: CamFileInfo[]
+  camerasLoading: boolean
+  presets: AcquisitionConfigPreset[]
+  presetsLoading: boolean
+  onQuickStart: (preset: AcquisitionConfigPreset) => void
+  canStart: boolean
+  busy: boolean
+  onStart: () => void
+  onSavePreset: (name: string) => void
+  savingPreset: boolean
+}
+
+const FORMATS: { value: SaveImageFormat; label: string }[] = [
   { value: 'png', label: 'PNG' },
   { value: 'bmp', label: 'BMP' },
   { value: 'raw', label: 'RAW' },
 ]
 
-interface Props {
-  config: AcquisitionFormConfig
-  onChange: <K extends keyof AcquisitionFormConfig>(key: K, value: AcquisitionFormConfig[K]) => void
-  disabled?: boolean
-}
-
-export default function AcquisitionSettings({ config, onChange, disabled }: Props) {
+export default function AcquisitionSettings({
+  config, onChange,
+  cameras, camerasLoading,
+  presets, presetsLoading,
+  onQuickStart,
+  canStart, busy, onStart,
+  onSavePreset, savingPreset,
+}: Props) {
   const [browserOpen, setBrowserOpen] = useState(false)
+  const [saveOpen, setSaveOpen] = useState(false)
+  const [presetName, setPresetName] = useState('')
+
+  const handleSave = () => {
+    if (!presetName.trim()) return
+    onSavePreset(presetName.trim())
+    setPresetName('')
+    setSaveOpen(false)
+  }
+
+  const showPresetsSection = presetsLoading || presets.length > 0
 
   return (
     <div className={cx('wrap')}>
-      {/* Mode selector */}
-      <div className={cx('modeRow')}>
-        <button
-          type="button"
-          className={cx('modeCard', { active: config.acquisitionMode === 'auto' })}
-          onClick={() => onChange('acquisitionMode', 'auto')}
-          disabled={disabled}
-        >
-          <span className={cx('modeIcon')}>🔄</span>
-          <span className={cx('modeLabel')}>자동 촬영</span>
-          <span className={cx('modeDesc')}>N초 간격 반복</span>
-        </button>
-        <button
-          type="button"
-          className={cx('modeCard', { active: config.acquisitionMode === 'manual' })}
-          onClick={() => onChange('acquisitionMode', 'manual')}
-          disabled={disabled}
-        >
-          <span className={cx('modeIcon')}>👆</span>
-          <span className={cx('modeLabel')}>수동 촬영</span>
-          <span className={cx('modeDesc')}>트리거로 한 장씩</span>
-        </button>
-      </div>
 
-      {/* Auto settings */}
-      {config.acquisitionMode === 'auto' && (
-        <div className={cx('autoFields')}>
-          <div className={cx('field')}>
-            <label>Interval</label>
-            <div className={cx('inputRow')}>
-              <input
-                type="number"
-                min={0.05}
-                step={0.1}
-                placeholder="1"
-                value={config.intervalMs != null ? config.intervalMs / 1000 : ''}
-                onChange={(e) => {
-                  const secs = parseFloat(e.target.value)
-                  onChange('intervalMs', isNaN(secs) || secs <= 0 ? null : Math.round(secs * 1000))
-                }}
-                disabled={disabled}
-              />
-              <span className={cx('unit')}>s</span>
+      {/* ── Quick Start ── */}
+      {showPresetsSection && (
+        <section className={cx('section')}>
+          <span className={cx('sectionLabel')}>빠른 시작</span>
+          {presetsLoading ? (
+            <div className={cx('skeletons')}>
+              <div className={cx('skeleton')} />
+              <div className={cx('skeleton')} />
             </div>
-            {config.intervalMs != null && (
-              <small>{config.intervalMs}ms</small>
-            )}
-            {config.intervalMs == null && (
-              <small>최소 0.05s (50ms)</small>
-            )}
-          </div>
-          <div className={cx('field')}>
-            <label>Stop after</label>
-            <div className={cx('inputRow')}>
-              <input
-                type="number"
-                min={1}
-                placeholder="∞"
-                value={config.frameCount ?? ''}
-                onChange={(e) => {
-                  const v = parseInt(e.target.value, 10)
-                  onChange('frameCount', isNaN(v) || v < 1 ? null : v)
-                }}
-                disabled={disabled}
-              />
-              <span className={cx('unit')}>frames</span>
+          ) : (
+            <div className={cx('chips')}>
+              {presets.map((p) => (
+                <button
+                  key={p.name}
+                  type="button"
+                  className={cx('chip')}
+                  onClick={() => onQuickStart(p)}
+                  disabled={busy}
+                  title={[
+                    p.profileId,
+                    p.frameCount != null ? `${p.frameCount}f` : null,
+                    p.intervalMs != null ? `${p.intervalMs / 1000}s` : null,
+                  ].filter(Boolean).join(' · ')}
+                >
+                  {busy && <Loader2 size={11} className={cx('spin')} />}
+                  {p.name}
+                </button>
+              ))}
             </div>
-            <small>비우면 제한없음</small>
-          </div>
-        </div>
+          )}
+        </section>
       )}
 
-      {/* Manual description */}
-      {config.acquisitionMode === 'manual' && (
-        <p className={cx('manualDesc')}>
-          Start 후 화면 상단 <strong>Trigger</strong> 버튼으로 한 장씩 촬영합니다.
-        </p>
-      )}
+      {/* ── Settings Form ── */}
+      <section className={cx('section')}>
+        <span className={cx('sectionLabel')}>촬영 설정</span>
 
-      {/* Save settings */}
-      <div className={cx('saveSection')}>
-        <span className={cx('saveSectionLabel')}>저장 설정</span>
-        <div className={cx('field')}>
-          <label>저장 경로</label>
+        <label>
+          카메라 프로파일
+          <select
+            value={config.profileId}
+            onChange={(e) => onChange('profileId', e.target.value)}
+            disabled={camerasLoading || busy}
+          >
+            {camerasLoading
+              ? <option>로딩 중…</option>
+              : cameras.map((c) => (
+                  <option key={c.fileName} value={c.fileName}>{c.fileName}</option>
+                ))
+            }
+          </select>
+        </label>
+
+        <label>
+          저장 경로
           <div className={cx('dirRow')}>
             <input
               type="text"
               value={config.outputDirectory}
               onChange={(e) => onChange('outputDirectory', e.target.value)}
-              disabled={disabled}
+              disabled={busy}
               placeholder="CapturedImages"
             />
             <button
               type="button"
-              className={cx('browseBtn')}
               onClick={() => setBrowserOpen(true)}
-              disabled={disabled}
+              disabled={busy}
               title="Browse"
             >
               <FolderSearch size={14} />
             </button>
           </div>
-          <small>Tokens: {'{date}'} → yyyy-MM-dd, {'{profile}'} → cam file name</small>
-        </div>
+          <small>토큰: {'{date}'} → yyyy-MM-dd, {'{profile}'} → cam 파일명</small>
+        </label>
 
-        <div className={cx('saveRow')}>
-          <div className={cx('field')}>
-            <label>포맷</label>
-            <select
-              value={config.format}
-              onChange={(e) => onChange('format', e.target.value as SaveImageFormat)}
-              disabled={disabled}
-            >
-              {FORMAT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
+        <fieldset>
+          <legend>포맷</legend>
+          {FORMATS.map(({ value, label }) => (
+            <label key={value}>
+              <input
+                type="radio"
+                name="format"
+                value={value}
+                checked={config.format === value}
+                onChange={() => onChange('format', value)}
+                disabled={busy}
+              />
+              {label}
+            </label>
+          ))}
+        </fieldset>
+
+        <label>
+          프레임 수
+          <input
+            type="number"
+            min={1}
+            value={config.frameCount ?? ''}
+            placeholder="∞ (제한없음)"
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10)
+              onChange('frameCount', isNaN(v) || v < 1 ? null : v)
+            }}
+            disabled={busy}
+          />
+        </label>
+      </section>
+
+      {/* ── Trigger Mode ── */}
+      <section className={cx('section')}>
+        <span className={cx('sectionLabel')}>촬영 방식</span>
+
+        <label>
+          <input
+            type="radio"
+            name="acquisitionMode"
+            value="auto"
+            checked={config.acquisitionMode === 'auto'}
+            onChange={() => onChange('acquisitionMode', 'auto')}
+            disabled={busy}
+          />
+          자동 (N초 간격 반복)
+        </label>
+
+        <label>
+          <input
+            type="radio"
+            name="acquisitionMode"
+            value="manual"
+            checked={config.acquisitionMode === 'manual'}
+            onChange={() => onChange('acquisitionMode', 'manual')}
+            disabled={busy}
+          />
+          수동 (트리거로 한 장씩)
+        </label>
+
+        {config.acquisitionMode === 'auto' && (
+          <label>
+            간격
+            <input
+              type="number"
+              min={0.05}
+              step={0.1}
+              value={config.intervalMs != null ? config.intervalMs / 1000 : ''}
+              placeholder="1"
+              onChange={(e) => {
+                const secs = parseFloat(e.target.value)
+                onChange('intervalMs', isNaN(secs) || secs <= 0 ? null : Math.round(secs * 1000))
+              }}
+              disabled={busy}
+            />
+            초
+          </label>
+        )}
+      </section>
+
+      {/* ── Start ── */}
+      <section className={cx('section')}>
+        <button
+          type="button"
+          className={cx('startBtn')}
+          onClick={onStart}
+          disabled={!canStart || busy}
+        >
+          {busy && <Loader2 size={14} className={cx('spin')} />}
+          촬영 시작
+        </button>
+
+        <button
+          type="button"
+          className={cx('saveLinkBtn')}
+          onClick={() => setSaveOpen(true)}
+          disabled={!config.profileId || busy}
+        >
+          + 프리셋으로 저장
+        </button>
+      </section>
 
       <DirectoryBrowser
         open={browserOpen}
@@ -148,6 +234,43 @@ export default function AcquisitionSettings({ config, onChange, disabled }: Prop
         onSelect={(path) => onChange('outputDirectory', path)}
         onClose={() => setBrowserOpen(false)}
       />
+
+      <Modal
+        open={saveOpen}
+        onClose={() => setSaveOpen(false)}
+        title="프리셋 저장"
+        actions={
+          <>
+            <button type="button" onClick={() => setSaveOpen(false)}>
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={savingPreset || !presetName.trim()}
+            >
+              {savingPreset && <Loader2 size={13} className={cx('spin')} />}
+              저장
+            </button>
+          </>
+        }
+      >
+        <input
+          type="text"
+          placeholder="프리셋 이름"
+          value={presetName}
+          onChange={(e) => setPresetName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+          autoFocus
+        />
+        <small>
+          {[
+            config.profileId || 'none',
+            config.frameCount != null ? `${config.frameCount} frames` : null,
+            config.intervalMs != null ? `${config.intervalMs / 1000}s` : null,
+          ].filter(Boolean).join(' | ')}
+        </small>
+      </Modal>
     </div>
   )
 }
