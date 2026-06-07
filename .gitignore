@@ -493,6 +493,7 @@ setup/sdk_pdfs/
 # Runtime output
 CapturedImages/
 src/PeanutVision.Api/image-save-settings.json
+src/PeanutVision.Api/acquisition-presets.json
 
 # SQLite databases
 *.db
