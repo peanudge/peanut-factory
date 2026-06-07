@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { Filter, RefreshCw, Trash2, X } from 'lucide-react'
+import { Filter, LayoutGrid, List, RefreshCw, Trash2, X } from 'lucide-react'
 import { thumbnailUrl } from '@/api/client'
 import type { CapturedImageRecord } from '@/api/types'
 import { formatTime } from '@/utils/formatTimestamp'
 import cx from './cx'
+
+type ViewMode = 'grid' | 'table'
 
 interface Props {
   images: CapturedImageRecord[]
@@ -16,6 +18,12 @@ interface Props {
   onDateToChange: (v: string | null) => void
   isLoading: boolean
   onRefresh: () => void
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 export default function ImageGallery({
@@ -31,6 +39,7 @@ export default function ImageGallery({
   onRefresh,
 }: Props) {
   const [filterOpen, setFilterOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const isFiltered = !!(dateFrom || dateTo)
 
   const handleToggleFilter = () => {
@@ -45,27 +54,48 @@ export default function ImageGallery({
     <div className={cx('wrap')}>
       {/* Toolbar */}
       <div className={cx('toolbar')}>
-        <button
-          type="button"
-          className={cx('iconBtn', { active: isFiltered })}
-          onClick={handleToggleFilter}
-          title={isFiltered ? 'Clear date filter' : 'Filter by date'}
-        >
-          <Filter size={14} />
-          {isFiltered && <span className={cx('badge')} />}
-        </button>
-        <button
-          type="button"
-          className={cx('iconBtn')}
-          onClick={onRefresh}
-          disabled={isLoading}
-          title="Refresh"
-        >
-          <RefreshCw size={14} />
-        </button>
+        <div className={cx('toolbarLeft')}>
+          <button
+            type="button"
+            className={cx('iconBtn', { active: isFiltered })}
+            onClick={handleToggleFilter}
+            title={isFiltered ? 'Clear date filter' : 'Filter by date'}
+          >
+            <Filter size={14} />
+            {isFiltered && <span className={cx('badge')} />}
+          </button>
+          <button
+            type="button"
+            className={cx('iconBtn')}
+            onClick={onRefresh}
+            disabled={isLoading}
+            title="Refresh"
+          >
+            <RefreshCw size={14} />
+          </button>
+        </div>
+
+        <div className={cx('viewToggle')}>
+          <button
+            type="button"
+            className={cx('iconBtn', { active: viewMode === 'grid' })}
+            onClick={() => setViewMode('grid')}
+            title="Grid view"
+          >
+            <LayoutGrid size={14} />
+          </button>
+          <button
+            type="button"
+            className={cx('iconBtn', { active: viewMode === 'table' })}
+            onClick={() => setViewMode('table')}
+            title="Table view"
+          >
+            <List size={14} />
+          </button>
+        </div>
       </div>
 
-      {/* Date range inputs — visible only when filter is open */}
+      {/* Date range inputs */}
       {filterOpen && (
         <div className={cx('filterRow')}>
           <input
@@ -106,8 +136,8 @@ export default function ImageGallery({
         <div className={cx('empty')}>No captures yet</div>
       )}
 
-      {/* Grid */}
-      {images.length > 0 && (
+      {/* Grid view */}
+      {!isLoading && images.length > 0 && viewMode === 'grid' && (
         <div className={cx('grid')}>
           {images.map((img) => (
             <div
@@ -134,6 +164,62 @@ export default function ImageGallery({
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Table view */}
+      {!isLoading && images.length > 0 && viewMode === 'table' && (
+        <div className={cx('tableWrap')}>
+          <table className={cx('table')}>
+            <thead>
+              <tr>
+                <th className={cx('thThumb')}></th>
+                <th>Filename</th>
+                <th>Resolution</th>
+                <th>Size</th>
+                <th>Format</th>
+                <th>Captured</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {images.map((img) => (
+                <tr
+                  key={img.id}
+                  className={cx('row', { selected: img.id === selectedId })}
+                  onClick={() => onSelect(img.id)}
+                >
+                  <td className={cx('tdThumb')}>
+                    {img.hasThumbnail ? (
+                      <img
+                        src={thumbnailUrl(img.id)}
+                        alt=""
+                        className={cx('rowThumb')}
+                        onError={(e) => { e.currentTarget.style.display = 'none' }}
+                      />
+                    ) : (
+                      <div className={cx('rowThumbPlaceholder')}>{img.format}</div>
+                    )}
+                  </td>
+                  <td className={cx('tdFilename')} title={img.filePath}>{img.filename}</td>
+                  <td className={cx('tdMeta')}>{img.width} × {img.height}</td>
+                  <td className={cx('tdMeta')}>{formatBytes(img.fileSizeBytes)}</td>
+                  <td className={cx('tdMeta')}>{img.format.toUpperCase()}</td>
+                  <td className={cx('tdMeta')}>{formatTime(new Date(img.capturedAt))}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className={cx('rowDeleteBtn')}
+                      onClick={(e) => { e.stopPropagation(); onDelete(img.id) }}
+                      title="Delete"
+                    >
+                      <X size={12} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
