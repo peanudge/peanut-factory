@@ -1,37 +1,41 @@
-import { useState } from 'react'
-import { Square, Save, Trash2 } from 'lucide-react'
+import { Loader2, Square } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import Modal from '@/components/shared/Modal'
-import AcquisitionActionBar from '@/components/shared/AcquisitionActionBar'
-import CameraProfileSelector from '@/components/shared/CameraProfileSelector'
 import AcquisitionSettings from '@/components/shared/AcquisitionSettings'
 import StatusChip from '@/components/shared/StatusChip'
-import type { AcquisitionConfigPreset } from '@/api/types'
-import { getPresets, savePreset, deletePreset } from '@/api/client'
+import type { AcquisitionConfigPreset, AcquisitionFormConfig } from '@/api/types'
+import { DEFAULT_ACQUISITION_FORM_CONFIG } from '@/api/types'
+import { getPresets, savePreset } from '@/api/client'
 import { queryKeys } from '@/api/queryKeys'
 import { useToast } from '@/contexts/ToastContext'
 import type { UseAcquisitionConfig } from '@/hooks/useAcquisitionConfig'
 import type { AcquisitionSession } from '@/hooks/useAcquisitionSession'
-import type { InputMode } from './index'
 import cx from './cx'
+
+function presetToFormConfig(preset: AcquisitionConfigPreset): AcquisitionFormConfig {
+  return {
+    ...DEFAULT_ACQUISITION_FORM_CONFIG,
+    profileId: preset.profileId,
+    frameCount: preset.frameCount ?? null,
+    intervalMs: preset.intervalMs ?? null,
+    acquisitionMode: preset.intervalMs != null ? 'auto' : 'manual',
+    outputDirectory: preset.outputDirectory ?? DEFAULT_ACQUISITION_FORM_CONFIG.outputDirectory,
+    format: preset.format ?? DEFAULT_ACQUISITION_FORM_CONFIG.format,
+  }
+}
 
 interface Props {
   acqConfig: UseAcquisitionConfig
   session: AcquisitionSession
-  inputMode: InputMode
-  onInputModeChange: (mode: InputMode) => void
-  selectedPreset: AcquisitionConfigPreset | null
-  onPresetSelect: (preset: AcquisitionConfigPreset | null) => void
 }
 
-export default function CaptureTab(props: Props) {
-  if (props.session.isActive) {
-    return <ActiveView session={props.session} />
+export default function CaptureTab({ acqConfig, session }: Props) {
+  if (session.isActive) {
+    return <ActiveView session={session} />
   }
-  return <IdleView {...props} />
+  return <IdleView acqConfig={acqConfig} session={session} />
 }
 
-// ── 촬영 중: readonly 상태 표시 ──────────────────────────────────────────────
+// ── Active: status + stop/trigger ────────────────────────────────────────────
 
 function ActiveView({ session }: { session: AcquisitionSession }) {
   const s = session.status
@@ -72,222 +76,77 @@ function ActiveView({ session }: { session: AcquisitionSession }) {
           <div className={cx('infoRow', 'error')}><dt>Error</dt><dd>{s.lastError}</dd></div>
         )}
       </dl>
+
       {s?.activeIntervalMs == null && (
-        <button type="button" className={cx('triggerBtn')} onClick={session.handleTrigger} disabled={session.busy}>
+        <button
+          type="button"
+          className={cx('triggerBtn')}
+          onClick={session.handleTrigger}
+          disabled={session.busy}
+        >
+          {session.busy && <Loader2 size={14} className={cx('spin')} />}
           Trigger
         </button>
       )}
-      <button type="button" className={cx('stopBtn')} onClick={session.handleStop} disabled={session.busy}>
-        <Square size={14} /> Stop
+
+      <button
+        type="button"
+        className={cx('stopBtn')}
+        onClick={session.handleStop}
+        disabled={session.busy}
+      >
+        {session.busy
+          ? <Loader2 size={14} className={cx('spin')} />
+          : <Square size={14} />}
+        Stop
       </button>
     </div>
   )
 }
 
-// ── 대기 중: 입력 모드 선택 ──────────────────────────────────────────────────
+// ── Idle: full acquisition form ───────────────────────────────────────────────
 
-function IdleView({ acqConfig, session, inputMode, onInputModeChange, selectedPreset, onPresetSelect }: Props) {
-  return (
-    <>
-      <InputModeToggle mode={inputMode} onChange={onInputModeChange} />
-      {inputMode === 'manual'
-        ? <ManualForm acqConfig={acqConfig} session={session} />
-        : <PresetForm session={session} selected={selectedPreset} onSelect={onPresetSelect} />
-      }
-    </>
-  )
-}
-
-// ── 입력 모드 토글 ─────────────────────────────────────────────────────────
-
-function InputModeToggle({ mode, onChange }: { mode: InputMode; onChange: (m: InputMode) => void }) {
-  return (
-    <div className={cx('modeToggle')}>
-      <button type="button" className={cx('modeBtn', { active: mode === 'manual' })} onClick={() => onChange('manual')}>
-        Manual
-      </button>
-      <button type="button" className={cx('modeBtn', { active: mode === 'preset' })} onClick={() => onChange('preset')}>
-        Preset
-      </button>
-    </div>
-  )
-}
-
-// ── Manual 모드: 폼 입력 ───────────────────────────────────────────────────
-
-function ManualForm({ acqConfig, session }: { acqConfig: UseAcquisitionConfig; session: AcquisitionSession }) {
-  const { config, updateConfig, cameras } = acqConfig
+function IdleView({ acqConfig, session }: Props) {
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const [saveOpen, setSaveOpen] = useState(false)
-  const [presetName, setPresetName] = useState('')
+
+  const { data: presets = [], isLoading: presetsLoading } = useQuery({
+    queryKey: queryKeys.presets,
+    queryFn: getPresets,
+  })
 
   const saveMutation = useMutation({
-    mutationFn: (preset: AcquisitionConfigPreset) => savePreset(preset),
+    mutationFn: savePreset,
     onSuccess: () => {
-      setPresetName('')
-      setSaveOpen(false)
       queryClient.invalidateQueries({ queryKey: queryKeys.presets })
       toast('프리셋이 저장되었습니다', 'success')
     },
     onError: (e: unknown) => toast(e instanceof Error ? e.message : '저장 실패', 'error'),
   })
 
-  const handleSave = () => {
-    if (!presetName.trim()) return
-    saveMutation.mutate({
-      name: presetName.trim(),
-      profileId: config.profileId,
-      frameCount: config.frameCount,
-      intervalMs: config.intervalMs,
-      outputDirectory: config.outputDirectory,
-      format: config.format,
-    })
-  }
-
   return (
-    <>
-      <CameraProfileSelector
-        cameras={cameras}
-        selectedProfile={config.profileId}
-        onProfileChange={(v) => updateConfig('profileId', v)}
-        disabled={false}
-      />
-      <AcquisitionActionBar
-        canStart={session.canStart}
-        canStop={session.canStop}
-        canTrigger={session.canTrigger}
-        acquisitionMode={config.acquisitionMode}
-        busy={session.busy}
-        onStart={session.handleStart}
-        onStop={session.handleStop}
-        onTrigger={session.handleTrigger}
-      />
-      <AcquisitionSettings
-        config={config}
-        onChange={updateConfig}
-        disabled={false}
-      />
-      <button
-        type="button"
-        className={cx('savePresetBtn')}
-        onClick={() => setSaveOpen(true)}
-        disabled={!config.profileId}
-      >
-        <Save size={13} /> Save as Preset
-      </button>
-
-      <Modal
-        open={saveOpen}
-        onClose={() => setSaveOpen(false)}
-        title="Save Acquisition Preset"
-        actions={
-          <>
-            <button type="button" className={cx('btn')} onClick={() => setSaveOpen(false)}>Cancel</button>
-            <button
-              type="button"
-              className={cx('btn', 'primary')}
-              onClick={handleSave}
-              disabled={saveMutation.isPending || !presetName.trim()}
-            >
-              Save
-            </button>
-          </>
-        }
-      >
-        <input
-          type="text"
-          className={cx('field')}
-          placeholder="Preset name"
-          value={presetName}
-          onChange={(e) => setPresetName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-          autoFocus
-        />
-        <p className={cx('meta')}>
-          {[
-            config.profileId || 'none',
-            config.frameCount != null ? `${config.frameCount} frames` : null,
-            config.intervalMs != null ? `${config.intervalMs / 1000}s` : null,
-          ].filter(Boolean).join(' | ')}
-        </p>
-      </Modal>
-    </>
-  )
-}
-
-// ── Preset 모드: 프리셋 선택 ────────────────────────────────────────────────
-
-function PresetForm({
-  session,
-  selected,
-  onSelect,
-}: {
-  session: AcquisitionSession
-  selected: AcquisitionConfigPreset | null
-  onSelect: (p: AcquisitionConfigPreset | null) => void
-}) {
-  const { toast } = useToast()
-  const queryClient = useQueryClient()
-
-  const { data: presets = [] } = useQuery({ queryKey: queryKeys.presets, queryFn: getPresets })
-
-  const deleteMutation = useMutation({
-    mutationFn: (name: string) => deletePreset(name),
-    onSuccess: (_, name) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.presets })
-      if (selected?.name === name) onSelect(null)
-      toast('프리셋이 삭제되었습니다', 'info')
-    },
-    onError: (e: unknown) => toast(e instanceof Error ? e.message : '삭제 실패', 'error'),
-  })
-
-  const canStart = !!selected && session.canStart
-
-  return (
-    <>
-      {presets.length === 0 ? (
-        <p className={cx('empty')}>저장된 프리셋이 없습니다. Manual 모드에서 저장하세요.</p>
-      ) : (
-        <ul className={cx('presetList')}>
-          {presets.map((p) => (
-            <li
-              key={p.name}
-              className={cx('presetItem', { selected: selected?.name === p.name })}
-              onClick={() => onSelect(p)}
-            >
-              <div className={cx('presetInfo')}>
-                <span className={cx('presetName')}>{p.name}</span>
-                <span className={cx('presetMeta')}>
-                  {[
-                    p.profileId,
-                    p.frameCount != null ? `${p.frameCount} frames` : '∞',
-                    p.intervalMs != null ? `${p.intervalMs / 1000}s` : null,
-                  ].filter(Boolean).join(' · ')}
-                </span>
-              </div>
-              <button
-                type="button"
-                className={cx('deleteBtn')}
-                onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(p.name) }}
-                disabled={deleteMutation.isPending}
-                title="Delete preset"
-              >
-                <Trash2 size={13} />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <button
-        type="button"
-        className={cx('btn', 'success', 'startBtn')}
-        onClick={session.handleStart}
-        disabled={session.busy || !canStart}
-      >
-        Start
-      </button>
-    </>
+    <AcquisitionSettings
+      config={acqConfig.config}
+      onChange={acqConfig.updateConfig}
+      cameras={acqConfig.cameras}
+      camerasLoading={acqConfig.camerasLoading}
+      presets={presets}
+      presetsLoading={presetsLoading}
+      onQuickStart={(preset: AcquisitionConfigPreset) => session.handleStartWithConfig(presetToFormConfig(preset))}
+      canStart={session.canStart}
+      busy={session.busy}
+      onStart={session.handleStart}
+      onSavePreset={(name: string) =>
+        saveMutation.mutate({
+          name,
+          profileId: acqConfig.config.profileId,
+          frameCount: acqConfig.config.frameCount,
+          intervalMs: acqConfig.config.intervalMs,
+          outputDirectory: acqConfig.config.outputDirectory,
+          format: acqConfig.config.format,
+        })
+      }
+      savingPreset={saveMutation.isPending}
+    />
   )
 }
