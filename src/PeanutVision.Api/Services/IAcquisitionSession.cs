@@ -12,6 +12,7 @@ public interface IAcquisitionSession : IDisposable
     void Start(AcquisitionConfig config);
     void Stop();
     void ReleaseChannel();
+    void Trigger();
     Task<ImageData> TriggerAsync(int timeoutMs = 5000);
     ImageData? GetLatestFrame();
 

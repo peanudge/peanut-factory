@@ -155,14 +155,10 @@ public class AcquisitionController : ControllerBase
     }
 
     [HttpPost("trigger")]
-    public async Task<ActionResult> Trigger()
+    public ActionResult Trigger()
     {
-        var image = await _acquisition.TriggerAsync(5000);
-        var encoder = new PngEncoder();
-        var stream = new MemoryStream();
-        encoder.Encode(image, stream);
-        stream.Position = 0;
-        return File(stream, "image/png", "trigger.png");
+        _acquisition.Trigger();
+        return Accepted();
     }
 
     [HttpGet("latest-frame")]

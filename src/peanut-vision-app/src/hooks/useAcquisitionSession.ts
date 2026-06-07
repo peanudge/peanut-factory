@@ -5,7 +5,7 @@ import {
   startAcquisition,
   stopAcquisition,
   getAcquisitionStatus,
-  triggerAndCapture,
+  sendTrigger,
   ApiError,
 } from '@/api/client'
 import { queryKeys } from '@/api/queryKeys'
@@ -57,11 +57,7 @@ export function useAcquisitionSession(config: AcquisitionFormConfig) {
   })
 
   const triggerMutation = useMutation({
-    mutationFn: triggerAndCapture,
-    onSuccess: () => {
-      invalidateStatus()
-      toast('프레임이 촬영되었습니다', 'success')
-    },
+    mutationFn: sendTrigger,
     onError: handleError,
   })
 

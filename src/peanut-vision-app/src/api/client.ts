@@ -113,13 +113,11 @@ export function getAcquisitionStatus(): Promise<AcquisitionStatus> {
   return request("/acquisition/status");
 }
 
-export async function triggerAndCapture(): Promise<CaptureResult> {
+export async function sendTrigger(): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/acquisition/trigger`, {
     method: "POST",
   });
   if (!res.ok) await handleErrorResponse(res);
-  const savedPath = res.headers.get("X-Image-Path") ?? undefined;
-  return { blob: await res.blob(), savedPath };
 }
 
 export async function getLatestFrame(): Promise<CaptureResult | null> {

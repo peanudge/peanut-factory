@@ -224,6 +224,24 @@ public sealed class AcquisitionManager : IAcquisitionSession
         StatusChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    public void Trigger()
+    {
+        lock (_lock)
+        {
+            if (_channel == null || !_channel.IsActive)
+                throw new InvalidOperationException("No active acquisition. Start acquisition first.");
+
+            if (!_channel.SupportsSoftwareTrigger)
+            {
+                throw new InvalidOperationException(
+                    $"Trigger requires SOFT or COMBINED trigger mode, but channel is configured for {_channel.TriggerMode}.");
+            }
+
+            _triggerTimestamps.Enqueue(DateTimeOffset.UtcNow);
+            _channel.SendSoftwareTrigger();
+        }
+    }
+
     public async Task<ImageData> TriggerAsync(int timeoutMs = 5000)
     {
         TaskCompletionSource<ImageData> tcs;
