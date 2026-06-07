@@ -16,12 +16,197 @@
   border-left: 1px solid var(--border-subtle);
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 20px 18px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
   position: relative;
   background: var(--bg-surface);
+}
+
+// ── Idle tabbed layout ──
+
+.idleWrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.tabBar {
+  display: flex;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  background: var(--bg-surface);
+  z-index: 1;
+}
+
+.tabBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 4px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: color 0.12s;
+
+  &:hover:not(.tabActive) { color: var(--text-secondary); }
+
+  &.tabActive {
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent);
+    font-weight: 600;
+  }
+}
+
+.tabBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.tabContent {
+  flex: 1;
+  padding: 20px 18px;
+  overflow-y: auto;
+}
+
+// ── Preset list (저장된 설정 탭) ──
+
+.presetSkeletons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.presetSkeleton {
+  height: 52px;
+  border-radius: 6px;
+  background: var(--bg-hover);
+  animation: presetPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes presetPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.presetsEmpty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.presetList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.presetItem {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: border-color 0.12s;
+
+  &:hover { border-color: var(--border-default); }
+}
+
+.presetNameBtn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+  transition: background 0.1s;
+
+  &:hover:not(:disabled) { background: var(--bg-hover); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.presetItemName {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.presetItemMeta {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.presetDeleteBtn {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  background: none;
+  border: none;
+  border-left: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.12s, background 0.1s;
+
+  &:hover:not(:disabled) { color: var(--color-error); background: color-mix(in srgb, var(--color-error) 6%, transparent); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.presetDetail {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.82rem;
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  dt {
+    color: var(--text-muted);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--text-primary);
+    text-align: right;
+    word-break: break-all;
+  }
 }
 
 .canvas {
@@ -209,6 +394,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding: 20px 18px;
 }
 
 .activeHeader {

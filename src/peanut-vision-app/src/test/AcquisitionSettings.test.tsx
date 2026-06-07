@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import AcquisitionSettings from '@/components/shared/AcquisitionSettings'
-import type { AcquisitionFormConfig, AcquisitionConfigPreset, CamFileInfo } from '@/api/types'
+import type { AcquisitionFormConfig, CamFileInfo } from '@/api/types'
 import { DEFAULT_ACQUISITION_FORM_CONFIG } from '@/api/types'
 
 vi.mock('@/components/shared/AcquisitionSettings/cx', () => ({
@@ -27,20 +27,12 @@ const CAMERAS: CamFileInfo[] = [
     spectrum: '', colorFormat: '', trigMode: '', acquisitionMode: '', tapConfiguration: '' },
 ]
 
-const PRESETS: AcquisitionConfigPreset[] = [
-  { name: '프리셋A', profileId: 'cam1.cam', format: 'png' },
-  { name: '프리셋B', profileId: 'cam2.cam', format: 'bmp', frameCount: 10 },
-]
-
 function renderSettings(overrides: Partial<Parameters<typeof AcquisitionSettings>[0]> = {}) {
   const defaults = {
     config: BASE_CONFIG,
     onChange: vi.fn(),
     cameras: CAMERAS,
     camerasLoading: false,
-    presets: [],
-    presetsLoading: false,
-    onQuickStart: vi.fn(),
     canStart: true,
     busy: false,
     onStart: vi.fn(),
@@ -49,40 +41,6 @@ function renderSettings(overrides: Partial<Parameters<typeof AcquisitionSettings
   }
   return render(<AcquisitionSettings {...defaults} {...overrides} />)
 }
-
-// ── Presets section ──
-
-describe('Presets quick-start section', () => {
-  it('does not render section when presets empty and not loading', () => {
-    renderSettings({ presets: [], presetsLoading: false })
-    expect(screen.queryByText('빠른 시작')).not.toBeInTheDocument()
-  })
-
-  it('renders preset chips when presets provided', () => {
-    renderSettings({ presets: PRESETS })
-    expect(screen.getByText('프리셋A')).toBeInTheDocument()
-    expect(screen.getByText('프리셋B')).toBeInTheDocument()
-  })
-
-  it('calls onQuickStart with correct preset when chip clicked', () => {
-    const onQuickStart = vi.fn()
-    renderSettings({ presets: PRESETS, onQuickStart })
-    fireEvent.click(screen.getByText('프리셋A'))
-    expect(onQuickStart).toHaveBeenCalledWith(PRESETS[0])
-  })
-
-  it('disables all chips when busy', () => {
-    renderSettings({ presets: PRESETS, busy: true })
-    const buttons = screen.getAllByRole('button', { name: /프리셋/ })
-    buttons.forEach(btn => expect(btn).toBeDisabled())
-  })
-
-  it('shows skeleton placeholders when presetsLoading', () => {
-    const { container } = renderSettings({ presetsLoading: true })
-    expect(container.querySelectorAll('.skeleton').length).toBeGreaterThan(0)
-    expect(screen.queryByText('프리셋A')).not.toBeInTheDocument()
-  })
-})
 
 // ── Camera select ──
 
@@ -159,10 +117,7 @@ describe('Trigger mode', () => {
 
   it('calls onChange("intervalMs", 500) when interval set to 0.5', () => {
     const onChange = vi.fn()
-    renderSettings({
-      onChange,
-      config: { ...BASE_CONFIG, acquisitionMode: 'auto' },
-    })
+    renderSettings({ onChange, config: { ...BASE_CONFIG, acquisitionMode: 'auto' } })
     fireEvent.change(screen.getByPlaceholderText('1'), { target: { value: '0.5' } })
     expect(onChange).toHaveBeenCalledWith('intervalMs', 500)
   })
@@ -189,27 +144,27 @@ describe('Start button', () => {
   })
 })
 
-// ── Save preset modal ──
+// ── Save settings modal ──
 
-describe('Save preset modal', () => {
-  it('opens modal when 프리셋으로 저장 clicked', () => {
+describe('Save settings modal', () => {
+  it('opens modal when 이 설정 저장하기 clicked', () => {
     renderSettings()
-    fireEvent.click(screen.getByRole('button', { name: /프리셋으로 저장/ }))
+    fireEvent.click(screen.getByRole('button', { name: /이 설정 저장하기/ }))
     expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 
   it('calls onSavePreset with trimmed name on 저장 click', () => {
     const onSavePreset = vi.fn()
     renderSettings({ onSavePreset })
-    fireEvent.click(screen.getByRole('button', { name: /프리셋으로 저장/ }))
-    fireEvent.change(screen.getByPlaceholderText('프리셋 이름'), { target: { value: '  내 프리셋  ' } })
+    fireEvent.click(screen.getByRole('button', { name: /이 설정 저장하기/ }))
+    fireEvent.change(screen.getByPlaceholderText('설정 이름'), { target: { value: '  내 설정  ' } })
     fireEvent.click(screen.getByRole('button', { name: /^저장/ }))
-    expect(onSavePreset).toHaveBeenCalledWith('내 프리셋')
+    expect(onSavePreset).toHaveBeenCalledWith('내 설정')
   })
 
   it('disables 저장 button when savingPreset is true', () => {
     renderSettings({ savingPreset: true })
-    fireEvent.click(screen.getByRole('button', { name: /프리셋으로 저장/ }))
+    fireEvent.click(screen.getByRole('button', { name: /이 설정 저장하기/ }))
     expect(screen.getByRole('button', { name: /^저장/ })).toBeDisabled()
   })
 })

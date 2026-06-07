@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Loader2, FolderSearch } from 'lucide-react'
-import type { AcquisitionFormConfig, SaveImageFormat, AcquisitionConfigPreset, CamFileInfo } from '@/api/types'
+import type { AcquisitionFormConfig, SaveImageFormat, CamFileInfo } from '@/api/types'
 import DirectoryBrowser from '@/components/shared/DirectoryBrowser'
 import Modal from '@/components/shared/Modal'
 import cx from './cx'
@@ -10,9 +10,6 @@ interface Props {
   onChange: <K extends keyof AcquisitionFormConfig>(key: K, value: AcquisitionFormConfig[K]) => void
   cameras: CamFileInfo[]
   camerasLoading: boolean
-  presets: AcquisitionConfigPreset[]
-  presetsLoading: boolean
-  onQuickStart: (preset: AcquisitionConfigPreset) => void
   canStart: boolean
   busy: boolean
   onStart: () => void
@@ -29,15 +26,12 @@ const FORMATS: { value: SaveImageFormat; label: string }[] = [
 export default function AcquisitionSettings({
   config, onChange,
   cameras, camerasLoading,
-  presets, presetsLoading,
-  onQuickStart,
   canStart, busy, onStart,
   onSavePreset, savingPreset,
 }: Props) {
   const [browserOpen, setBrowserOpen] = useState(false)
   const [saveOpen, setSaveOpen] = useState(false)
   const [presetName, setPresetName] = useState('')
-  const [confirmPreset, setConfirmPreset] = useState<AcquisitionConfigPreset | null>(null)
 
   const handleSave = () => {
     if (!presetName.trim()) return
@@ -46,49 +40,8 @@ export default function AcquisitionSettings({
     setSaveOpen(false)
   }
 
-  const handleConfirmStart = () => {
-    if (!confirmPreset) return
-    onQuickStart(confirmPreset)
-    setConfirmPreset(null)
-  }
-
   return (
     <div className={cx('wrap')}>
-
-      {/* ── Saved Settings ── */}
-      <section className={cx('section')}>
-        <span className={cx('sectionLabel')}>저장된 설정</span>
-        {presetsLoading ? (
-          <div className={cx('skeletons')}>
-            <div className={cx('skeleton')} />
-            <div className={cx('skeleton')} />
-          </div>
-        ) : presets.length > 0 ? (
-          <div className={cx('chips')}>
-            {presets.map((p) => (
-              <button
-                key={p.name}
-                type="button"
-                className={cx('chip')}
-                onClick={() => setConfirmPreset(p)}
-                disabled={busy}
-              >
-                {p.name}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <span className={cx('presetsEmpty')}>저장된 설정 없음</span>
-        )}
-        <button
-          type="button"
-          className={cx('saveLinkBtn')}
-          onClick={() => setSaveOpen(true)}
-          disabled={!config.profileId || busy}
-        >
-          아래 설정을 저장하기
-        </button>
-      </section>
 
       {/* ── Settings Form ── */}
       <section className={cx('section')}>
@@ -224,6 +177,15 @@ export default function AcquisitionSettings({
           {busy && <Loader2 size={14} className={cx('spin')} />}
           촬영 시작
         </button>
+
+        <button
+          type="button"
+          className={cx('saveLinkBtn')}
+          onClick={() => setSaveOpen(true)}
+          disabled={!config.profileId || busy}
+        >
+          이 설정 저장하기
+        </button>
       </section>
 
       <DirectoryBrowser
@@ -236,7 +198,7 @@ export default function AcquisitionSettings({
       <Modal
         open={saveOpen}
         onClose={() => setSaveOpen(false)}
-        title="프리셋 저장"
+        title="설정 저장"
         actions={
           <>
             <button type="button" onClick={() => setSaveOpen(false)}>
@@ -255,7 +217,7 @@ export default function AcquisitionSettings({
       >
         <input
           type="text"
-          placeholder="프리셋 이름"
+          placeholder="설정 이름"
           value={presetName}
           onChange={(e) => setPresetName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSave()}
@@ -268,50 +230,6 @@ export default function AcquisitionSettings({
             config.intervalMs != null ? `${config.intervalMs / 1000}s` : null,
           ].filter(Boolean).join(' | ')}
         </small>
-      </Modal>
-      {/* ── Preset confirmation dialog ── */}
-      <Modal
-        open={confirmPreset !== null}
-        onClose={() => setConfirmPreset(null)}
-        title={confirmPreset?.name ?? ''}
-        actions={
-          <>
-            <button type="button" onClick={() => setConfirmPreset(null)}>
-              취소
-            </button>
-            <button
-              type="button"
-              className={cx('startBtn')}
-              onClick={handleConfirmStart}
-              disabled={busy}
-            >
-              {busy && <Loader2 size={13} className={cx('spin')} />}
-              이 설정으로 촬영 시작
-            </button>
-          </>
-        }
-      >
-        {confirmPreset && (
-          <dl className={cx('presetDetail')}>
-            <div><dt>카메라</dt><dd>{confirmPreset.profileId}</dd></div>
-            <div><dt>포맷</dt><dd>{(confirmPreset.format ?? 'png').toUpperCase()}</dd></div>
-            <div>
-              <dt>촬영 방식</dt>
-              <dd>
-                {confirmPreset.intervalMs != null
-                  ? `자동 (${confirmPreset.intervalMs / 1000}초 간격)`
-                  : '수동'}
-              </dd>
-            </div>
-            <div>
-              <dt>프레임 수</dt>
-              <dd>{confirmPreset.frameCount != null ? `${confirmPreset.frameCount}장` : '제한 없음'}</dd>
-            </div>
-            {confirmPreset.outputDirectory && (
-              <div><dt>저장 경로</dt><dd>{confirmPreset.outputDirectory}</dd></div>
-            )}
-          </dl>
-        )}
       </Modal>
     </div>
   )
