@@ -852,8 +852,10 @@ public sealed class GrabChannel : IDisposable
 
         if (_processingTask != null)
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             try { _processingTask.Wait(TimeSpan.FromSeconds(2)); }
             catch { /* Ignore timeout/cancellation */ }
+            System.Diagnostics.Trace.WriteLine($"[SHUTDOWN] GrabChannel.ShutdownProcessingThread: wait took {sw.ElapsedMilliseconds}ms (timed out: {!_processingTask.IsCompleted})");
         }
 
         // Drain any remaining signals — release surfaces, discard others

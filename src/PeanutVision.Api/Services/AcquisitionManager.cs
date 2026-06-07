@@ -354,17 +354,22 @@ public sealed class AcquisitionManager : IAcquisitionSession
     {
         if (_disposed) return;
         _disposed = true;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        System.Diagnostics.Trace.WriteLine($"[SHUTDOWN] AcquisitionManager.Dispose start (state={_channelState})");
         Stop();
+        System.Diagnostics.Trace.WriteLine($"[SHUTDOWN] AcquisitionManager.Dispose: Stop() took {sw.ElapsedMilliseconds}ms");
         GrabChannel? channel;
         lock (_lock)
         {
             channel = _channel;
             _channel = null;
             _channelState = ChannelState.None;
-            
-            
         }
         if (channel != null)
+        {
             _grabService.ReleaseChannel(channel);
+            System.Diagnostics.Trace.WriteLine($"[SHUTDOWN] AcquisitionManager.Dispose: ReleaseChannel took {sw.ElapsedMilliseconds}ms total");
+        }
+        System.Diagnostics.Trace.WriteLine($"[SHUTDOWN] AcquisitionManager.Dispose done ({sw.ElapsedMilliseconds}ms)");
     }
 }

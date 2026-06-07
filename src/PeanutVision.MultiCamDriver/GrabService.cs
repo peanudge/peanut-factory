@@ -297,6 +297,9 @@ public sealed class GrabService : IGrabService
 
             _disposed = true;
 
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            System.Diagnostics.Trace.WriteLine($"[SHUTDOWN] GrabService.Dispose start (channels={_channels.Count})");
+
             // Dispose all channels
             foreach (var channel in _channels.Values)
             {
@@ -311,10 +314,13 @@ public sealed class GrabService : IGrabService
             // Close driver if it was successfully opened
             if (_initialized)
             {
+                var closeSw = System.Diagnostics.Stopwatch.StartNew();
                 _hal.CloseDriver();
+                System.Diagnostics.Trace.WriteLine($"[SHUTDOWN] GrabService: CloseDriver took {closeSw.ElapsedMilliseconds}ms");
             }
 
             _initialized = false;
+            System.Diagnostics.Trace.WriteLine($"[SHUTDOWN] GrabService.Dispose done ({sw.ElapsedMilliseconds}ms total)");
         }
     }
 }
