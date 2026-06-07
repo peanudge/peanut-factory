@@ -48,7 +48,7 @@ export default function AcquisitionActionBar({
         {canTrigger && acquisitionMode === 'manual' && (
           <button
             type="button"
-            className={cx('btn')}
+            className={cx('btn', 'neutral')}
             onClick={onTrigger}
             disabled={busy}
           >

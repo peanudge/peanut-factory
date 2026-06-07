@@ -1,64 +1,47 @@
 .bar {
   display: flex;
+  flex-direction: column;
   gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
 }
 
 .group {
   display: flex;
-  gap: 4px;
+  gap: 8px;
 }
 
 .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border: 1px solid var(--border-default);
-  border-radius: 4px;
-  background: var(--bg-surface);
-  color: var(--text-secondary);
-  font-size: 0.82rem;
-  cursor: pointer;
-  transition: background 0.15s;
-
-  &:hover:not(:disabled) { background: var(--bg-hover); }
-  &:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  &.primary {
-    background: var(--btn-primary-bg);
-    border-color: var(--btn-primary-border);
-    color: var(--text-inverse);
-  }
-  &.primary:hover:not(:disabled) { opacity: 0.8; }
-
-  &.danger {
-    background: var(--btn-danger-bg);
-    border-color: var(--btn-danger-border);
-    color: var(--text-inverse);
-  }
-  &.danger:hover:not(:disabled) { opacity: 0.8; }
-
-  &.success {
-    background: var(--btn-success-bg);
-    border-color: var(--btn-success-border);
-    color: var(--text-inverse);
-  }
-  &.success:hover:not(:disabled) { opacity: 0.8; }
-}
-
-.iconBtn {
+  flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px;
-  border: 1px solid var(--border-default);
-  border-radius: 4px;
-  background: var(--bg-surface);
-  color: var(--text-muted);
+  gap: 6px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: opacity 0.15s;
 
-  &:hover:not(:disabled) { color: var(--text-primary); background: var(--bg-hover); }
-  &:disabled { opacity: 0.4; cursor: not-allowed; }
+  &:hover:not(:disabled) { opacity: 0.85; }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  &.success {
+    background: var(--color-success, #16a34a);
+    color: #fff;
+  }
+
+  &.danger {
+    background: var(--color-error, #dc2626);
+    color: #fff;
+  }
+
+  &.neutral {
+    background: var(--bg-surface-raised);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    font-weight: 500;
+
+    &:hover:not(:disabled) { background: var(--bg-hover); opacity: 1; }
+  }
 }

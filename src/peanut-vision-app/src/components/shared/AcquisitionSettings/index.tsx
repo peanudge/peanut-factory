@@ -102,6 +102,7 @@ export default function AcquisitionSettings({ config, onChange, disabled }: Prop
 
       {/* Save settings */}
       <div className={cx('saveSection')}>
+        <span className={cx('saveSectionLabel')}>저장 설정</span>
         <div className={cx('field')}>
           <label>저장 경로</label>
           <div className={cx('dirRow')}>

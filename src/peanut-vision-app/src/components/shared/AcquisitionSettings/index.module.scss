@@ -1,7 +1,7 @@
 .wrap {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
 }
 
 // ── Mode selector ──
@@ -9,18 +9,18 @@
 .modeRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 8px;
 }
 
 .modeCard {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 10px 8px;
+  gap: 4px;
+  padding: 12px 8px;
   background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: 7px;
+  border: 1.5px solid var(--border-default);
+  border-radius: 8px;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
   text-align: center;
@@ -38,7 +38,7 @@
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
-.modeIcon  { font-size: 1.1rem; line-height: 1; }
+.modeIcon  { font-size: 1.2rem; line-height: 1; }
 .modeLabel { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); }
 .modeDesc  { font-size: 0.7rem; color: var(--text-muted); }
 
@@ -47,19 +47,21 @@
 .autoFields {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  flex: 1 1 120px; // 120px 이하 공간이면 아래로 줄바꿈
+  gap: 4px;
+  flex: 1 1 110px;
 
   label {
     font-size: 0.72rem;
     font-weight: 600;
     color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
 
   small {
@@ -70,28 +72,37 @@
 
 .inputRow {
   display: flex;
-  align-items: center;
-  gap: 4px;
+  align-items: stretch;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-input);
+
+  &:focus-within { border-color: var(--color-accent); }
 
   input {
     flex: 1;
     min-width: 0;
-    padding: 5px 8px;
-    background: var(--bg-input);
-    border: 1px solid var(--border-default);
-    border-radius: 4px;
+    padding: 7px 10px;
+    background: transparent;
+    border: none;
     color: var(--text-primary);
     font-size: 0.85rem;
 
     &::placeholder { color: var(--text-hint); }
-    &:focus { outline: none; border-color: var(--color-accent); }
+    &:focus { outline: none; }
     &:disabled { opacity: 0.4; }
   }
 }
 
 .unit {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
   font-size: 0.75rem;
   color: var(--text-muted);
+  background: var(--bg-surface-raised);
+  border-left: 1px solid var(--border-default);
   white-space: nowrap;
 }
 
@@ -99,13 +110,13 @@
 
 .manualDesc {
   margin: 0;
-  padding: 10px 12px;
+  padding: 12px 14px;
   background: var(--bg-surface-raised);
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
-  line-height: 1.5;
+  line-height: 1.6;
 
   strong { color: var(--text-primary); }
 }
@@ -115,9 +126,17 @@
 .saveSection {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-top: 4px;
+  gap: 12px;
+  padding-top: 12px;
   border-top: 1px solid var(--border-subtle);
+}
+
+.saveSectionLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .saveRow {
@@ -129,23 +148,40 @@
 
 .dirRow {
   display: flex;
-  gap: 4px;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-input);
 
-  input { flex: 1; min-width: 0; }
+  &:focus-within { border-color: var(--color-accent); }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 10px;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 0.82rem;
+
+    &::placeholder { color: var(--text-hint); }
+    &:focus { outline: none; }
+    &:disabled { opacity: 0.4; }
+  }
 }
 
 .browseBtn {
   display: flex;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 10px;
   background: var(--bg-surface-raised);
-  border: 1px solid var(--border-default);
-  border-radius: 4px;
+  border: none;
+  border-left: 1px solid var(--border-default);
   color: var(--text-muted);
   cursor: pointer;
   flex-shrink: 0;
 
-  &:hover:not(:disabled) { color: var(--color-accent); border-color: var(--color-accent); }
+  &:hover:not(:disabled) { color: var(--color-accent); }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
@@ -156,7 +192,7 @@
   font-size: 0.82rem;
   color: var(--text-secondary);
   cursor: pointer;
-  padding-bottom: 4px;
+  padding-bottom: 3px;
 
   input[type='checkbox'] { accent-color: var(--color-accent); }
 }
