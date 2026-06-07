@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { listImages, deleteImage, imageFileUrl } from '@/api/client'
 import { queryKeys } from '@/api/queryKeys'
-import { GALLERY_POLL_INTERVAL_MS } from '@/constants'
 import { useToast } from '@/contexts/ToastContext'
 import type { CapturedImageRecord } from '@/api/types'
 
@@ -26,7 +25,6 @@ export function useImageGallery() {
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.images(queryParams),
     queryFn: () => listImages(queryParams),
-    refetchInterval: GALLERY_POLL_INTERVAL_MS,
   })
 
   useEffect(() => {
@@ -45,6 +43,10 @@ export function useImageGallery() {
     onError: (e: unknown) =>
       toast(e instanceof Error ? e.message : '삭제에 실패했습니다', 'error'),
   })
+
+  const refresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.images() })
+  }, [queryClient])
 
   const images: CapturedImageRecord[] = data?.items ?? []
   const selectedImage = images.find((i) => i.id === selectedId) ?? null
@@ -65,6 +67,7 @@ export function useImageGallery() {
     setSelectedId,
     selectedImage,
     selectedImageUrl,
+    refresh,
     handleDelete: (id: string) => deleteMutation.mutate(id),
   }
 }

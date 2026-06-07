@@ -9,7 +9,7 @@ interface Props {
   savedPath?: string
   isLive: boolean
   capturedAt: Date | null
-  onClose: () => void
+  onClose?: () => void
 }
 
 export default function ImageViewer({
@@ -44,7 +44,7 @@ export default function ImageViewer({
               <span className={cx('chip', 'time')}>
                 {capturedAt ? formatTime(capturedAt) : 'Captured'}
               </span>
-              {capturedAt !== null && (
+              {capturedAt !== null && onClose && (
                 <span className={cx('closeChip')} onClick={onClose}>
                   Close
                 </span>

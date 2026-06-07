@@ -18,7 +18,6 @@ export default function Gallery() {
           capturedAt={
             gallery.selectedImage ? new Date(gallery.selectedImage.capturedAt) : null
           }
-          onClose={() => gallery.setSelectedId(null)}
         />
       </div>
 
@@ -37,6 +36,7 @@ export default function Gallery() {
           onDateFromChange={gallery.setDateFrom}
           onDateToChange={gallery.setDateTo}
           isLoading={gallery.isLoading}
+          onRefresh={gallery.refresh}
         />
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { ChevronDown, Trash2, X } from 'lucide-react'
+import { ChevronDown, RefreshCw, Trash2, X } from 'lucide-react'
 import { thumbnailUrl } from '@/api/client'
 import type { CapturedImageRecord } from '@/api/types'
 import { formatTime } from '@/utils/formatTimestamp'
@@ -17,6 +17,7 @@ interface Props {
   onDateFromChange: (v: string | null) => void
   onDateToChange: (v: string | null) => void
   isLoading: boolean
+  onRefresh: () => void
 }
 
 export default function ImageGallery({
@@ -32,10 +33,11 @@ export default function ImageGallery({
   onDateFromChange,
   onDateToChange,
   isLoading,
+  onRefresh,
 }: Props) {
   return (
     <div className={cx('wrap')}>
-      {/* Date range filter */}
+      {/* Date range filter + refresh */}
       <div className={cx('filterRow')}>
         <input
           type="date"
@@ -59,6 +61,15 @@ export default function ImageGallery({
             <X size={14} />
           </button>
         )}
+        <button
+          type="button"
+          className={cx('refreshBtn')}
+          onClick={onRefresh}
+          disabled={isLoading}
+          title="Refresh"
+        >
+          <RefreshCw size={14} />
+        </button>
       </div>
 
       {/* Loading */}
