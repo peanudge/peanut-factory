@@ -89,23 +89,11 @@ lifetime.ApplicationStopping.Register(() =>
 lifetime.ApplicationStopped.Register(() =>
     shutdownLogger.LogWarning("[SHUTDOWN] ApplicationStopped fired (+{Elapsed}ms — IHostedService phase done)", shutdownSw.ElapsedMilliseconds));
 
-// Ensure SQLite database and schema are created
+// Apply pending EF Core migrations on startup
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
-    db.Database.ExecuteSqlRaw("""
-        CREATE TABLE IF NOT EXISTS CapturedImages (
-            Id TEXT NOT NULL PRIMARY KEY,
-            FilePath TEXT NOT NULL,
-            Width INTEGER NOT NULL DEFAULT 0,
-            Height INTEGER NOT NULL DEFAULT 0,
-            FileSizeBytes INTEGER NOT NULL DEFAULT 0,
-            Format TEXT NOT NULL DEFAULT '',
-            CapturedAt TEXT NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS IX_CapturedImages_CapturedAt ON CapturedImages(CapturedAt);
-        """);
+    db.Database.Migrate();
 }
 
 app.UseCors();
