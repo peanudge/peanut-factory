@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Modal from '@/components/shared/Modal'
 import AcquisitionActionBar from '@/components/shared/AcquisitionActionBar'
 import CameraProfileSelector from '@/components/shared/CameraProfileSelector'
-import ContinuousSettings from '@/components/shared/ContinuousSettings'
+import AcquisitionSettings from '@/components/shared/AcquisitionSettings'
 import StatusChip from '@/components/shared/StatusChip'
 import type { AcquisitionConfigPreset } from '@/api/types'
 import { getPresets, savePreset, deletePreset } from '@/api/client'
@@ -170,7 +170,7 @@ function ManualForm({ config, session }: { config: AcquisitionConfig; session: A
         hasWarnings={session.hasWarnings}
         hasErrors={session.hasErrors}
       />
-      <ContinuousSettings
+      <AcquisitionSettings
         acquisitionMode={config.acquisitionMode}
         onAcquisitionModeChange={config.setAcquisitionMode}
         frameCount={config.frameCount}

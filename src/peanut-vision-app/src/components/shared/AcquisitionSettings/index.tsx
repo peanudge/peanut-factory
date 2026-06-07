@@ -11,7 +11,7 @@ interface Props {
   disabled?: boolean
 }
 
-export default function ContinuousSettings({
+export default function AcquisitionSettings({
   acquisitionMode,
   onAcquisitionModeChange,
   frameCount,
