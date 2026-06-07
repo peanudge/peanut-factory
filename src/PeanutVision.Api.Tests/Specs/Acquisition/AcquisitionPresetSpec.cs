@@ -166,4 +166,89 @@ public class AcquisitionPresetSpec : IClassFixture<PeanutVisionApiFactory>, IAsy
         Assert.False(doc.RootElement.TryGetProperty("triggerMode", out _),
             "triggerMode must not appear in preset response after removal from AcquisitionConfigPreset");
     }
+
+    // ── Save settings (outputDirectory, format, autoSave) persisted in preset ──
+
+    [Fact]
+    public async Task Preset_saves_and_returns_outputDirectory()
+    {
+        await _client.PutJsonAsync("/api/presets", new
+        {
+            name = _testPresetName,
+            profileId = "crevis-tc-a160k-freerun-rgb8.cam",
+            outputDirectory = "/data/peanut/captures",
+        });
+
+        var response = await _client.GetAsync($"/api/presets/{Uri.EscapeDataString(_testPresetName)}");
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("/data/peanut/captures", doc.RootElement.GetProperty("outputDirectory").GetString());
+    }
+
+    [Fact]
+    public async Task Preset_saves_and_returns_format()
+    {
+        await _client.PutJsonAsync("/api/presets", new
+        {
+            name = _testPresetName,
+            profileId = "crevis-tc-a160k-freerun-rgb8.cam",
+            format = "bmp",
+        });
+
+        var response = await _client.GetAsync($"/api/presets/{Uri.EscapeDataString(_testPresetName)}");
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        // SaveImageFormat is serialized as camelCase string via JsonStringEnumConverter
+        Assert.Equal("bmp", doc.RootElement.GetProperty("format").GetString());
+    }
+
+    [Fact]
+    public async Task Preset_saves_and_returns_autoSave_false()
+    {
+        await _client.PutJsonAsync("/api/presets", new
+        {
+            name = _testPresetName,
+            profileId = "crevis-tc-a160k-freerun-rgb8.cam",
+            autoSave = false,
+        });
+
+        var response = await _client.GetAsync($"/api/presets/{Uri.EscapeDataString(_testPresetName)}");
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.False(doc.RootElement.GetProperty("autoSave").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Preset_start_reflects_outputDirectory_in_status()
+    {
+        // Save preset with custom outputDirectory
+        await _client.PutJsonAsync("/api/presets", new
+        {
+            name = _testPresetName,
+            profileId = "crevis-tc-a160k-freerun-rgb8.cam",
+            outputDirectory = "/preset/custom/path",
+            format = "png",
+            autoSave = true,
+        });
+
+        // Load preset and start with its config
+        var presetResp = await _client.GetAsync($"/api/presets/{Uri.EscapeDataString(_testPresetName)}");
+        using var presetDoc = JsonDocument.Parse(await presetResp.Content.ReadAsStringAsync());
+        var outputDir = presetDoc.RootElement.GetProperty("outputDirectory").GetString();
+
+        // Start acquisition with preset values
+        var startResp = await _client.PostJsonAsync("/api/acquisition/start", new
+        {
+            profileId = "crevis-tc-a160k-softtrig-rgb8.cam",
+            outputDirectory = outputDir,
+            format = "png",
+            autoSave = true,
+        });
+        Assert.Equal(HttpStatusCode.OK, startResp.StatusCode);
+
+        // Status must reflect the outputDirectory from the preset
+        var statusResp = await _client.GetAsync("/api/acquisition/status");
+        using var statusDoc = JsonDocument.Parse(await statusResp.Content.ReadAsStringAsync());
+        Assert.Equal("/preset/custom/path", statusDoc.RootElement.GetProperty("outputDirectory").GetString());
+
+        // Cleanup
+        await _client.PostAsync("/api/acquisition/stop", null);
+    }
 }
