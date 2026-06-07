@@ -1,5 +1,13 @@
 import { useState } from 'react'
-import { Filter, RefreshCw, Trash2, X } from 'lucide-react'
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type SortingState,
+} from '@tanstack/react-table'
+import { Filter, RefreshCw, Trash2, X, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
 import { thumbnailUrl } from '@/api/client'
 import type { CapturedImageRecord } from '@/api/types'
 import { formatTime } from '@/utils/formatTimestamp'
@@ -24,6 +32,8 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+const columnHelper = createColumnHelper<CapturedImageRecord>()
+
 export default function ImageGallery({
   images,
   selectedId,
@@ -37,7 +47,78 @@ export default function ImageGallery({
   onRefresh,
 }: Props) {
   const [filterOpen, setFilterOpen] = useState(false)
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: 'capturedAt', desc: true },
+  ])
   const isFiltered = !!(dateFrom || dateTo)
+
+  const columns = [
+    columnHelper.display({
+      id: 'thumbnail',
+      header: '',
+      size: 44,
+      cell: ({ row }) => {
+        const img = row.original
+        return img.hasThumbnail ? (
+          <img
+            src={thumbnailUrl(img.id)}
+            alt=""
+            className={cx('rowThumb')}
+            onError={(e) => { e.currentTarget.style.display = 'none' }}
+          />
+        ) : (
+          <div className={cx('rowThumbPlaceholder')}>{img.format}</div>
+        )
+      },
+    }),
+    columnHelper.accessor('filename', {
+      header: 'Filename',
+      cell: ({ getValue, row }) => (
+        <span title={row.original.filePath}>{getValue()}</span>
+      ),
+    }),
+    columnHelper.display({
+      id: 'resolution',
+      header: 'Resolution',
+      cell: ({ row }) => `${row.original.width} × ${row.original.height}`,
+    }),
+    columnHelper.accessor('fileSizeBytes', {
+      header: 'Size',
+      cell: ({ getValue }) => formatBytes(getValue()),
+    }),
+    columnHelper.accessor('format', {
+      header: 'Format',
+      cell: ({ getValue }) => getValue().toUpperCase(),
+    }),
+    columnHelper.accessor('capturedAt', {
+      header: 'Captured',
+      cell: ({ getValue }) => formatTime(new Date(getValue())),
+    }),
+    columnHelper.display({
+      id: 'delete',
+      header: '',
+      size: 36,
+      cell: ({ row }) => (
+        <button
+          type="button"
+          className={cx('rowDeleteBtn')}
+          onClick={(e) => { e.stopPropagation(); onDelete(row.original.id) }}
+          title="Delete"
+        >
+          <X size={12} />
+        </button>
+      ),
+    }),
+  ]
+
+  const table = useReactTable({
+    data: images,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  })
 
   const handleToggleFilter = () => {
     if (filterOpen && isFiltered) {
@@ -90,7 +171,7 @@ export default function ImageGallery({
           {isFiltered && (
             <button
               type="button"
-              className={cx('clearBtn')}
+              className={cx('clearBtn', 'clearFilter')}
               onClick={() => { onDateFromChange(null); onDateToChange(null) }}
               title="Clear filter"
             >
@@ -117,50 +198,53 @@ export default function ImageGallery({
         <div className={cx('tableWrap')}>
           <table className={cx('table')}>
             <thead>
-              <tr>
-                <th className={cx('thThumb')}></th>
-                <th>Filename</th>
-                <th>Resolution</th>
-                <th>Size</th>
-                <th>Format</th>
-                <th>Captured</th>
-                <th></th>
-              </tr>
+              {table.getHeaderGroups().map((hg) => (
+                <tr key={hg.id}>
+                  {hg.headers.map((header) => {
+                    const canSort = header.column.getCanSort()
+                    const sortDir = header.column.getIsSorted()
+                    return (
+                      <th
+                        key={header.id}
+                        style={{ width: header.getSize() }}
+                        className={cx({ sortable: canSort })}
+                        onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                      >
+                        <span className={cx('thContent')}>
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {canSort && (
+                            <span className={cx('sortIcon')}>
+                              {sortDir === 'asc' ? <ChevronUp size={11} /> :
+                               sortDir === 'desc' ? <ChevronDown size={11} /> :
+                               <ChevronsUpDown size={11} />}
+                            </span>
+                          )}
+                        </span>
+                      </th>
+                    )
+                  })}
+                </tr>
+              ))}
             </thead>
             <tbody>
-              {images.map((img) => (
+              {table.getRowModel().rows.map((row) => (
                 <tr
-                  key={img.id}
-                  className={cx('row', { selected: img.id === selectedId })}
-                  onClick={() => onSelect(img.id)}
+                  key={row.id}
+                  className={cx('row', { selected: row.original.id === selectedId })}
+                  onClick={() => onSelect(row.original.id)}
                 >
-                  <td className={cx('tdThumb')}>
-                    {img.hasThumbnail ? (
-                      <img
-                        src={thumbnailUrl(img.id)}
-                        alt=""
-                        className={cx('rowThumb')}
-                        onError={(e) => { e.currentTarget.style.display = 'none' }}
-                      />
-                    ) : (
-                      <div className={cx('rowThumbPlaceholder')}>{img.format}</div>
-                    )}
-                  </td>
-                  <td className={cx('tdFilename')} title={img.filePath}>{img.filename}</td>
-                  <td className={cx('tdMeta')}>{img.width} × {img.height}</td>
-                  <td className={cx('tdMeta')}>{formatBytes(img.fileSizeBytes)}</td>
-                  <td className={cx('tdMeta')}>{img.format.toUpperCase()}</td>
-                  <td className={cx('tdMeta')}>{formatTime(new Date(img.capturedAt))}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className={cx('rowDeleteBtn')}
-                      onClick={(e) => { e.stopPropagation(); onDelete(img.id) }}
-                      title="Delete"
+                  {row.getVisibleCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      className={cx({
+                        tdThumb: cell.column.id === 'thumbnail',
+                        tdFilename: cell.column.id === 'filename',
+                        tdMeta: !['thumbnail', 'filename', 'delete'].includes(cell.column.id),
+                      })}
                     >
-                      <X size={12} />
-                    </button>
-                  </td>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>
@@ -171,7 +255,7 @@ export default function ImageGallery({
       {/* Clear all */}
       {images.length > 0 && (
         <div className={cx('actions')}>
-          <span />
+          <span className={cx('count')}>{images.length} images</span>
           <button
             type="button"
             className={cx('clearBtn')}
