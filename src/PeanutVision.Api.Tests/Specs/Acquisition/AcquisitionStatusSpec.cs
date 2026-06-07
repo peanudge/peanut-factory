@@ -208,4 +208,32 @@ public class AcquisitionStatusSpec : IClassFixture<PeanutVisionApiFactory>, IAsy
         Assert.True(stats.TryGetProperty("elapsedMs", out _));
         Assert.True(stats.TryGetProperty("averageFps", out _));
     }
+
+    [Fact]
+    public async Task Status_response_does_not_contain_triggerMode_field()
+    {
+        // TriggerMode was removed from AcquisitionConfig — must not appear in API response
+        await _client.PostJsonAsync("/api/acquisition/start",
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
+
+        var response = await _client.GetAsync("/api/acquisition/status");
+
+        using var doc = await response.ReadJsonDocumentAsync();
+        Assert.False(doc.RootElement.TryGetProperty("triggerMode", out _),
+            "triggerMode must not be present in status response after removal from AcquisitionConfig");
+    }
+
+    [Fact]
+    public async Task Start_with_config_fields_roundtrip_to_status()
+    {
+        await _client.PostJsonAsync("/api/acquisition/start",
+            new { profileId = "crevis-tc-a160k-softtrig-rgb8.cam", frameCount = 7, intervalMs = 200 });
+
+        var response = await _client.GetAsync("/api/acquisition/status");
+
+        using var doc = await response.ReadJsonDocumentAsync();
+        Assert.Equal("crevis-tc-a160k-softtrig-rgb8.cam", doc.RootElement.GetProperty("profileId").GetString());
+        Assert.Equal(7, doc.RootElement.GetProperty("activeFrameCount").GetInt32());
+        Assert.Equal(200, doc.RootElement.GetProperty("activeIntervalMs").GetInt32());
+    }
 }
