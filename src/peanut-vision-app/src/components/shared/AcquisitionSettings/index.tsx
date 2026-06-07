@@ -149,19 +149,35 @@ export default function AcquisitionSettings({
         {config.acquisitionMode === 'auto' && (
           <label>
             간격
-            <input
-              type="number"
-              min={50}
-              step={50}
-              value={config.intervalMs ?? ''}
-              placeholder="1000"
-              onChange={(e) => {
-                const ms = parseInt(e.target.value, 10)
-                onChange('intervalMs', isNaN(ms) || ms < 50 ? null : ms)
-              }}
-              disabled={busy}
-            />
-            ms
+            <div className={cx('intervalRow')}>
+              <button
+                type="button"
+                className={cx('intervalBtn')}
+                onClick={() => onChange('intervalMs', Math.max(50, (config.intervalMs ?? 1000) - 50))}
+                disabled={busy || (config.intervalMs ?? 1000) <= 50}
+              >−50
+              </button>
+              <input
+                type="number"
+                min={50}
+                step={50}
+                value={config.intervalMs ?? ''}
+                placeholder="1000"
+                onChange={(e) => {
+                  const ms = parseInt(e.target.value, 10)
+                  onChange('intervalMs', isNaN(ms) || ms < 50 ? null : ms)
+                }}
+                disabled={busy}
+              />
+              <span className={cx('intervalUnit')}>ms</span>
+              <button
+                type="button"
+                className={cx('intervalBtn')}
+                onClick={() => onChange('intervalMs', (config.intervalMs ?? 1000) + 50)}
+                disabled={busy}
+              >+50
+              </button>
+            </div>
           </label>
         )}
       </section>

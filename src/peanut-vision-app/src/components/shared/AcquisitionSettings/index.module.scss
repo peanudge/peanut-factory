@@ -68,6 +68,42 @@
   }
 }
 
+// ── Interval row ──
+
+.intervalRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  input {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+  }
+}
+
+.intervalBtn {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) { color: var(--text-primary); border-color: var(--text-muted); }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+}
+
+.intervalUnit {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
 // ── Dir row ──
 
 .dirRow {
