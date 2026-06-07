@@ -24,44 +24,6 @@
   background: var(--bg-surface);
 }
 
-.sidebarTabs {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--bg-surface-raised);
-  border-bottom: 1px solid var(--border-subtle);
-  display: flex;
-}
-
-.tab {
-  flex: 1;
-  padding: 11px 4px;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: color 0.15s;
-
-  &.active {
-    color: var(--color-accent);
-    border-bottom-color: var(--color-accent);
-    font-weight: 600;
-  }
-
-  &:hover:not(.active) { color: var(--text-secondary); }
-}
-
-.tabPanel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-
-  &.hidden { display: none; }
-}
-
 .canvas {
   flex: 1;
   display: flex;
