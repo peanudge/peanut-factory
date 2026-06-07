@@ -11,9 +11,9 @@
 }
 
 .sidebar {
-  width: 340px;
+  width: 320px;
   flex-shrink: 0;
-  border-right: 1px solid var(--border-subtle);
+  border-left: 1px solid var(--border-subtle);
   overflow-y: auto;
   overflow-x: hidden;
   padding: 20px 18px;
@@ -322,3 +322,9 @@
   &:hover:not(:disabled) { opacity: 0.85; }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
+
+.spin {
+  animation: spin-kf 0.8s linear infinite;
+}
+
+@keyframes spin-kf { to { transform: rotate(360deg); } }
