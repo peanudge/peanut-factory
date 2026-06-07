@@ -151,17 +151,17 @@ export default function AcquisitionSettings({
             간격
             <input
               type="number"
-              min={0.05}
-              step={0.1}
-              value={config.intervalMs != null ? config.intervalMs / 1000 : ''}
-              placeholder="1"
+              min={50}
+              step={50}
+              value={config.intervalMs ?? ''}
+              placeholder="1000"
               onChange={(e) => {
-                const secs = parseFloat(e.target.value)
-                onChange('intervalMs', isNaN(secs) || secs <= 0 ? null : Math.round(secs * 1000))
+                const ms = parseInt(e.target.value, 10)
+                onChange('intervalMs', isNaN(ms) || ms < 50 ? null : ms)
               }}
               disabled={busy}
             />
-            초
+            ms
           </label>
         )}
       </section>
