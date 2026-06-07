@@ -383,3 +383,39 @@ McCloseDriver();
 - `/Services`: `VisionService.cs` (Channel control and image acquisition logic)
 - `/Calibration`: `CrevisController.cs` (FFC and white balance operations)
 - `/Models`: Surface data and signal info structs
+
+---
+
+## 개발 가이드라인: 테스트 작성 원칙
+
+### 기능 추가·변경 시 반드시 테스트를 함께 작성한다
+
+이 프로젝트는 다음 원칙을 따른다:
+
+**1. 새 기능 = 새 테스트**
+- 새 서비스 메서드나 API 엔드포인트를 추가할 때는 반드시 단위 테스트 또는 스펙 테스트를 함께 작성한다.
+- 테스트 없는 PR은 불완전한 것으로 간주한다.
+
+**2. 버그 수정 = 회귀 테스트**
+- 버그를 수정할 때는 **해당 버그를 재현하는 테스트를 먼저** 작성한다 (Red → Green).
+- 이 테스트가 이후 동일한 버그가 재발하는 것을 막는다.
+- 참고: `AcquisitionConfigPersistenceTests` — GetStatus().ActiveConfig가 OutputDirectory/Format/AutoSave를 올바르게 반영하는지 검증. 테스트 부재로 인해 이 버그가 오랫동안 숨어 있었음.
+
+**3. 변경 범위에 맞는 테스트 종류**
+
+| 변경 유형 | 작성할 테스트 |
+|-----------|-------------|
+| 서비스 로직 변경 | `Unit/` 단위 테스트 |
+| API 엔드포인트 변경 | `Specs/` 통합 스펙 테스트 |
+| 데이터 흐름 변경 (config → status 등) | 양 끝단을 연결하는 단위 테스트 |
+| FE 컴포넌트 변경 | `src/test/` Vitest 컴포넌트/훅 테스트 |
+
+**4. 테스트 위치**
+- BE 단위: `src/PeanutVision.Api.Tests/Unit/`
+- BE 스펙: `src/PeanutVision.Api.Tests/Specs/Acquisition/` 등
+- FE: `src/peanut-vision-app/src/test/`
+
+**5. 특히 주의할 데이터 흐름**
+- `AcquisitionConfig` 필드가 `AcquisitionManager`를 거쳐 `GetStatus().ActiveConfig`에 올바르게 전달되는지
+- `AutoSaveService`가 실제 ActiveConfig의 설정(OutputDirectory, Format, AutoSave)을 사용하는지
+- FE의 `AcquisitionFormConfig`가 서버로 올바르게 직렬화되는지

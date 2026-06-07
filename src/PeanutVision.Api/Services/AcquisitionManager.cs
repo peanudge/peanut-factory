@@ -22,9 +22,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
     private bool _disposed;
     private Timer? _triggerTimer;
     private ChannelState _channelState = ChannelState.None;
-    private ProfileId? _channelProfileId;
-    private int? _targetFrameCount;
-    private int? _activeIntervalMs;
+    private AcquisitionConfig? _activeConfig;  // full config including OutputDirectory, Format, AutoSave
 
     public event EventHandler? FrameAcquired;
     public event EventHandler? StatusChanged;
@@ -61,7 +59,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
             }
 
             AcquisitionConfig? activeConfig = _channelState == ChannelState.Active
-                ? new AcquisitionConfig(_channelProfileId!.Value, _targetFrameCount, _activeIntervalMs)
+                ? _activeConfig
                 : null;
 
             var allowedActions = _channelState switch
@@ -93,7 +91,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
 
             var camFile = _camFileService.GetByFileName(profileId.Value);
             _channel = _grabService.CreateChannel(camFile.ToChannelOptions());
-            _channelProfileId = profileId;
+            _activeConfig = null; // will be set in Start()
             _channelState = ChannelState.Idle;
         }
     }
@@ -111,7 +109,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
             {
                 toRelease = _channel;
                 _channel = null;
-                _channelProfileId = null;
+                
                 
                 _channelState = ChannelState.None;
                 _lastFrame = null;
@@ -125,8 +123,11 @@ public sealed class AcquisitionManager : IAcquisitionSession
         {
             var camFile = _camFileService.GetByFileName(config.ProfileId.Value);
             _channel = _grabService.CreateChannel(camFile.ToChannelOptions());
-            _channelProfileId = config.ProfileId;
-            
+            _activeConfig = config with
+            {
+                IntervalMs = config.IntervalMs is > 0 ? config.IntervalMs : null,
+            };
+
             _lastFrame = null;
             _lastError = null;
             _statistics = new AcquisitionStatistics();
@@ -135,8 +136,6 @@ public sealed class AcquisitionManager : IAcquisitionSession
             _channel.AcquisitionError += OnAcquisitionError;
             _channel.AcquisitionEnded += OnAcquisitionEnded;
 
-            _targetFrameCount = config.FrameCount;
-            _activeIntervalMs = config.IntervalMs is > 0 ? config.IntervalMs : null;
             _channelState = ChannelState.Active;
             _statistics.Start();
             _channel.StartAcquisition(config.FrameCount ?? -1);
@@ -181,7 +180,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
 
             channel = _channel;
             _channel = null;
-            _channelProfileId = null;
+            
             
             _channelState = ChannelState.None;
             _lastFrame = null;
@@ -202,8 +201,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
                 return;
 
             _channelState = ChannelState.Idle;
-            _targetFrameCount = null;
-            _activeIntervalMs = null;
+            _activeConfig = null;
 
             tcs = _triggerTcs;
             _triggerTcs = null;
@@ -274,7 +272,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
         long frameCount;
         lock (_lock)
         {
-            target = _targetFrameCount;
+            target = _activeConfig?.FrameCount;
             frameCount = _statistics?.FrameCount ?? 0;
         }
 
@@ -314,7 +312,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
             _lastFrame = image;
             _statistics?.RecordFrame();
             frameIndex = _statistics?.FrameCount ?? 0;
-            profileId = _channelProfileId?.Value;
+            profileId = _activeConfig?.ProfileId.Value;
             tcs = _triggerTcs;
             _triggerTcs = null;
         }
@@ -363,7 +361,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
             channel = _channel;
             _channel = null;
             _channelState = ChannelState.None;
-            _channelProfileId = null;
+            
             
         }
         if (channel != null)
