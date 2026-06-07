@@ -28,16 +28,6 @@ public class ImagesController : ControllerBase
             (int)Math.Ceiling(total / (double)pageSize)));
     }
 
-    [HttpGet("{id:guid}/thumbnail")]
-    public async Task<IActionResult> GetThumbnail(Guid id)
-    {
-        var image = await _repo.GetByIdAsync(id);
-        if (image is null) return NotFound();
-        if (image.ThumbnailPath is null || !System.IO.File.Exists(image.ThumbnailPath))
-            return NotFound(new { error = "Thumbnail not available" });
-        return PhysicalFile(image.ThumbnailPath, "image/jpeg");
-    }
-
     [HttpGet("{id:guid}/file")]
     public async Task<IActionResult> GetFile(Guid id)
     {
@@ -62,12 +52,6 @@ public class ImagesController : ControllerBase
         if (image is null) return NotFound();
 
         try { if (System.IO.File.Exists(image.FilePath)) System.IO.File.Delete(image.FilePath); } catch { }
-        try
-        {
-            if (image.ThumbnailPath is not null && System.IO.File.Exists(image.ThumbnailPath))
-                System.IO.File.Delete(image.ThumbnailPath);
-        }
-        catch { }
 
         await _repo.DeleteAsync(id);
         return NoContent();
@@ -77,7 +61,6 @@ public class ImagesController : ControllerBase
         c.Id,
         c.FilePath,
         Path.GetFileName(c.FilePath),
-        c.ThumbnailPath is not null,
         c.Width,
         c.Height,
         c.FileSizeBytes,
@@ -89,7 +72,6 @@ public record CapturedImageDto(
     Guid Id,
     string FilePath,
     string Filename,
-    bool HasThumbnail,
     int Width,
     int Height,
     long FileSizeBytes,

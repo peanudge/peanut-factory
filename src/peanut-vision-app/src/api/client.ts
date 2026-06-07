@@ -183,10 +183,6 @@ export function deleteImage(id: string): Promise<void> {
   });
 }
 
-export function thumbnailUrl(id: string): string {
-  return `${API_BASE_URL}/images/${id}/thumbnail`;
-}
-
 export function imageFileUrl(id: string): string {
   return `${API_BASE_URL}/images/${id}/file`;
 }

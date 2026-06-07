@@ -12,7 +12,6 @@ public class FrameSaveServiceTests : IDisposable
     private readonly FakeAcquisitionService _acquisition;
     private readonly FrameSaveTracker _tracker;
     private readonly FilenameGenerator _filenameGenerator;
-    private readonly FakeThumbnailService _thumbnailService;
     private readonly FakeScopeFactory _scopeFactory;
     private readonly FakeWebHostEnvironment _environment;
 
@@ -24,7 +23,6 @@ public class FrameSaveServiceTests : IDisposable
         _acquisition = new FakeAcquisitionService(_tempDir);
         _tracker = new FrameSaveTracker();
         _filenameGenerator = new FilenameGenerator();
-        _thumbnailService = new FakeThumbnailService();
         _scopeFactory = new FakeScopeFactory();
         _environment = new FakeWebHostEnvironment(_tempDir);
     }
@@ -37,7 +35,7 @@ public class FrameSaveServiceTests : IDisposable
 
     private FrameSaveService BuildService() =>
         new(_acquisition, _filenameGenerator, _tracker,
-            _thumbnailService, _scopeFactory, _environment);
+            _scopeFactory, _environment);
 
     private static ImageData MakeFrame() =>
         new(new byte[4 * 1 * 3], 4, 1, 12);
@@ -210,11 +208,6 @@ internal sealed class FakeAcquisitionService : IAcquisitionSession
     public Task<ImageData> TriggerAsync(int timeoutMs = 5000) =>
         Task.FromResult(new ImageData(new byte[3], 1, 1, 3));
     public void Dispose() { }
-}
-
-internal sealed class FakeThumbnailService : IThumbnailService
-{
-    public Task<string?> GenerateAsync(string imagePath) => Task.FromResult<string?>(null);
 }
 
 internal sealed class FakeImageRepository : ICapturedImageRepository

@@ -11,7 +11,6 @@ const makeImage = (id: string): CapturedImageRecord => ({
   id,
   filePath: `/captures/${id}.png`,
   filename: `${id}.png`,
-  hasThumbnail: true,
   width: 4160,
   height: 3120,
   fileSizeBytes: 1024 * 500,

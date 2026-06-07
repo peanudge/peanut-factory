@@ -165,7 +165,6 @@ export interface CapturedImageRecord {
   id: string;
   filePath: string;
   filename: string;
-  hasThumbnail: boolean;
   width: number;
   height: number;
   fileSizeBytes: number;

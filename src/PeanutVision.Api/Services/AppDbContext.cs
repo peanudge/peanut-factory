@@ -14,7 +14,6 @@ public sealed class AppDbContext : DbContext
         {
             entity.HasKey(c => c.Id);
             entity.Property(c => c.FilePath).HasMaxLength(1000).IsRequired();
-            entity.Property(c => c.ThumbnailPath).HasMaxLength(1000);
             entity.Property(c => c.Format).HasMaxLength(10).IsRequired();
             entity.HasIndex(c => c.CapturedAt);
         });

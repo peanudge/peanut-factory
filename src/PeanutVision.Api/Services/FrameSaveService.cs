@@ -7,7 +7,6 @@ public sealed class FrameSaveService : IHostedService
     private readonly IAcquisitionSession _acquisition;
     private readonly FilenameGenerator _filenameGenerator;
     private readonly FrameSaveTracker _frameSaveTracker;
-    private readonly IThumbnailService _thumbnailService;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IWebHostEnvironment _environment;
 
@@ -15,14 +14,12 @@ public sealed class FrameSaveService : IHostedService
         IAcquisitionSession acquisition,
         FilenameGenerator filenameGenerator,
         FrameSaveTracker frameSaveTracker,
-        IThumbnailService thumbnailService,
         IServiceScopeFactory scopeFactory,
         IWebHostEnvironment environment)
     {
         _acquisition = acquisition;
         _filenameGenerator = filenameGenerator;
         _frameSaveTracker = frameSaveTracker;
-        _thumbnailService = thumbnailService;
         _scopeFactory = scopeFactory;
         _environment = environment;
     }
@@ -59,7 +56,6 @@ public sealed class FrameSaveService : IHostedService
             var filePath = _filenameGenerator.Generate(config, _environment.ContentRootPath);
             new ImageWriter().Save(image, filePath);
 
-            var thumbPath = await _thumbnailService.GenerateAsync(filePath);
             var fileInfo = new FileInfo(filePath);
 
             using var scope = _scopeFactory.CreateScope();
@@ -69,7 +65,6 @@ public sealed class FrameSaveService : IHostedService
             {
                 Id = Guid.NewGuid(),
                 FilePath = filePath,
-                ThumbnailPath = thumbPath,
                 Width = image.Width,
                 Height = image.Height,
                 FileSizeBytes = fileInfo.Exists ? fileInfo.Length : 0,
