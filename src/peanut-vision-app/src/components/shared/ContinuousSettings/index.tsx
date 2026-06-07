@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { ContinuousSubMode } from '@/api/types'
 import cx from './cx'
 
@@ -21,68 +20,79 @@ export default function ContinuousSettings({
   onIntervalMsChange,
   disabled,
 }: Props) {
-  const [infinite, setInfinite] = useState(frameCount === null)
-
-  const handleInfiniteChange = (checked: boolean) => {
-    setInfinite(checked)
-    onFrameCountChange(checked ? null : 10)
-  }
-
   return (
     <div className={cx('wrap')}>
-      <div className={cx('toggleGroup')}>
-        {(['auto', 'manual'] as ContinuousSubMode[]).map((v) => (
-          <button
-            key={v}
-            type="button"
-            className={cx('toggle', { active: subMode === v })}
-            onClick={() => onSubModeChange(v)}
-            disabled={disabled}
-          >
-            {v.charAt(0).toUpperCase() + v.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      <div className={cx('field')}>
-        <label>Frame Count</label>
-        <input
-          type="number"
-          min={1}
-          value={infinite ? '' : (frameCount ?? '')}
-          onChange={(e) => {
-            const v = parseInt(e.target.value, 10)
-            onFrameCountChange(isNaN(v) || v < 1 ? null : v)
-          }}
-          disabled={disabled || infinite}
-        />
-      </div>
-
-      <label className={cx('checkLabel')}>
-        <input
-          type="checkbox"
-          checked={infinite}
-          onChange={(e) => handleInfiniteChange(e.target.checked)}
+      {/* Mode selector */}
+      <div className={cx('modeRow')}>
+        <button
+          type="button"
+          className={cx('modeCard', { active: subMode === 'auto' })}
+          onClick={() => onSubModeChange('auto')}
           disabled={disabled}
-        />
-        Infinite
-      </label>
+        >
+          <span className={cx('modeIcon')}>🔄</span>
+          <span className={cx('modeLabel')}>자동 촬영</span>
+          <span className={cx('modeDesc')}>N초 간격 반복</span>
+        </button>
+        <button
+          type="button"
+          className={cx('modeCard', { active: subMode === 'manual' })}
+          onClick={() => onSubModeChange('manual')}
+          disabled={disabled}
+        >
+          <span className={cx('modeIcon')}>👆</span>
+          <span className={cx('modeLabel')}>수동 촬영</span>
+          <span className={cx('modeDesc')}>트리거로 한 장씩</span>
+        </button>
+      </div>
 
+      {/* Auto settings */}
       {subMode === 'auto' && (
-        <div className={cx('field')}>
-          <label>Interval (ms)</label>
-          <input
-            type="number"
-            min={50}
-            value={intervalMs ?? ''}
-            onChange={(e) => {
-              const v = parseInt(e.target.value, 10)
-              onIntervalMsChange(isNaN(v) || v < 0 ? null : v)
-            }}
-            disabled={disabled}
-          />
-          <small>최소 50ms</small>
+        <div className={cx('autoFields')}>
+          <div className={cx('field')}>
+            <label>Interval</label>
+            <div className={cx('inputRow')}>
+              <input
+                type="number"
+                min={50}
+                placeholder="500"
+                value={intervalMs ?? ''}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10)
+                  onIntervalMsChange(isNaN(v) || v < 0 ? null : v)
+                }}
+                disabled={disabled}
+              />
+              <span className={cx('unit')}>ms</span>
+            </div>
+            <small>최소 50ms</small>
+          </div>
+          <div className={cx('field')}>
+            <label>Stop after</label>
+            <div className={cx('inputRow')}>
+              <input
+                type="number"
+                min={1}
+                placeholder="∞"
+                value={frameCount ?? ''}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10)
+                  onFrameCountChange(isNaN(v) || v < 1 ? null : v)
+                }}
+                disabled={disabled}
+              />
+              <span className={cx('unit')}>frames</span>
+            </div>
+            <small>비우면 제한없음</small>
+          </div>
         </div>
+      )}
+
+      {/* Manual description */}
+      {subMode === 'manual' && (
+        <p className={cx('manualDesc')}>
+          Start 후 화면 상단 <strong>Trigger</strong> 버튼으로 한 장씩 촬영합니다.
+        </p>
       )}
     </div>
   )

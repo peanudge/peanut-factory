@@ -1,42 +1,80 @@
 .wrap {
   display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.toggleGroup {
+// ── Mode selector ──
+
+.modeRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.modeCard {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 8px;
+  background: var(--bg-surface);
   border: 1px solid var(--border-default);
-  border-radius: 4px;
-  overflow: hidden;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-accent);
+    background: var(--bg-hover);
+  }
+
+  &.active {
+    border-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  }
+
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
-.toggle {
-  padding: 5px 12px;
-  background: var(--bg-surface);
-  border: none;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  cursor: pointer;
+.modeIcon  { font-size: 1.1rem; line-height: 1; }
+.modeLabel { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); }
+.modeDesc  { font-size: 0.7rem; color: var(--text-muted); }
 
-  &:not(:first-child) { border-left: 1px solid var(--border-default); }
-  &.active { background: var(--color-accent); color: var(--text-inverse); }
-  &:disabled { opacity: 0.4; cursor: not-allowed; }
+// ── Auto fields ──
+
+.autoFields {
+  display: flex;
+  gap: 12px;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  flex: 1;
 
   label {
     font-size: 0.72rem;
+    font-weight: 600;
     color: var(--text-muted);
   }
 
+  small {
+    font-size: 0.68rem;
+    color: var(--text-hint);
+  }
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
   input {
-    width: 110px;
+    flex: 1;
+    min-width: 0;
     padding: 5px 8px;
     background: var(--bg-input);
     border: 1px solid var(--border-default);
@@ -44,25 +82,29 @@
     color: var(--text-primary);
     font-size: 0.85rem;
 
+    &::placeholder { color: var(--text-hint); }
     &:focus { outline: none; border-color: var(--color-accent); }
     &:disabled { opacity: 0.4; }
   }
-
-  small {
-    font-size: 0.7rem;
-    color: var(--text-hint);
-  }
 }
 
-.checkLabel {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  cursor: pointer;
+.unit {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
 
-  input[type='checkbox'] {
-    accent-color: var(--color-accent);
-  }
+// ── Manual description ──
+
+.manualDesc {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+
+  strong { color: var(--text-primary); }
 }
