@@ -67,10 +67,10 @@ public class AcquisitionStartSpec : IClassFixture<PeanutVisionApiFactory>, IAsyn
     }
 
     [Fact]
-    public async Task Start_with_custom_trigger_mode_returns_ok()
+    public async Task Start_with_default_profile_returns_ok()
     {
         var response = await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam", triggerMode = "MC_TrigMode_SOFT" });
+            new { profileId = "crevis-tc-a160k-freerun-rgb8.cam" });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }

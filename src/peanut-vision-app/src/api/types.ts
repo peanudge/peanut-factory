@@ -61,13 +61,12 @@ export type AcquisitionAction = "start" | "stop" | "trigger";
 
 export type ChannelState = "none" | "idle" | "active";
 
-export type ShootingMode = "auto" | "manual";
+export type AcquisitionMode = "auto" | "manual";
 
 export interface AcquisitionStatus {
   isActive: boolean;
   channelState?: ChannelState;
   profileId?: string;
-  triggerMode?: string;
   activeFrameCount?: number | null;
   activeIntervalMs?: number | null;
   hasFrame?: boolean;
@@ -99,7 +98,6 @@ export interface HistogramData {
   bins: number;
 }
 
-export type TriggerModeOption = "soft" | "hard" | "combined";
 
 export type ColorFormat =
   | "Y8" | "Y10" | "Y12" | "Y16"
@@ -112,7 +110,6 @@ export type ColorFormat =
 export interface AcquisitionConfigPreset {
   name: string;
   profileId: string;
-  triggerMode?: TriggerModeOption | null;
   frameCount?: number | null;
   intervalMs?: number | null;
 }

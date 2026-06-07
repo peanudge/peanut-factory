@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Modal from '@/components/shared/Modal'
 import AcquisitionActionBar from '@/components/shared/AcquisitionActionBar'
 import CameraProfileSelector from '@/components/shared/CameraProfileSelector'
-import TriggerModeSelector from '@/components/shared/TriggerModeSelector'
 import ContinuousSettings from '@/components/shared/ContinuousSettings'
 import StatusChip from '@/components/shared/StatusChip'
 import type { AcquisitionConfigPreset } from '@/api/types'
@@ -48,7 +47,6 @@ function ActiveView({ session }: { session: AcquisitionSession }) {
       </div>
       <dl className={cx('activeInfo')}>
         <div className={cx('infoRow')}><dt>Profile</dt><dd>{s?.profileId ?? '—'}</dd></div>
-        <div className={cx('infoRow')}><dt>Trigger</dt><dd>{s?.triggerMode ?? '—'}</dd></div>
         <div className={cx('infoRow')}>
           <dt>Frame count</dt>
           <dd>{s?.activeFrameCount != null ? s.activeFrameCount : '∞'}</dd>
@@ -143,7 +141,6 @@ function ManualForm({ config, session }: { config: AcquisitionConfig; session: A
     saveMutation.mutate({
       name: presetName.trim(),
       profileId: config.selectedProfile,
-      triggerMode: config.triggerMode,
       frameCount: config.frameCount,
       intervalMs: config.intervalMs,
     })
@@ -157,18 +154,13 @@ function ManualForm({ config, session }: { config: AcquisitionConfig; session: A
         onProfileChange={config.setSelectedProfile}
         disabled={false}
       />
-      <TriggerModeSelector
-        triggerMode={config.triggerMode}
-        onTriggerModeChange={config.setTriggerMode}
-        disabled={false}
-      />
       <AcquisitionActionBar
         isActive={false}
         profileLabel={config.selectedProfile}
         canStart={session.canStart}
         canStop={session.canStop}
         canTrigger={session.canTrigger}
-        shootingMode={config.shootingMode}
+        acquisitionMode={config.acquisitionMode}
         busy={session.busy}
         onStart={session.handleStart}
         onStop={session.handleStop}
@@ -179,8 +171,8 @@ function ManualForm({ config, session }: { config: AcquisitionConfig; session: A
         hasErrors={session.hasErrors}
       />
       <ContinuousSettings
-        shootingMode={config.shootingMode}
-        onShootingModeChange={config.setShootingMode}
+        acquisitionMode={config.acquisitionMode}
+        onAcquisitionModeChange={config.setAcquisitionMode}
         frameCount={config.frameCount}
         onFrameCountChange={config.setFrameCount}
         intervalMs={config.intervalMs}
@@ -226,7 +218,6 @@ function ManualForm({ config, session }: { config: AcquisitionConfig; session: A
         <p className={cx('meta')}>
           {[
             config.selectedProfile || 'none',
-            config.triggerMode,
             config.frameCount != null ? `${config.frameCount} frames` : null,
             config.intervalMs != null ? `${config.intervalMs}ms` : null,
           ].filter(Boolean).join(' | ')}
@@ -284,7 +275,6 @@ function PresetForm({
                 <span className={cx('presetMeta')}>
                   {[
                     p.profileId,
-                    p.triggerMode ?? 'soft',
                     p.frameCount != null ? `${p.frameCount} frames` : '∞',
                     p.intervalMs != null ? `${p.intervalMs}ms` : null,
                   ].filter(Boolean).join(' · ')}

@@ -130,19 +130,6 @@ public class AcquisitionStatusSpec : IClassFixture<PeanutVisionApiFactory>, IAsy
     }
 
     [Fact]
-    public async Task Status_when_active_includes_triggerMode()
-    {
-        await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-softtrig-rgb8.cam", triggerMode = "soft" });
-
-        var response = await _client.GetAsync("/api/acquisition/status");
-
-        using var doc = await response.ReadJsonDocumentAsync();
-        var triggerMode = doc.RootElement.GetProperty("triggerMode").GetString();
-        Assert.Equal("soft", triggerMode);
-    }
-
-    [Fact]
     public async Task Status_when_active_with_frameCount_includes_activeFrameCount()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
@@ -191,19 +178,10 @@ public class AcquisitionStatusSpec : IClassFixture<PeanutVisionApiFactory>, IAsy
     }
 
     [Fact]
-    public async Task Status_when_idle_triggerMode_is_null()
-    {
-        var response = await _client.GetAsync("/api/acquisition/status");
-
-        using var doc = await response.ReadJsonDocumentAsync();
-        Assert.Equal(JsonValueKind.Null, doc.RootElement.GetProperty("triggerMode").ValueKind);
-    }
-
-    [Fact]
     public async Task Status_after_stop_active_config_fields_are_null()
     {
         await _client.PostJsonAsync("/api/acquisition/start",
-            new { profileId = "crevis-tc-a160k-softtrig-rgb8.cam", frameCount = 3, triggerMode = "soft" });
+            new { profileId = "crevis-tc-a160k-softtrig-rgb8.cam", frameCount = 3 });
         await _client.PostAsync("/api/acquisition/stop", null);
 
         var response = await _client.GetAsync("/api/acquisition/status");

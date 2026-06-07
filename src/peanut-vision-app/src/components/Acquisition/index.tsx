@@ -3,7 +3,7 @@ import { useLiveStream } from '@/hooks/useLiveStream'
 import { useResizablePanel } from '@/hooks/useResizablePanel'
 import { useAcquisitionConfig } from '@/hooks/useAcquisitionConfig'
 import { useAcquisitionSession } from '@/hooks/useAcquisitionSession'
-import type { AcquisitionConfigPreset, ShootingMode, TriggerModeOption } from '@/api/types'
+import type { AcquisitionConfigPreset, AcquisitionMode,  } from '@/api/types'
 import CaptureTab from './CaptureTab'
 import ImageSaveSettingsPanel from '@/components/shared/ImageSaveSettingsPanel'
 import ImageViewer from '@/components/shared/ImageViewer'
@@ -22,10 +22,9 @@ export default function Acquisition() {
   const sessionConfig = inputMode === 'preset' && selectedPreset
     ? {
         selectedProfile: selectedPreset.profileId,
-        triggerMode: (selectedPreset.triggerMode ?? 'soft') as TriggerModeOption,
         frameCount: selectedPreset.frameCount ?? null,
         intervalMs: selectedPreset.intervalMs ?? null,
-        shootingMode: (selectedPreset.intervalMs != null ? 'auto' : 'manual') as ShootingMode,
+        acquisitionMode: (selectedPreset.intervalMs != null ? 'auto' : 'manual') as AcquisitionMode,
       }
     : config
 

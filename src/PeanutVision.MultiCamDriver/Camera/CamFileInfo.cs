@@ -35,17 +35,6 @@ public sealed record CamFileInfo(
         };
     }
 
-    /// <summary>
-    /// Creates GrabChannelOptions with a custom trigger mode override.
-    /// </summary>
-    public GrabChannelOptions ToChannelOptions(McTrigMode triggerMode, int driverIndex = 0,
-        string connector = "M", int surfaceCount = 4)
-    {
-        var options = ToChannelOptions(driverIndex, connector, surfaceCount);
-        options.TriggerMode = triggerMode;
-        return options;
-    }
-
     private static McTrigMode ParseTrigMode(string trigMode)
     {
         return trigMode.ToUpperInvariant() switch

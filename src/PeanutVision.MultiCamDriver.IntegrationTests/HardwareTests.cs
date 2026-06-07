@@ -172,7 +172,7 @@ public class HardwareTests : IDisposable
         SkipIfNoHardware();
 
         var camInfo = _camFileService.GetByFileName("TC-A160K-SEM_freerun_RGB8.cam");
-        var options = camInfo.ToChannelOptions(triggerMode: McTrigMode.MC_TrigMode_SOFT);
+        var options = camInfo.ToChannelOptions();
 
         using var channel = _service.CreateChannel(options);
 

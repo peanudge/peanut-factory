@@ -69,13 +69,12 @@ export function getCameras(): Promise<CamFileInfo[]> {
 
 export function startAcquisition(
   profileId: string,
-  triggerMode?: string,
   frameCount?: number | null,
   intervalMs?: number | null,
 ): Promise<ApiMessage & { profileId: string }> {
   return request("/acquisition/start", {
     method: "POST",
-    body: JSON.stringify({ profileId, triggerMode, frameCount, intervalMs }),
+    body: JSON.stringify({ profileId, frameCount, intervalMs }),
   });
 }
 

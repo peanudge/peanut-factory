@@ -22,7 +22,6 @@ public class AcquisitionController : ControllerBase
     {
         var config = new AcquisitionConfig(
             new ProfileId(request.ProfileId),
-            request.TriggerMode is not null ? TriggerMode.Parse(request.TriggerMode) : null,
             request.FrameCount,
             request.IntervalMs);
 
@@ -53,7 +52,6 @@ public class AcquisitionController : ControllerBase
             isActive = s.IsActive,
             channelState = s.ChannelState.ToString().ToLowerInvariant(),
             profileId = s.ActiveConfig?.ProfileId.Value,
-            triggerMode = s.ActiveConfig?.TriggerMode?.ToString().ToLowerInvariant(),
             activeFrameCount = s.IsActive ? s.ActiveConfig?.FrameCount : null,
             activeIntervalMs = s.IsActive ? s.ActiveConfig?.IntervalMs : null,
             hasFrame = s.HasFrame,
@@ -163,7 +161,6 @@ public class AcquisitionController : ControllerBase
             isActive = s.IsActive,
             channelState = s.ChannelState.ToString().ToLowerInvariant(),
             profileId = s.ActiveConfig?.ProfileId.Value,
-            triggerMode = s.ActiveConfig?.TriggerMode?.ToString().ToLowerInvariant(),
             activeFrameCount = s.IsActive ? s.ActiveConfig?.FrameCount : (int?)null,
             activeIntervalMs = s.IsActive ? s.ActiveConfig?.IntervalMs : (int?)null,
             hasFrame = s.HasFrame,
@@ -198,7 +195,6 @@ public class AcquisitionController : ControllerBase
 public class StartAcquisitionRequest
 {
     public required string ProfileId { get; set; }
-    public string? TriggerMode { get; set; }
     public int? FrameCount { get; set; }
     public int? IntervalMs { get; set; }
 }

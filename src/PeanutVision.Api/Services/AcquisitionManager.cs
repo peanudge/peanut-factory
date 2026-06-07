@@ -23,7 +23,6 @@ public sealed class AcquisitionManager : IAcquisitionSession
     private Timer? _triggerTimer;
     private ChannelState _channelState = ChannelState.None;
     private ProfileId? _channelProfileId;
-    private TriggerMode? _channelTriggerMode;
     private int? _targetFrameCount;
     private int? _activeIntervalMs;
 
@@ -62,7 +61,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
             }
 
             AcquisitionConfig? activeConfig = _channelState == ChannelState.Active
-                ? new AcquisitionConfig(_channelProfileId!.Value, _channelTriggerMode, _targetFrameCount, _activeIntervalMs)
+                ? new AcquisitionConfig(_channelProfileId!.Value, _targetFrameCount, _activeIntervalMs)
                 : null;
 
             var allowedActions = _channelState switch
@@ -85,7 +84,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
         }
     }
 
-    private void CreateChannel(ProfileId profileId, TriggerMode? triggerMode = null)
+    private void CreateChannel(ProfileId profileId)
     {
         lock (_lock)
         {
@@ -93,13 +92,8 @@ public sealed class AcquisitionManager : IAcquisitionSession
                 throw new InvalidOperationException("A channel already exists. Release it first.");
 
             var camFile = _camFileService.GetByFileName(profileId.Value);
-            var options = triggerMode.HasValue
-                ? camFile.ToChannelOptions(triggerMode.Value.Mode)
-                : camFile.ToChannelOptions();
-
-            _channel = _grabService.CreateChannel(options);
+            _channel = _grabService.CreateChannel(camFile.ToChannelOptions());
             _channelProfileId = profileId;
-            _channelTriggerMode = triggerMode;
             _channelState = ChannelState.Idle;
         }
     }
@@ -122,7 +116,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
                 toRelease = _channel;
                 _channel = null;
                 _channelProfileId = null;
-                _channelTriggerMode = null;
+                
                 _channelState = ChannelState.None;
                 _lastFrame = null;
                 _statistics = null;
@@ -134,13 +128,9 @@ public sealed class AcquisitionManager : IAcquisitionSession
         lock (_lock)
         {
             var camFile = _camFileService.GetByFileName(config.ProfileId.Value);
-            var options = config.TriggerMode.HasValue
-                ? camFile.ToChannelOptions(config.TriggerMode.Value.Mode)
-                : camFile.ToChannelOptions();
-
-            _channel = _grabService.CreateChannel(options);
+            _channel = _grabService.CreateChannel(camFile.ToChannelOptions());
             _channelProfileId = config.ProfileId;
-            _channelTriggerMode = config.TriggerMode;
+            
             _lastFrame = null;
             _lastError = null;
             _statistics = new AcquisitionStatistics();
@@ -196,7 +186,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
             channel = _channel;
             _channel = null;
             _channelProfileId = null;
-            _channelTriggerMode = null;
+            
             _channelState = ChannelState.None;
             _lastFrame = null;
             _statistics = null;
@@ -378,7 +368,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
             _channel = null;
             _channelState = ChannelState.None;
             _channelProfileId = null;
-            _channelTriggerMode = null;
+            
         }
         if (channel != null)
             _grabService.ReleaseChannel(channel);

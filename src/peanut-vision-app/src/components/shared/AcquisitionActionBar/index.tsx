@@ -1,6 +1,6 @@
 import { Play, Square, Crosshair, RefreshCw } from 'lucide-react'
 import StatusChip from '@/components/shared/StatusChip'
-import type { ShootingMode } from '@/api/types'
+import type { AcquisitionMode } from '@/api/types'
 import cx from './cx'
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
   canStart: boolean
   canStop: boolean
   canTrigger: boolean
-  shootingMode: ShootingMode
+  acquisitionMode: AcquisitionMode
   busy: boolean
   onStart: () => void
   onStop: () => void
@@ -26,7 +26,7 @@ export default function AcquisitionActionBar({
   canStart,
   canStop,
   canTrigger,
-  shootingMode,
+  acquisitionMode,
   busy,
   onStart,
   onStop,
@@ -58,7 +58,7 @@ export default function AcquisitionActionBar({
             <Play size={14} /> Start
           </button>
         )}
-        {canTrigger && shootingMode === 'manual' && (
+        {canTrigger && acquisitionMode === 'manual' && (
           <button
             type="button"
             className={cx('btn')}

@@ -175,28 +175,6 @@ public class AcquisitionManagerTests : IDisposable
         }
     }
 
-    public class Given_started_with_trigger_mode : AcquisitionManagerTests
-    {
-        public Given_started_with_trigger_mode()
-        {
-            _manager.Start(new AcquisitionConfig(
-                new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"),
-                TriggerMode.Soft));
-        }
-
-        [Fact]
-        public void Then_is_active()
-        {
-            Assert.True(_manager.GetStatus().IsActive);
-        }
-
-        [Fact]
-        public void Then_channel_trigger_mode_is_soft()
-        {
-            Assert.Equal(TriggerMode.Soft, _manager.GetStatus().ActiveConfig?.TriggerMode);
-        }
-    }
-
     public class Given_started_then_stopped : AcquisitionManagerTests
     {
         public Given_started_then_stopped()
@@ -497,12 +475,10 @@ public class AcquisitionManagerTests : IDisposable
         {
             var config = new AcquisitionConfig(
                 new ProfileId("cam.cam"),
-                TriggerMode.Soft,
                 FrameCount: 5,
                 IntervalMs: 100);
 
             Assert.Equal("cam.cam", config.ProfileId.Value);
-            Assert.Equal(TriggerMode.Soft, config.TriggerMode);
             Assert.Equal(5, config.FrameCount);
             Assert.Equal(100, config.IntervalMs);
         }
@@ -512,7 +488,6 @@ public class AcquisitionManagerTests : IDisposable
         {
             var config = new AcquisitionConfig(new ProfileId("cam.cam"));
 
-            Assert.Null(config.TriggerMode);
             Assert.Null(config.FrameCount);
             Assert.Null(config.IntervalMs);
         }
@@ -538,7 +513,6 @@ public class AcquisitionManagerTests : IDisposable
         {
             var config = new AcquisitionConfig(
                 new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"),
-                TriggerMode.Soft,
                 FrameCount: 3,
                 IntervalMs: 100);
             _manager.Start(config);
@@ -549,7 +523,6 @@ public class AcquisitionManagerTests : IDisposable
             Assert.True(status.IsActive);
             Assert.NotNull(status.ActiveConfig);
             Assert.Equal("crevis-tc-a160k-freerun-rgb8.cam", status.ActiveConfig!.ProfileId.Value);
-            Assert.Equal(TriggerMode.Soft, status.ActiveConfig.TriggerMode);
             Assert.Equal(3, status.ActiveConfig.FrameCount);
             Assert.Equal(100, status.ActiveConfig.IntervalMs);
         }

@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import type { AcquisitionConfigPreset, ShootingMode, TriggerModeOption } from '@/api/types'
+import type { AcquisitionConfigPreset, AcquisitionMode } from '@/api/types'
 import { getCameras } from '@/api/client'
 import { queryKeys } from '@/api/queryKeys'
 
 export function useAcquisitionConfig() {
   const [selectedProfile, setSelectedProfile] = useState('')
-  const [shootingMode, setShootingMode] = useState<ShootingMode>('auto')
-  const [triggerMode, setTriggerMode] = useState<TriggerModeOption>('soft')
+  const [acquisitionMode, setAcquisitionMode] = useState<AcquisitionMode>('auto')
   const [frameCount, setFrameCount] = useState<number | null>(null)
   const [intervalMs, setIntervalMs] = useState<number | null>(null)
 
@@ -24,7 +23,6 @@ export function useAcquisitionConfig() {
 
   const handleLoadPreset = useCallback((preset: AcquisitionConfigPreset) => {
     setSelectedProfile(preset.profileId)
-    setTriggerMode(preset.triggerMode ?? 'soft')
     setFrameCount(preset.frameCount ?? null)
     setIntervalMs(preset.intervalMs ?? null)
   }, [])
@@ -33,10 +31,8 @@ export function useAcquisitionConfig() {
     cameras,
     selectedProfile,
     setSelectedProfile,
-    shootingMode,
-    setShootingMode,
-    triggerMode,
-    setTriggerMode,
+    acquisitionMode,
+    setAcquisitionMode,
     frameCount,
     setFrameCount,
     intervalMs,

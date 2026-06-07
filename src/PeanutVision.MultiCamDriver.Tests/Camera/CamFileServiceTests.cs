@@ -145,15 +145,15 @@ public class CamFileServiceTests : IDisposable
     }
 
     [Fact]
-    public void ToChannelOptions_WithOverride_UsesOverriddenTriggerMode()
+    public void ToChannelOptions_ParsesTrigModeFromFile()
     {
         WriteTestCamFile("test.cam", "TrigMode = IMMEDIATE");
 
         var service = new CamFileService(_testDir);
         var info = service.GetByFileName("test.cam");
-        var options = info.ToChannelOptions(McTrigMode.MC_TrigMode_HARD);
+        var options = info.ToChannelOptions();
 
-        Assert.Equal(McTrigMode.MC_TrigMode_HARD, options.TriggerMode);
+        Assert.Equal(McTrigMode.MC_TrigMode_IMMEDIATE, options.TriggerMode);
     }
 
     [Fact]
