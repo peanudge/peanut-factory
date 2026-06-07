@@ -46,14 +46,15 @@
 
 .autoFields {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .field {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  flex: 1;
+  flex: 1 1 120px; // 120px 이하 공간이면 아래로 줄바꿈
 
   label {
     font-size: 0.72rem;
