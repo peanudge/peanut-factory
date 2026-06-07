@@ -53,18 +53,24 @@ export default function AcquisitionSettings({ config, onChange, disabled }: Prop
             <div className={cx('inputRow')}>
               <input
                 type="number"
-                min={50}
-                placeholder="500"
-                value={config.intervalMs ?? ''}
+                min={0.05}
+                step={0.1}
+                placeholder="1"
+                value={config.intervalMs != null ? config.intervalMs / 1000 : ''}
                 onChange={(e) => {
-                  const v = parseInt(e.target.value, 10)
-                  onChange('intervalMs', isNaN(v) || v < 0 ? null : v)
+                  const secs = parseFloat(e.target.value)
+                  onChange('intervalMs', isNaN(secs) || secs <= 0 ? null : Math.round(secs * 1000))
                 }}
                 disabled={disabled}
               />
-              <span className={cx('unit')}>ms</span>
+              <span className={cx('unit')}>s</span>
             </div>
-            <small>최소 50ms</small>
+            {config.intervalMs != null && (
+              <small>{config.intervalMs}ms</small>
+            )}
+            {config.intervalMs == null && (
+              <small>최소 0.05s (50ms)</small>
+            )}
           </div>
           <div className={cx('field')}>
             <label>Stop after</label>

@@ -53,7 +53,7 @@ function ActiveView({ session }: { session: AcquisitionSession }) {
         </div>
         <div className={cx('infoRow')}>
           <dt>Interval</dt>
-          <dd>{s?.activeIntervalMs != null ? `${s.activeIntervalMs} ms` : 'manual'}</dd>
+          <dd>{s?.activeIntervalMs != null ? `${s.activeIntervalMs / 1000}s` : 'manual'}</dd>
         </div>
         <div className={cx('infoRow')}>
           <dt>Save to</dt>
@@ -215,7 +215,7 @@ function ManualForm({ acqConfig, session }: { acqConfig: UseAcquisitionConfig; s
           {[
             config.profileId || 'none',
             config.frameCount != null ? `${config.frameCount} frames` : null,
-            config.intervalMs != null ? `${config.intervalMs}ms` : null,
+            config.intervalMs != null ? `${config.intervalMs / 1000}s` : null,
           ].filter(Boolean).join(' | ')}
         </p>
       </Modal>
@@ -269,7 +269,7 @@ function PresetForm({
                   {[
                     p.profileId,
                     p.frameCount != null ? `${p.frameCount} frames` : '∞',
-                    p.intervalMs != null ? `${p.intervalMs}ms` : null,
+                    p.intervalMs != null ? `${p.intervalMs / 1000}s` : null,
                   ].filter(Boolean).join(' · ')}
                 </span>
               </div>
