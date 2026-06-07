@@ -31,21 +31,21 @@
     border-color: var(--btn-primary-border);
     color: var(--text-inverse);
   }
-  &.primary:hover:not(:disabled) { background: var(--btn-primary-hover); }
+  &.primary:hover:not(:disabled) { opacity: 0.8; }
 
   &.danger {
     background: var(--btn-danger-bg);
     border-color: var(--btn-danger-border);
     color: var(--text-inverse);
   }
-  &.danger:hover:not(:disabled) { filter: brightness(1.1); }
+  &.danger:hover:not(:disabled) { opacity: 0.8; }
 
   &.success {
     background: var(--btn-success-bg);
     border-color: var(--btn-success-border);
     color: var(--text-inverse);
   }
-  &.success:hover:not(:disabled) { filter: brightness(1.1); }
+  &.success:hover:not(:disabled) { opacity: 0.8; }
 }
 
 .iconBtn {

@@ -98,7 +98,7 @@
   cursor: pointer;
 
   &:disabled { opacity: 0.4; cursor: not-allowed; }
-  &:hover:not(:disabled) { background: var(--btn-primary-hover); }
+  &:hover:not(:disabled) { opacity: 0.8; }
 }
 
 .alert {
