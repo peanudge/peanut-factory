@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Runtime.InteropServices;
 using PeanutVision.Api.Services;
 using PeanutVision.Api.Tests.Infrastructure;
@@ -37,7 +38,8 @@ public class LatencyDropDetectionTests : IDisposable
         _manager = new AcquisitionManager(
             _grabService,
             TestCamFileHelper.GetOrCreate(),
-            _spy);
+            _spy,
+            NullLogger<AcquisitionManager>.Instance);
     }
 
     public void Dispose()
@@ -134,6 +136,7 @@ public class LatencyDropDetectionTests : IDisposable
                 _grabService,
                 TestCamFileHelper.GetOrCreate(),
                 _spy,
+                NullLogger<AcquisitionManager>.Instance,
                 maxExpectedLatency: TimeSpan.FromMilliseconds(1));
 
             manager.Start(new AcquisitionConfig(new ProfileId("crevis-tc-a160k-softtrig-rgb8.cam")));

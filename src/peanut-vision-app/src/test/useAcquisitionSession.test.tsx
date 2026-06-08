@@ -16,6 +16,7 @@ vi.mock('@/api/client', () => ({
     channelState: 'none',
     allowedActions: ['start'],
   }),
+  sendTrigger: vi.fn().mockResolvedValue(undefined),
   triggerAndCapture: vi.fn().mockResolvedValue({ blob: new Blob() }),
   ApiError: class ApiError extends Error {},
 }))

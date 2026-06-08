@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using PeanutVision.Api.Services;
+using PeanutVision.MultiCamDriver.Camera;
 
 namespace PeanutVision.Api.Controllers;
 
@@ -8,8 +9,13 @@ namespace PeanutVision.Api.Controllers;
 public class PresetController : ControllerBase
 {
     private readonly IAcquisitionConfigPresetService _presets;
+    private readonly ICamFileService _camFileService;
 
-    public PresetController(IAcquisitionConfigPresetService presets) => _presets = presets;
+    public PresetController(IAcquisitionConfigPresetService presets, ICamFileService camFileService)
+    {
+        _presets = presets;
+        _camFileService = camFileService;
+    }
 
     [HttpGet]
     public ActionResult<IReadOnlyList<AcquisitionConfigPreset>> GetAll()
@@ -29,6 +35,8 @@ public class PresetController : ControllerBase
             return BadRequest(new { error = "Preset name is required" });
         if (string.IsNullOrWhiteSpace(preset.ProfileId))
             return BadRequest(new { error = "ProfileId is required" });
+        if (!_camFileService.TryGetByFileName(preset.ProfileId, out _))
+            return BadRequest(new { error = $"Camera profile '{preset.ProfileId}' not found." });
 
         await _presets.SaveAsync(preset);
         return Ok(preset);

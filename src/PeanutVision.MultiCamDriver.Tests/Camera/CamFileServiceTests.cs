@@ -169,4 +169,28 @@ public class CamFileServiceTests : IDisposable
         Assert.Equal("M", options.Connector);
         Assert.Equal(4, options.SurfaceCount);
     }
+
+    // ── Imaging 파서 검증 ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Imaging_parsed_from_cam_file()
+    {
+        WriteTestCamFile("area.cam", "Hactive_Px = 1456\nVactive_Ln = 1088\nImaging = AREA");
+
+        var service = new CamFileService(_testDir);
+        var info = service.GetByFileName("area.cam");
+
+        Assert.Equal("AREA", info.Imaging);
+    }
+
+    [Fact]
+    public void Imaging_defaults_to_AREA_when_key_absent()
+    {
+        WriteTestCamFile("no-imaging.cam", "Hactive_Px = 1456\nVactive_Ln = 1088");
+
+        var service = new CamFileService(_testDir);
+        var info = service.GetByFileName("no-imaging.cam");
+
+        Assert.Equal("AREA", info.Imaging);
+    }
 }

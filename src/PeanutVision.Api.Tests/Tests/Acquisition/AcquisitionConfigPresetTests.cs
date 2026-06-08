@@ -68,6 +68,18 @@ public class AcquisitionConfigPresetTests : IClassFixture<PeanutVisionApiFactory
     }
 
     [Fact]
+    public async Task Save_preset_with_unknown_profileId_returns_bad_request()
+    {
+        var response = await _client.PutJsonAsync("/api/presets", new
+        {
+            name = _testPresetName,
+            profileId = "nonexistent-camera.cam",
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetAll_returns_saved_preset()
     {
         await _client.PutJsonAsync("/api/presets", new

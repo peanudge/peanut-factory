@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 using PeanutVision.MultiCamDriver;
 using PeanutVision.MultiCamDriver.Camera;
 using PeanutVision.MultiCamDriver.Imaging;
@@ -10,6 +11,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
     private readonly IGrabService _grabService;
     private readonly ICamFileService _camFileService;
     private readonly ILatencyService _latencyService;
+    private readonly ILogger<AcquisitionManager> _logger;
     private readonly TimeSpan _maxExpectedLatency;
     private readonly object _lock = new();
     private readonly ChannelEventLog _eventLog = new();
@@ -28,12 +30,17 @@ public sealed class AcquisitionManager : IAcquisitionSession
     public event EventHandler? FrameAcquired;
     public event EventHandler? StatusChanged;
 
-    public AcquisitionManager(IGrabService grabService, ICamFileService camFileService, ILatencyService latencyService,
+    public AcquisitionManager(
+        IGrabService grabService,
+        ICamFileService camFileService,
+        ILatencyService latencyService,
+        ILogger<AcquisitionManager> logger,
         TimeSpan maxExpectedLatency = default)
     {
         _grabService = grabService;
         _camFileService = camFileService;
         _latencyService = latencyService;
+        _logger = logger;
         _maxExpectedLatency = maxExpectedLatency == default ? TimeSpan.FromSeconds(5) : maxExpectedLatency;
     }
 
@@ -85,20 +92,6 @@ public sealed class AcquisitionManager : IAcquisitionSession
         }
     }
 
-    private void CreateChannel(ProfileId profileId)
-    {
-        lock (_lock)
-        {
-            if (_channelState != ChannelState.None)
-                throw new InvalidOperationException("A channel already exists. Release it first.");
-
-            var camFile = _camFileService.GetByFileName(profileId.Value);
-            _channel = _grabService.CreateChannel(camFile.ToChannelOptions());
-            _activeConfig = null; // will be set in Start()
-            _channelState = ChannelState.Idle;
-        }
-    }
-
     public void Start(AcquisitionConfig config)
     {
         // Capture idle channel for release OUTSIDE lock to avoid potential deadlock with channel Dispose
@@ -122,48 +115,76 @@ public sealed class AcquisitionManager : IAcquisitionSession
         if (toRelease != null)
             _grabService.ReleaseChannel(toRelease);
 
-        lock (_lock)
+        GrabChannel? failedChannel = null;
+        try
         {
-            var camFile = _camFileService.GetByFileName(config.ProfileId.Value);
-            _channel = _grabService.CreateChannel(camFile.ToChannelOptions());
-            _activeConfig = config with
+            lock (_lock)
             {
-                IntervalMs = config.IntervalMs is > 0 ? config.IntervalMs : null,
-            };
-
-            _lastFrame = null;
-            _lastError = null;
-            _statistics = new AcquisitionStatistics();
-
-            _channel.FrameAcquired    += OnFrameAcquired;
-            _channel.AcquisitionError += OnAcquisitionError;
-            _channel.AcquisitionEnded += OnAcquisitionEnded;
-
-            _channelState = ChannelState.Active;
-            _statistics.Start();
-            _channel.StartAcquisition(config.FrameCount ?? -1);
-
-            if (config.IntervalMs is > 0)
-            {
-                var ms = config.IntervalMs.Value;
-                _triggerTimer = new Timer(_ =>
+                var camFile = _camFileService.GetByFileName(config.ProfileId.Value);
+                _channel = _grabService.CreateChannel(camFile.ToChannelOptions());
+                _activeConfig = config with
                 {
-                    lock (_lock)
-                    {
-                        if (_channel?.IsActive == true)
-                        {
-                            _triggerTimestamps.Enqueue(DateTimeOffset.UtcNow);
-                            _channel.SendSoftwareTrigger();
-                        }
-                    }
-                }, null, 0, ms);
-            }
+                    IntervalMs = config.IntervalMs is > 0 ? config.IntervalMs : null,
+                };
 
-            _eventLog.Add(new ChannelEvent(
-                DateTime.UtcNow, ChannelEventType.AcquisitionStarted,
-                $"Acquisition started with profile '{config.ProfileId.Value}'" +
-                (config.FrameCount.HasValue ? $", frameCount={config.FrameCount}" : "") +
-                (config.IntervalMs.HasValue ? $", intervalMs={config.IntervalMs}" : "")));
+                _lastFrame = null;
+                _lastError = null;
+                _statistics = new AcquisitionStatistics();
+
+                _channel.FrameAcquired    += OnFrameAcquired;
+                _channel.AcquisitionError += OnAcquisitionError;
+                _channel.AcquisitionEnded += OnAcquisitionEnded;
+
+                _statistics.Start();
+                try
+                {
+                    _channel.StartAcquisition(config.FrameCount ?? -1);
+                }
+                catch
+                {
+                    // StartAcquisition failed — roll back subscriptions and state so the
+                    // manager stays consistent. Channel is released outside the lock below.
+                    _channel.FrameAcquired    -= OnFrameAcquired;
+                    _channel.AcquisitionError -= OnAcquisitionError;
+                    _channel.AcquisitionEnded -= OnAcquisitionEnded;
+                    failedChannel = _channel;
+                    _channel = null;
+                    _activeConfig = null;
+                    _statistics = null;
+                    throw;
+                }
+
+                _channelState = ChannelState.Active;
+
+                if (config.IntervalMs is > 0)
+                {
+                    var ms = config.IntervalMs.Value;
+                    _triggerTimer = new Timer(_ =>
+                    {
+                        lock (_lock)
+                        {
+                            if (_channel?.IsActive == true)
+                            {
+                                _triggerTimestamps.Enqueue(DateTimeOffset.UtcNow);
+                                _channel.SendSoftwareTrigger();
+                            }
+                        }
+                    }, null, 0, ms);
+                }
+
+                _eventLog.Add(new ChannelEvent(
+                    DateTime.UtcNow, ChannelEventType.AcquisitionStarted,
+                    $"Acquisition started with profile '{config.ProfileId.Value}'" +
+                    (config.FrameCount.HasValue ? $", frameCount={config.FrameCount}" : "") +
+                    (config.IntervalMs.HasValue ? $", intervalMs={config.IntervalMs}" : "")));
+            }
+        }
+        finally
+        {
+            // Release the channel outside the lock — channel.Dispose() must not run while
+            // _lock is held to avoid a potential deadlock with the processing thread.
+            if (failedChannel != null)
+                _grabService.ReleaseChannel(failedChannel);
         }
 
         StatusChanged?.Invoke(this, EventArgs.Empty);

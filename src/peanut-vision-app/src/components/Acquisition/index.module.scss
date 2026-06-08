@@ -131,6 +131,19 @@
   transition: border-color 0.12s;
 
   &:hover { border-color: var(--border-default); }
+
+  &[data-stale] {
+    border-color: var(--color-warning, #f59e0b);
+    background: color-mix(in srgb, var(--color-warning, #f59e0b) 5%, transparent);
+  }
+}
+
+.staleWarning {
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  color: var(--color-warning, #f59e0b);
+  flex-shrink: 0;
 }
 
 .presetNameBtn {
@@ -555,9 +568,17 @@
   font-size: 0.82rem;
   cursor: pointer;
   font-weight: 500;
+  transition: background 0.1s, border-color 0.1s, color 0.1s, transform 0.08s;
 
   &:hover:not(:disabled) { background: var(--bg-hover); }
+  &:active:not(:disabled) { transform: scale(0.97); background: var(--bg-active, #d1d5db); }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  &.triggerFlash {
+    background: #dcfce7;
+    border-color: #22c55e;
+    color: #15803d;
+  }
 }
 
 .stopBtn {

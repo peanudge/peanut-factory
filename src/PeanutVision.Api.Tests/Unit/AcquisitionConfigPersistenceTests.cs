@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using PeanutVision.Api.Services;
 using PeanutVision.Api.Tests.Infrastructure;
 using PeanutVision.MultiCamDriver;
@@ -21,7 +22,7 @@ public class AcquisitionConfigPersistenceTests : IDisposable
         var mockHal = new MockMultiCamHAL();
         var grabService = new GrabService(mockHal);
         grabService.Initialize();
-        _manager = new AcquisitionManager(grabService, TestCamFileHelper.GetOrCreate(), new NullLatencyService());
+        _manager = new AcquisitionManager(grabService, TestCamFileHelper.GetOrCreate(), new NullLatencyService(), NullLogger<AcquisitionManager>.Instance);
     }
 
     public void Dispose() => _manager.Dispose();

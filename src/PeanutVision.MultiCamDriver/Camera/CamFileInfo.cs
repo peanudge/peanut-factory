@@ -15,7 +15,8 @@ public sealed record CamFileInfo(
     string ColorFormat,
     string TrigMode,
     string AcquisitionMode,
-    string TapConfiguration)
+    string TapConfiguration,
+    string Imaging = "AREA")
 {
     /// <summary>
     /// Creates GrabChannelOptions from this cam file info.
@@ -40,10 +41,10 @@ public sealed record CamFileInfo(
         return trigMode.ToUpperInvariant() switch
         {
             "IMMEDIATE" => McTrigMode.MC_TrigMode_IMMEDIATE,
-            "SOFT" => McTrigMode.MC_TrigMode_SOFT,
-            "HARD" => McTrigMode.MC_TrigMode_HARD,
-            "COMBINED" => McTrigMode.MC_TrigMode_COMBINED,
-            _ => McTrigMode.MC_TrigMode_IMMEDIATE
+            "SOFT"      => McTrigMode.MC_TrigMode_SOFT,
+            "HARD"      => McTrigMode.MC_TrigMode_HARD,
+            "COMBINED"  => McTrigMode.MC_TrigMode_COMBINED,
+            _           => McTrigMode.MC_TrigMode_IMMEDIATE
         };
     }
 
@@ -56,8 +57,8 @@ public sealed record CamFileInfo(
     {
         return trigMode switch
         {
-            McTrigMode.MC_TrigMode_SOFT => McAcquisitionMode.MC_AcquisitionMode_SNAPSHOT,
-            McTrigMode.MC_TrigMode_HARD => McAcquisitionMode.MC_AcquisitionMode_SNAPSHOT,
+            McTrigMode.MC_TrigMode_SOFT     => McAcquisitionMode.MC_AcquisitionMode_SNAPSHOT,
+            McTrigMode.MC_TrigMode_HARD     => McAcquisitionMode.MC_AcquisitionMode_SNAPSHOT,
             McTrigMode.MC_TrigMode_COMBINED => McAcquisitionMode.MC_AcquisitionMode_SNAPSHOT,
             McTrigMode.MC_TrigMode_IMMEDIATE => McAcquisitionMode.MC_AcquisitionMode_VIDEO,
             _ => McAcquisitionMode.MC_AcquisitionMode_SNAPSHOT

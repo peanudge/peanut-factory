@@ -91,7 +91,8 @@ public static class CamFileParser
             ColorFormat: GetString(parameters, "ColorFormat", "Y8"),
             TrigMode: GetString(parameters, "TrigMode", "IMMEDIATE"),
             AcquisitionMode: GetString(parameters, "AcquisitionMode", "SNAPSHOT"),
-            TapConfiguration: GetString(parameters, "TapConfiguration", "BASE_1T8")
+            TapConfiguration: GetString(parameters, "TapConfiguration", "BASE_1T8"),
+            Imaging: GetString(parameters, "Imaging", "AREA")
         );
     }
 

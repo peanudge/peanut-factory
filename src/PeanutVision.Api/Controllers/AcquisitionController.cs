@@ -27,9 +27,6 @@ public class AcquisitionController : ControllerBase
     [HttpPost("start")]
     public ActionResult Start([FromBody] StartAcquisitionRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.ProfileId))
-            return BadRequest(new { error = "profileId is required." });
-
         if (request.Format is not null && !Enum.TryParse<SaveImageFormat>(request.Format, ignoreCase: true, out _))
             return BadRequest(new { error = $"Invalid format '{request.Format}'. Valid values: png, bmp, raw." });
 

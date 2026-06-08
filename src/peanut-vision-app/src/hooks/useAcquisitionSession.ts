@@ -45,7 +45,10 @@ export function useAcquisitionSession(config: AcquisitionFormConfig) {
       invalidateStatus()
       toast('촬영이 시작되었습니다', 'success')
     },
-    onError: handleError,
+    onError: (e: unknown) => {
+      invalidateStatus()
+      handleError(e)
+    },
   })
 
   const stopMutation = useMutation({

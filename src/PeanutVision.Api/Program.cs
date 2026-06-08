@@ -104,6 +104,8 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
+
+
 app.UseCors();
 
 app.UseExceptionHandler(o => { });

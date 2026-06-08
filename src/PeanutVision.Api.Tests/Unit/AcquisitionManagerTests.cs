@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Runtime.InteropServices;
 using PeanutVision.Api.Services;
 using PeanutVision.Api.Tests.Infrastructure;
@@ -28,7 +29,7 @@ public class AcquisitionManagerTests : IDisposable
 
         _grabService = new GrabService(_mockHal);
         _grabService.Initialize();
-        _manager = new AcquisitionManager(_grabService, TestCamFileHelper.GetOrCreate(), new NullLatencyService());
+        _manager = new AcquisitionManager(_grabService, TestCamFileHelper.GetOrCreate(), new NullLatencyService(), NullLogger<AcquisitionManager>.Instance);
     }
 
     public void Dispose()
@@ -601,5 +602,78 @@ public class AcquisitionManagerTests : IDisposable
 
             Assert.Equal(200, _manager.GetStatus().ActiveConfig?.IntervalMs);
         }
+    }
+
+}
+
+/// <summary>
+/// Regression: before the fix, _channelState was set to Active before StartAcquisition was called.
+/// If StartAcquisition threw (e.g. MC_INVALID_PARAMETER_SETTING from the driver), the manager
+/// got permanently stuck in Active state — subsequent Start calls returned 409 and the FE could
+/// not recover without an app restart.
+/// </summary>
+public class AcquisitionManager_StartAcquisitionFails_Tests : IDisposable
+{
+    // Subclass MockMultiCamHAL to simulate MC_INVALID_PARAMETER_SETTING on ChannelState=ACTIVE
+    private sealed class ActivationFailingHal : MockMultiCamHAL
+    {
+        public override int SetParamStr(uint instance, string paramName, string value)
+        {
+            if (paramName == MultiCamApi.PN_ChannelState && value == MultiCamApi.MC_ChannelState_ACTIVE_STR)
+                return (int)McStatus.MC_INVALID_PARAMETER_SETTING;
+            return base.SetParamStr(instance, paramName, value);
+        }
+    }
+
+    private readonly ActivationFailingHal _hal;
+    private readonly GrabService _grabService;
+    private readonly AcquisitionManager _manager;
+    private readonly IntPtr _surfaceMemory;
+
+    public AcquisitionManager_StartAcquisitionFails_Tests()
+    {
+        _hal = new ActivationFailingHal();
+        var bufferSize = _hal.Configuration.DefaultImageWidth * _hal.Configuration.DefaultImageHeight * 3;
+        _surfaceMemory = Marshal.AllocHGlobal(bufferSize);
+        var zeros = new byte[bufferSize];
+        Marshal.Copy(zeros, 0, _surfaceMemory, bufferSize);
+        _hal.Configuration.SimulatedSurfaceAddress = _surfaceMemory;
+
+        _grabService = new GrabService(_hal);
+        _grabService.Initialize();
+        _manager = new AcquisitionManager(_grabService, TestCamFileHelper.GetOrCreate(), new NullLatencyService(), NullLogger<AcquisitionManager>.Instance);
+    }
+
+    public void Dispose()
+    {
+        _manager.Dispose();
+        _grabService.Dispose();
+        if (_surfaceMemory != IntPtr.Zero)
+            Marshal.FreeHGlobal(_surfaceMemory);
+    }
+
+    [Fact]
+    public void Start_throws_MultiCamException_when_activation_fails()
+    {
+        Assert.Throws<MultiCamException>(
+            () => _manager.Start(new AcquisitionConfig(new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"))));
+    }
+
+    [Fact]
+    public void ChannelState_remains_None_after_failed_start()
+    {
+        try { _manager.Start(new AcquisitionConfig(new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"))); }
+        catch (MultiCamException) { }
+
+        Assert.Equal(ChannelState.None, _manager.GetStatus().ChannelState);
+    }
+
+    [Fact]
+    public void IsActive_is_false_after_failed_start()
+    {
+        try { _manager.Start(new AcquisitionConfig(new ProfileId("crevis-tc-a160k-freerun-rgb8.cam"))); }
+        catch (MultiCamException) { }
+
+        Assert.False(_manager.GetStatus().IsActive);
     }
 }

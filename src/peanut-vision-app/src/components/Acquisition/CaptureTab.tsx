@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Loader2, Square, Trash2, Pencil, FolderSearch } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Loader2, Square, Trash2, Pencil, FolderSearch, AlertTriangle } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import AcquisitionSettings from '@/components/shared/AcquisitionSettings'
 import StatusChip from '@/components/shared/StatusChip'
@@ -42,6 +42,14 @@ export default function CaptureTab({ acqConfig, session }: Props) {
 
 function ActiveView({ session }: { session: AcquisitionSession }) {
   const s = session.status
+  const [triggered, setTriggered] = useState(false)
+
+  const handleTriggerClick = () => {
+    session.handleTrigger()
+    setTriggered(true)
+    setTimeout(() => setTriggered(false), 400)
+  }
+
   return (
     <div className={cx('activeView')}>
       <div className={cx('activeHeader')}>
@@ -83,8 +91,8 @@ function ActiveView({ session }: { session: AcquisitionSession }) {
       {s?.activeIntervalMs == null && (
         <button
           type="button"
-          className={cx('triggerBtn')}
-          onClick={session.handleTrigger}
+          className={cx('triggerBtn', triggered && 'triggerFlash')}
+          onClick={handleTriggerClick}
           disabled={session.busy}
         >
           {session.busy && <Loader2 size={14} className={cx('spin')} />}
@@ -261,6 +269,11 @@ function PresetTab({
   const [confirmPreset, setConfirmPreset] = useState<AcquisitionConfigPreset | null>(null)
   const [editState, setEditState] = useState<EditState | null>(null)
 
+  const availableProfileIds = useMemo(
+    () => new Set(cameras.map((c) => c.fileName)),
+    [cameras],
+  )
+
   const openEdit = (preset: AcquisitionConfigPreset) => {
     setEditState({
       originalName: preset.name,
@@ -342,8 +355,19 @@ function PresetTab({
   return (
     <>
       <ul className={cx('presetList')}>
-        {presets.map((p) => (
-          <li key={p.name} className={cx('presetItem')}>
+        {presets.map((p) => {
+          const isStale = !camerasLoading && !availableProfileIds.has(p.profileId)
+          return (
+          <li key={p.name} className={cx('presetItem')} data-stale={isStale || undefined}>
+            {isStale && (
+              <span
+                className={cx('staleWarning')}
+                title={`카메라 프로파일 '${p.profileId}'을 찾을 수 없습니다`}
+                data-testid={`stale-profile-warning-${p.name}`}
+              >
+                <AlertTriangle size={12} />
+              </span>
+            )}
             <button
               type="button"
               className={cx('presetNameBtn')}
@@ -380,7 +404,8 @@ function PresetTab({
                 : <Trash2 size={13} />}
             </button>
           </li>
-        ))}
+          )
+        })}
       </ul>
 
       {/* ── Confirm start dialog ── */}
