@@ -10,6 +10,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
     private readonly IGrabService _grabService;
     private readonly ICamFileService _camFileService;
     private readonly ILatencyService _latencyService;
+    private readonly TimeSpan _maxExpectedLatency;
     private readonly object _lock = new();
     private readonly ChannelEventLog _eventLog = new();
     private readonly ConcurrentQueue<DateTimeOffset> _triggerTimestamps = new();
@@ -27,11 +28,13 @@ public sealed class AcquisitionManager : IAcquisitionSession
     public event EventHandler? FrameAcquired;
     public event EventHandler? StatusChanged;
 
-    public AcquisitionManager(IGrabService grabService, ICamFileService camFileService, ILatencyService latencyService)
+    public AcquisitionManager(IGrabService grabService, ICamFileService camFileService, ILatencyService latencyService,
+        TimeSpan maxExpectedLatency = default)
     {
         _grabService = grabService;
         _camFileService = camFileService;
         _latencyService = latencyService;
+        _maxExpectedLatency = maxExpectedLatency == default ? TimeSpan.FromSeconds(5) : maxExpectedLatency;
     }
 
     public ImageData? GetLatestFrame()
@@ -335,8 +338,17 @@ public sealed class AcquisitionManager : IAcquisitionSession
             _triggerTcs = null;
         }
 
+        // Discard orphaned triggers older than maxExpectedLatency (safety net for undetected drops)
+        while (_triggerTimestamps.TryPeek(out var oldest)
+               && (frameReceivedAt - oldest) > _maxExpectedLatency)
+        {
+            _triggerTimestamps.TryDequeue(out _);
+        }
+
         if (_triggerTimestamps.TryDequeue(out var triggerSentAt))
+        {
             _latencyService.Record(triggerSentAt, frameReceivedAt, frameIndex, profileId);
+        }
 
         tcs?.TrySetResult(image);
         FrameAcquired?.Invoke(this, EventArgs.Empty);
@@ -353,7 +365,10 @@ public sealed class AcquisitionManager : IAcquisitionSession
             _statistics?.RecordError();
 
             if (signal == McSignal.MC_SIG_CLUSTER_UNAVAILABLE)
+            {
                 _statistics?.RecordDroppedFrame();
+                _triggerTimestamps.TryDequeue(out _);
+            }
 
             tcs = _triggerTcs;
             _triggerTcs = null;

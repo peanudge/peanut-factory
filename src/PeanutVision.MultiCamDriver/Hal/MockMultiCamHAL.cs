@@ -87,6 +87,7 @@ public class MockMultiCamHAL : IMultiCamHAL
             }
 
             instance = _nextInstanceId++;
+            CallLog.LastCreatedHandle = instance;
             var mockInstance = new MockInstance
             {
                 Handle = instance,
@@ -741,6 +742,8 @@ public class MockHalCallLog
     public int RegisterCallbackCalls { get; set; }
     public int WaitSignalCalls { get; set; }
 
+    public uint LastCreatedHandle { get; set; }
+
     public bool AcquisitionStarted { get; set; }
     public bool AcquisitionStopped { get; set; }
     public int SoftwareTriggerCount { get; set; }
@@ -761,6 +764,7 @@ public class MockHalCallLog
         SetParamCalls = 0;
         RegisterCallbackCalls = 0;
         WaitSignalCalls = 0;
+        LastCreatedHandle = 0;
         AcquisitionStarted = false;
         AcquisitionStopped = false;
         SoftwareTriggerCount = 0;

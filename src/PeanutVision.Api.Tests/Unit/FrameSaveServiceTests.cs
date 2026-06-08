@@ -205,6 +205,7 @@ internal sealed class FakeAcquisitionService : IAcquisitionSession
     public void Start(AcquisitionConfig config) { }
     public void Stop() { }
     public void ReleaseChannel() { }
+    public void Trigger() { }
     public Task<ImageData> TriggerAsync(int timeoutMs = 5000) =>
         Task.FromResult(new ImageData(new byte[3], 1, 1, 3));
     public void Dispose() { }

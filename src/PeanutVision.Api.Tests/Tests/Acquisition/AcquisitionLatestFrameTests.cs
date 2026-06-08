@@ -33,17 +33,25 @@ public class AcquisitionLatestFrameTests : IClassFixture<PeanutVisionApiFactory>
         await _client.PostJsonAsync("/api/acquisition/start",
             new { profileId = "crevis-tc-a160k-softtrig-rgb8.cam" });
 
-        // Trigger to produce a frame
+        // Trigger is fire-and-forget (202); poll until frame arrives
         await _client.PostAsync("/api/acquisition/trigger", null);
 
-        var response = await _client.GetAsync("/api/acquisition/latest-frame");
+        HttpResponseMessage response = null!;
+        for (var i = 0; i < 20; i++)
+        {
+            response = await _client.GetAsync("/api/acquisition/latest-frame");
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                break;
+            }
+            await Task.Delay(100);
+        }
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("image/png", response.Content.Headers.ContentType?.MediaType);
 
         var bytes = await response.Content.ReadAsByteArrayAsync();
         Assert.True(bytes.Length > 8);
-        // PNG magic bytes
         Assert.Equal(0x89, bytes[0]);
         Assert.Equal((byte)'P', bytes[1]);
         Assert.Equal((byte)'N', bytes[2]);
