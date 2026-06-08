@@ -167,7 +167,7 @@ public class AcquisitionConfigPresetTests : IClassFixture<PeanutVisionApiFactory
             "triggerMode must not appear in preset response after removal from AcquisitionConfigPreset");
     }
 
-    // ── Save settings (outputDirectory, format, autoSave) persisted in preset ──
+    // ── Save settings (outputDirectory, format) persisted in preset ──
 
     [Fact]
     public async Task Preset_saves_and_returns_outputDirectory()

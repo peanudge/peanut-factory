@@ -23,7 +23,7 @@ public sealed class AcquisitionManager : IAcquisitionSession
     private bool _disposed;
     private Timer? _triggerTimer;
     private ChannelState _channelState = ChannelState.None;
-    private AcquisitionConfig? _activeConfig;  // full config including OutputDirectory, Format, AutoSave
+    private AcquisitionConfig? _activeConfig;
 
     public event EventHandler? FrameAcquired;
     public event EventHandler? StatusChanged;

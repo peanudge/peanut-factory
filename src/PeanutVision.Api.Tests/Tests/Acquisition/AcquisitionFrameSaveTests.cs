@@ -8,11 +8,11 @@ namespace PeanutVision.Api.Tests.Tests.Acquisition;
 /// Verifies the headless save flow that replaced the removed Snapshot endpoint:
 /// POST /start {frameCount:1} → frame arrives → FrameSaveService saves to disk + DB.
 /// </summary>
-public class AcquisitionAutoSaveTests : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
+public class AcquisitionFrameSaveTests : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
 {
     private readonly HttpClient _client;
 
-    public AcquisitionAutoSaveTests(PeanutVisionApiFactory factory)
+    public AcquisitionFrameSaveTests(PeanutVisionApiFactory factory)
     {
         _client = factory.CreateClient();
     }
