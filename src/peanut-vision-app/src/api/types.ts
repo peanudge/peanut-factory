@@ -25,18 +25,6 @@ export interface BoardStatus {
   pcieLinkInfo: string;
 }
 
-export interface CamFileInfo {
-  fileName: string;
-  manufacturer: string;
-  cameraModel: string;
-  width: number;
-  height: number;
-  spectrum: string;
-  colorFormat: string;
-  trigMode: string;
-  acquisitionMode: string;
-  tapConfiguration: string;
-}
 
 export interface AcquisitionStatistics {
   frameCount: number;

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using PeanutVision.Api.Tests.Infrastructure;
 
 namespace PeanutVision.Api.Tests.Tests.System;
@@ -37,21 +38,15 @@ public class SystemCamerasTests : IClassFixture<PeanutVisionApiFactory>, IAsyncL
     }
 
     [Fact]
-    public async Task GetCameras_each_entry_has_required_fields()
+    public async Task GetCameras_each_entry_is_a_filename_string()
     {
         var response = await _client.GetAsync("/api/system/cameras");
 
         using var doc = await response.ReadJsonDocumentAsync();
         foreach (var entry in doc.RootElement.EnumerateArray())
         {
-            Assert.True(entry.TryGetProperty("fileName", out _));
-            Assert.True(entry.TryGetProperty("manufacturer", out _));
-            Assert.True(entry.TryGetProperty("cameraModel", out _));
-            Assert.True(entry.TryGetProperty("width", out _));
-            Assert.True(entry.TryGetProperty("height", out _));
-            Assert.True(entry.TryGetProperty("spectrum", out _));
-            Assert.True(entry.TryGetProperty("colorFormat", out _));
-            Assert.True(entry.TryGetProperty("trigMode", out _));
+            Assert.Equal(System.Text.Json.JsonValueKind.String, entry.ValueKind);
+            Assert.EndsWith(".cam", entry.GetString(), StringComparison.OrdinalIgnoreCase);
         }
     }
 
@@ -62,7 +57,7 @@ public class SystemCamerasTests : IClassFixture<PeanutVisionApiFactory>, IAsyncL
 
         using var doc = await response.ReadJsonDocumentAsync();
         var fileNames = doc.RootElement.EnumerateArray()
-            .Select(e => e.GetProperty("fileName").GetString())
+            .Select(e => e.GetString())
             .ToList();
 
         Assert.Contains("crevis-tc-a160k-freerun-rgb8.cam", fileNames);

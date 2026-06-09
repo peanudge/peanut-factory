@@ -38,37 +38,6 @@ public class SystemController : ControllerBase
     }
 
     [HttpGet("cameras")]
-    public ActionResult<List<CamFileInfoDto>> GetCameras()
-    {
-        var cameras = _camFileService.CamFiles
-            .Select(c => new CamFileInfoDto
-            {
-                FileName = c.FileName,
-                Manufacturer = c.Manufacturer,
-                CameraModel = c.CameraModel,
-                Width = c.Width,
-                Height = c.Height,
-                Spectrum = c.Spectrum,
-                ColorFormat = c.ColorFormat,
-                TrigMode = c.TrigMode,
-                AcquisitionMode = c.AcquisitionMode,
-                TapConfiguration = c.TapConfiguration,
-            })
-            .ToList();
-        return cameras;
-    }
-}
-
-public class CamFileInfoDto
-{
-    public required string FileName { get; set; }
-    public required string Manufacturer { get; set; }
-    public required string CameraModel { get; set; }
-    public int Width { get; set; }
-    public int Height { get; set; }
-    public required string Spectrum { get; set; }
-    public required string ColorFormat { get; set; }
-    public required string TrigMode { get; set; }
-    public required string AcquisitionMode { get; set; }
-    public required string TapConfiguration { get; set; }
+    public ActionResult<IEnumerable<string>> GetCameras()
+        => Ok(_camFileService.CamFiles.Select(c => c.FileName));
 }

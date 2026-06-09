@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import CaptureTab from '@/components/Acquisition/CaptureTab'
 import { renderWithProviders } from './helpers'
-import type { CamFileInfo, AcquisitionConfigPreset } from '@/api/types'
+import type { AcquisitionConfigPreset } from '@/api/types'
 
 vi.mock('@/components/Acquisition/cx', () => ({
   default: (...args: unknown[]) => args.filter(Boolean).join(' '),
@@ -26,10 +26,7 @@ vi.mock('@/api/client', () => ({
   ApiError: class ApiError extends Error {},
 }))
 
-const CAMERAS: CamFileInfo[] = [
-  { fileName: 'valid-cam.cam', manufacturer: '', cameraModel: '', width: 1920, height: 1080,
-    spectrum: '', colorFormat: '', trigMode: '', acquisitionMode: '', tapConfiguration: '' },
-]
+const CAMERAS: string[] = ['valid-cam.cam']
 
 function makeSession(overrides = {}) {
   return {

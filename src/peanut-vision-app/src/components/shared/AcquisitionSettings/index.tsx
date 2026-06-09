@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Loader2, FolderSearch } from 'lucide-react'
-import type { AcquisitionFormConfig, SaveImageFormat, CamFileInfo } from '@/api/types'
+import type { AcquisitionFormConfig, SaveImageFormat } from '@/api/types'
 import DirectoryBrowser from '@/components/shared/DirectoryBrowser'
 import Modal from '@/components/shared/Modal'
 import cx from './cx'
@@ -8,7 +8,7 @@ import cx from './cx'
 interface Props {
   config: AcquisitionFormConfig
   onChange: <K extends keyof AcquisitionFormConfig>(key: K, value: AcquisitionFormConfig[K]) => void
-  cameras: CamFileInfo[]
+  cameras: string[]
   camerasLoading: boolean
   canStart: boolean
   busy: boolean
@@ -87,8 +87,8 @@ export default function AcquisitionSettings({
           >
             {camerasLoading
               ? <option>로딩 중…</option>
-              : cameras.map((c) => (
-                  <option key={c.fileName} value={c.fileName}>{c.fileName}</option>
+              : cameras.map((name) => (
+                  <option key={name} value={name}>{name}</option>
                 ))
             }
           </select>

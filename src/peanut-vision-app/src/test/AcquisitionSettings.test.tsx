@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import AcquisitionSettings from '@/components/shared/AcquisitionSettings'
-import type { AcquisitionFormConfig, CamFileInfo } from '@/api/types'
+import type { AcquisitionFormConfig } from '@/api/types'
 import { DEFAULT_ACQUISITION_FORM_CONFIG } from '@/api/types'
 
 vi.mock('@/components/shared/AcquisitionSettings/cx', () => ({
@@ -20,12 +20,7 @@ const BASE_CONFIG: AcquisitionFormConfig = {
   acquisitionMode: 'manual',
 }
 
-const CAMERAS: CamFileInfo[] = [
-  { fileName: 'cam1.cam', manufacturer: '', cameraModel: '', width: 1920, height: 1080,
-    spectrum: '', colorFormat: '', trigMode: '', acquisitionMode: '', tapConfiguration: '' },
-  { fileName: 'cam2.cam', manufacturer: '', cameraModel: '', width: 4160, height: 3120,
-    spectrum: '', colorFormat: '', trigMode: '', acquisitionMode: '', tapConfiguration: '' },
-]
+const CAMERAS: string[] = ['cam1.cam', 'cam2.cam']
 
 function renderSettings(overrides: Partial<Parameters<typeof AcquisitionSettings>[0]> = {}) {
   const defaults = {

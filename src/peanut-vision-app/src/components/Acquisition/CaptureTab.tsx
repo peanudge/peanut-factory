@@ -5,7 +5,7 @@ import AcquisitionSettings from '@/components/shared/AcquisitionSettings'
 import StatusChip from '@/components/shared/StatusChip'
 import Modal from '@/components/shared/Modal'
 import DirectoryBrowser from '@/components/shared/DirectoryBrowser'
-import type { AcquisitionConfigPreset, AcquisitionFormConfig, SaveImageFormat, CamFileInfo } from '@/api/types'
+import type { AcquisitionConfigPreset, AcquisitionFormConfig, SaveImageFormat } from '@/api/types'
 import { DEFAULT_ACQUISITION_FORM_CONFIG } from '@/api/types'
 import { getPresets, savePreset, deletePreset } from '@/api/client'
 import { queryKeys } from '@/api/queryKeys'
@@ -229,7 +229,7 @@ function IdleView({ acqConfig, session }: Props) {
 interface PresetTabProps {
   presets: AcquisitionConfigPreset[]
   presetsLoading: boolean
-  cameras: CamFileInfo[]
+  cameras: string[]
   camerasLoading: boolean
   busy: boolean
   onStart: (preset: AcquisitionConfigPreset) => void
@@ -270,7 +270,7 @@ function PresetTab({
   const [editState, setEditState] = useState<EditState | null>(null)
 
   const availableProfileIds = useMemo(
-    () => new Set(cameras.map((c) => c.fileName)),
+    () => new Set(cameras),
     [cameras],
   )
 
@@ -486,8 +486,8 @@ function PresetTab({
               >
                 {camerasLoading
                   ? <option>로딩 중…</option>
-                  : cameras.map((c) => (
-                      <option key={c.fileName} value={c.fileName}>{c.fileName}</option>
+                  : cameras.map((name) => (
+                      <option key={name} value={name}>{name}</option>
                     ))
                 }
               </select>

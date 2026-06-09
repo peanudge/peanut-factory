@@ -5,8 +5,8 @@ import { createWrapper } from './helpers'
 
 vi.mock('@/api/client', () => ({
   getCameras: vi.fn().mockResolvedValue([
-    { fileName: 'crevis-tc-a160k-freerun-rgb8.cam', width: 4160, height: 3120 },
-    { fileName: 'crevis-tc-a160k-softtrig-rgb8.cam', width: 4160, height: 3120 },
+    'crevis-tc-a160k-freerun-rgb8.cam',
+    'crevis-tc-a160k-softtrig-rgb8.cam',
   ]),
   getFilesystemDefaults: vi.fn().mockResolvedValue({ desktopPath: '' }),
 }))

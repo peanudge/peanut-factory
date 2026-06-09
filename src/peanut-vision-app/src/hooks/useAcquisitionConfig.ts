@@ -4,6 +4,7 @@ import type {
   AcquisitionConfigPreset,
   AcquisitionFormConfig,
 } from '@/api/types'
+
 import { DEFAULT_ACQUISITION_FORM_CONFIG } from '@/api/types'
 import { getCameras, getFilesystemDefaults } from '@/api/client'
 import { queryKeys } from '@/api/queryKeys'
@@ -25,7 +26,7 @@ export function useAcquisitionConfig() {
   // Auto-select first camera profile
   useEffect(() => {
     if (cameras.length > 0 && !config.profileId) {
-      setConfig(prev => ({ ...prev, profileId: cameras[0].fileName }))
+      setConfig(prev => ({ ...prev, profileId: cameras[0] }))
     }
   }, [cameras, config.profileId])
 
