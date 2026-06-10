@@ -15,7 +15,7 @@ namespace PeanutVision.MultiCamDriver.Imaging;
 /// var writer = new ImageWriter(registry);
 /// writer.Save(imageData, "output.png");
 /// </example>
-public sealed class ImageWriter
+public sealed class ImageWriter : IImageWriter
 {
     private readonly ImageEncoderRegistry _registry;
 

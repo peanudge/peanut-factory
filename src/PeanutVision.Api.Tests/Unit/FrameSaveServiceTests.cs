@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using PeanutVision.Api.Services;
@@ -33,9 +34,9 @@ public class FrameSaveServiceTests : IDisposable
             Directory.Delete(_tempDir, recursive: true);
     }
 
-    private FrameSaveService BuildService() =>
+    private FrameSaveService BuildService(IImageWriter? imageWriter = null) =>
         new(_acquisition, _filenameGenerator, _tracker,
-            _scopeFactory, _environment);
+            _scopeFactory, _environment, imageWriter ?? new ImageWriter());
 
     private static ImageData MakeFrame() =>
         new(new byte[4 * 1 * 3], 4, 1, 12);
@@ -152,6 +153,32 @@ public class FrameSaveServiceTests : IDisposable
         Assert.Equal(1, _scopeFactory.FakeImageRepo.AddCount);
     }
 
+    // ── Save is async (does not block the frame-handler caller) ──
+
+    [Fact]
+    public async Task Save_does_not_block_frame_handler_caller()
+    {
+        // Arrange: writer that blocks until released — simulates a slow encode/write
+        var gate = new SemaphoreSlim(0, 1);
+        var writer = new FakeBlockingImageWriter(gate);
+        var svc = BuildService(writer);
+        await svc.StartAsync(CancellationToken.None);
+
+        // Act: fire the frame event and measure how long the handler takes to return
+        var sw = Stopwatch.StartNew();
+        _acquisition.SimulateFrame(MakeFrame());
+        var handlerMs = sw.ElapsedMilliseconds;
+
+        // Assert: handler must return before the (still-blocked) save completes
+        // Without await Task.Run: SimulateFrame blocks for the gate timeout (~500 ms) → fails
+        // With    await Task.Run: SimulateFrame returns immediately → passes
+        Assert.True(handlerMs < 50,
+            $"Frame handler blocked the caller for {handlerMs} ms — ImageWriter.Save must run on a background thread");
+
+        gate.Release();         // unblock the background save
+        await Task.Delay(200);  // let the async continuation finish
+    }
+
     // ── Save failure does not propagate ──
 
     [Fact]
@@ -248,6 +275,16 @@ internal sealed class FakeScopeFactory : IServiceScopeFactory
         public IServiceProvider ServiceProvider { get; } = provider;
         public void Dispose() { }
     }
+}
+
+internal sealed class FakeBlockingImageWriter : IImageWriter
+{
+    private readonly SemaphoreSlim _gate;
+
+    public FakeBlockingImageWriter(SemaphoreSlim gate) => _gate = gate;
+
+    public void Save(ImageData image, string filePath)
+        => _gate.Wait(TimeSpan.FromMilliseconds(500)); // won't block forever; 500 ms >> expected async return
 }
 
 internal sealed class FakeWebHostEnvironment : IWebHostEnvironment

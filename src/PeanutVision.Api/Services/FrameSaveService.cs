@@ -1,3 +1,4 @@
+using System.Threading.Channels;
 using PeanutVision.MultiCamDriver.Imaging;
 
 namespace PeanutVision.Api.Services;
@@ -9,31 +10,53 @@ public sealed class FrameSaveService : IHostedService
     private readonly FrameSaveTracker _frameSaveTracker;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IWebHostEnvironment _environment;
+    private readonly IImageWriter _imageWriter;
+
+    // Bounded queue: decouples the acquisition loop from disk I/O.
+    // DropWrite when full so a slow disk never blocks or OOM-s the acquisition pipeline.
+    private readonly Channel<(ImageData Frame, AcquisitionConfig Config)> _saveQueue;
+    private Task? _saveWorker;
 
     public FrameSaveService(
         IAcquisitionSession acquisition,
         FilenameGenerator filenameGenerator,
         FrameSaveTracker frameSaveTracker,
         IServiceScopeFactory scopeFactory,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        IImageWriter imageWriter)
     {
         _acquisition = acquisition;
         _filenameGenerator = filenameGenerator;
         _frameSaveTracker = frameSaveTracker;
         _scopeFactory = scopeFactory;
         _environment = environment;
+        _imageWriter = imageWriter;
+        _saveQueue = Channel.CreateBounded<(ImageData, AcquisitionConfig)>(
+            new BoundedChannelOptions(8)
+            {
+                AllowSynchronousContinuations = false,
+                FullMode = BoundedChannelFullMode.DropWrite,
+                SingleReader = true,
+                SingleWriter = false,
+            });
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _acquisition.FrameAcquired += OnFrameAcquired;
+        _saveWorker = Task.Run(RunSaveWorkerAsync);
         return Task.CompletedTask;
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
         _acquisition.FrameAcquired -= OnFrameAcquired;
-        return Task.CompletedTask;
+        _saveQueue.Writer.TryComplete();
+        if (_saveWorker != null)
+        {
+            try { await _saveWorker.WaitAsync(cancellationToken); }
+            catch (OperationCanceledException) { }
+        }
     }
 
     private void OnFrameAcquired(object? sender, EventArgs e)
@@ -46,7 +69,15 @@ public sealed class FrameSaveService : IHostedService
         if (frame == null || !_frameSaveTracker.ShouldSave(frame))
             return;
 
-        _ = SaveAsync(frame, config);
+        _saveQueue.Writer.TryWrite((frame, config));
+    }
+
+    private async Task RunSaveWorkerAsync()
+    {
+        await foreach (var (image, config) in _saveQueue.Reader.ReadAllAsync())
+        {
+            await SaveAsync(image, config);
+        }
     }
 
     private async Task SaveAsync(ImageData image, AcquisitionConfig config)
@@ -54,7 +85,7 @@ public sealed class FrameSaveService : IHostedService
         try
         {
             var filePath = _filenameGenerator.Generate(config, _environment.ContentRootPath);
-            new ImageWriter().Save(image, filePath);
+            _imageWriter.Save(image, filePath);
 
             var fileInfo = new FileInfo(filePath);
 
@@ -74,7 +105,7 @@ public sealed class FrameSaveService : IHostedService
         }
         catch
         {
-            // Save failures must not propagate to the acquisition pipeline
+            // Save failures must not kill the worker
         }
     }
 }

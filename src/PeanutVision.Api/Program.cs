@@ -4,6 +4,7 @@ using PeanutVision.Api.Middleware;
 using PeanutVision.Api.Services;
 using PeanutVision.FakeCamDriver;
 using PeanutVision.MultiCamDriver;
+using PeanutVision.MultiCamDriver.Imaging;
 
 System.Diagnostics.Trace.Listeners.Add(new System.Diagnostics.ConsoleTraceListener());
 
@@ -40,6 +41,7 @@ else
     builder.Services.AddGrabService(autoInitialize: true);
 }
 
+builder.Services.AddSingleton<IImageWriter, ImageWriter>();
 builder.Services.AddSingleton<FilenameGenerator>();
 builder.Services.AddSingleton<FrameSaveTracker>();
 
