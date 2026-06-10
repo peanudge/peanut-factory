@@ -253,16 +253,18 @@ export default function ImageGallery({ selectedId, onRowSelect }: Props) {
           </button>
         </div>
 
-        {selectedCount > 0 && (
-          <button
-            type="button"
-            className={cx('deleteSelectedBtn')}
-            onClick={handleDeleteSelected}
-            disabled={deleteMutation.isPending}
-          >
-            <Trash2 size={13} /> Delete {selectedCount} selected
-          </button>
-        )}
+        <div className={cx('toolbarRight')}>
+          {selectedCount > 0 && (
+            <button
+              type="button"
+              className={cx('deleteSelectedBtn')}
+              onClick={handleDeleteSelected}
+              disabled={deleteMutation.isPending}
+            >
+              <Trash2 size={13} /> Delete {selectedCount} selected
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Date range filter */}
