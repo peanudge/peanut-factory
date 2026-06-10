@@ -61,6 +61,18 @@
   &.danger:hover:not(:disabled) { background: var(--color-error-bg); }
 }
 
+.limitSelect {
+  padding: 5px 8px;
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  cursor: pointer;
+
+  &:hover { background: var(--bg-hover); }
+}
+
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));

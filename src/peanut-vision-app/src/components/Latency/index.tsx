@@ -162,15 +162,18 @@ function RecordsTable({ records }: { records: LatencyRecord[] }) {
   )
 }
 
+const LIMIT_OPTIONS = [100, 200, 500, 1000] as const
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function Latency() {
   const qc = useQueryClient()
   const [autoRefresh] = useState(true)
+  const [displayLimit, setDisplayLimit] = useState<number>(500)
 
   const { data: records = [], isFetching: fetchingRecords } = useQuery({
-    queryKey: ['latency', 'records'],
-    queryFn: () => getLatencyRecords(500),
+    queryKey: ['latency', 'records', displayLimit],
+    queryFn: () => getLatencyRecords(displayLimit),
     refetchInterval: autoRefresh ? 2000 : false,
   })
 
@@ -205,9 +208,20 @@ export default function Latency() {
       {/* Header */}
       <div className={cx('header')}>
         <h2 className={cx('title')}>Trigger → Frame Latency Analysis</h2>
-        <span className={cx('countChip')}>{records.length} records</span>
+        <span className={cx('countChip')}>{stats?.count ?? records.length} records</span>
         {fetchingRecords && <span className={cx('spinner')} />}
         <div className={cx('spacer')} />
+        <select
+          className={cx('limitSelect')}
+          value={displayLimit}
+          onChange={(e) => setDisplayLimit(Number(e.target.value))}
+        >
+          {LIMIT_OPTIONS.map((n) => (
+            <option key={n} value={n}>
+              Show {n}
+            </option>
+          ))}
+        </select>
         <button type="button" className={cx('btn')} onClick={refresh}>
           <RefreshCw size={13} /> Refresh
         </button>
@@ -236,7 +250,7 @@ export default function Latency() {
 
       {/* Chart */}
       <div className={cx('paper')}>
-        <p className={cx('sectionLabel')}>Latency over time</p>
+        <p className={cx('sectionLabel')}>Latency over time (last {displayLimit} measurements)</p>
         {records.length > 0 ? (
           <LatencyChart records={records} stats={stats ?? null} />
         ) : (
