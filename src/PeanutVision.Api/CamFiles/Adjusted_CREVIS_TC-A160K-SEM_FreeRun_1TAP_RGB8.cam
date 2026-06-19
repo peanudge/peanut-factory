@@ -156,3 +156,48 @@ StrobeMode = AUTO
 Hactive_Px = 1456
 Vactive_Ln = 1088
 FifoOrdering = PROGRESSIVE
+
+
+; +------------------------------------------+
+; | User Settings (Tue Feb 24 08:25:24 2026) |
+; +------------------------------------------+
+
+SeqLength_Fr = -1
+Expose_us = 20000
+WBO_Mode = NONE
+Expose_us = 10
+WBO_Mode = NONE
+WBO_GainR = 1000
+WBO_GainG = 1000
+WBO_GainB = 1000
+WBO_GainG = 5390
+WBO_GainB = 3680
+WBO_GainG = 1110
+WBO_GainR = 4320
+Expose_us = 10000
+WBO_Mode = MANUAL
+WBO_GainR = 1000
+WBO_GainG = 1000
+WBO_GainB = 1000
+LUT_Method = RESPONSE_CONTROL
+LUT_Contrast.0 = 1.000000
+LUT_Contrast.1 = 1.000000
+LUT_Contrast.2 = 1.000000
+LUT_Brightness.0 = 0.000000
+LUT_Brightness.1 = 0.000000
+LUT_Brightness.2 = 0.000000
+LUT_Visibility.0 = 0.000000
+LUT_Visibility.1 = 0.000000
+LUT_Visibility.2 = 0.000000
+LUT_Negative.0 = FALSE
+LUT_Negative.1 = FALSE
+LUT_Negative.2 = FALSE
+LUT_StoreIndex = 1
+LUT_UseIndex = 0
+
+
+; +------------------------------------------+
+; | User Settings (Fri Jun 19 21:20:09 2026) |
+; +------------------------------------------+
+
+Expose_us = 4000
