@@ -23,7 +23,14 @@ services:
       - LABEL_STUDIO_BASE_DATA_DIR=/label-studio/data
       # Allow Label Studio to serve local files mounted into the container
       - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=${LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED:-true}
+      # Root for Local Storage file serving (container path). Local Storage
+      # "Absolute local path" and converter --image-root-url ?d= are relative to this.
+      - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/label-studio/files
     volumes:
       # Existing SQLite DB, media and exports are preserved here
       - ./mydata:/label-studio/data:rw
+      # YOLO datasets mounted read-only so Local Storage can serve images.
+      # Host  : ./yolo-data-to-label-studio/dataset/images
+      # In LS : /label-studio/files/dataset/images   (?d=dataset/images)
+      - ./yolo-data-to-label-studio:/label-studio/files:ro
     command: label-studio
