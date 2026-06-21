@@ -1,0 +1,29 @@
+# Label Studio — reproducible single-container setup (SQLite backend)
+#
+# Usage:
+#   docker compose up -d        # start in background
+#   docker compose logs -f      # follow logs
+#   docker compose down         # stop (data persists in ./mydata)
+#
+# Open: http://localhost:8080
+#
+# All state (SQLite DB, uploaded media, exports) lives in ./mydata,
+# so the install behaves identically every time you bring it up.
+services:
+  label-studio:
+    image: heartexlabs/label-studio:1.23.0
+    container_name: label-studio
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Bind to all interfaces inside the container
+      - LABEL_STUDIO_HOST=${LABEL_STUDIO_HOST:-}
+      # Persist everything (DB + media) under /label-studio/data
+      - LABEL_STUDIO_BASE_DATA_DIR=/label-studio/data
+      # Allow Label Studio to serve local files mounted into the container
+      - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=${LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED:-true}
+    volumes:
+      # Existing SQLite DB, media and exports are preserved here
+      - ./mydata:/label-studio/data:rw
+    command: label-studio
