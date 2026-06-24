@@ -14,6 +14,18 @@ const config = defineConfig({
     tanstackRouter({ target: 'react', autoCodeSplitting: true }),
     viteReact(),
   ],
+  server: {
+    host: true,            // bind 0.0.0.0 so external clients (e.g. ngrok) can reach the dev server
+    allowedHosts: true,    // accept ngrok / arbitrary forwarded host headers
+    proxy: {
+      // Forward API + SSE calls to the backend so the browser talks to a single origin.
+      // localhost:5000 is resolved here (on the dev machine), not in the remote browser.
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,
