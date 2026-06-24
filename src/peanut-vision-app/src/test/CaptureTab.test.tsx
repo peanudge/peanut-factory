@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, fireEvent } from '@testing-library/react'
 import CaptureTab from '@/components/Acquisition/CaptureTab'
 import { renderWithProviders } from './helpers'
 import type { AcquisitionConfigPreset } from '@/api/types'
@@ -100,5 +100,23 @@ describe('CaptureTab — preset list stale profile warning', () => {
     await waitFor(() => screen.getByText('valid preset'))
 
     expect(screen.queryByTestId('stale-profile-warning-valid preset')).toBeNull()
+  })
+
+  it('edit dialog keeps the stale profileId selected instead of silently resetting it', async () => {
+    renderWithProviders(
+      <CaptureTab acqConfig={makeAcqConfig()} session={makeSession()} />
+    )
+
+    const presetTabBtn = await screen.findByRole('button', { name: /저장된 설정/i })
+    presetTabBtn.click()
+
+    await waitFor(() => screen.getByText('stale preset'))
+
+    // Open the edit dialog for the stale preset (second preset in the list).
+    fireEvent.click(screen.getAllByTitle('수정')[1])
+
+    const combo = await screen.findByRole('combobox') as HTMLSelectElement
+    expect(combo.value).toBe('deleted-cam.cam')
+    expect(screen.getByRole('option', { name: /deleted-cam\.cam/ })).toBeInTheDocument()
   })
 })

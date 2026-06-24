@@ -58,6 +58,19 @@ describe('Camera profile select', () => {
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'cam2.cam' } })
     expect(onChange).toHaveBeenCalledWith('profileId', 'cam2.cam')
   })
+
+  it('keeps a stale profileId selectable when it is no longer in the cameras list', () => {
+    // CamFile was renamed after this profile was saved; the controlled select
+    // must still reflect the saved value instead of silently falling back to
+    // the first camera (which would be sent to the server on save).
+    renderSettings({
+      config: { ...BASE_CONFIG, profileId: 'renamed-away.cam' },
+      cameras: ['cam1.cam', 'cam2.cam'],
+    })
+    const combo = screen.getByRole('combobox') as HTMLSelectElement
+    expect(combo.value).toBe('renamed-away.cam')
+    expect(screen.getByRole('option', { name: /renamed-away\.cam/ })).toBeInTheDocument()
+  })
 })
 
 // ── Format radio ──

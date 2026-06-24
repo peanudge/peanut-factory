@@ -486,9 +486,14 @@ function PresetTab({
               >
                 {camerasLoading
                   ? <option>로딩 중…</option>
-                  : cameras.map((name) => (
-                      <option key={name} value={name}>{name}</option>
-                    ))
+                  : <>
+                      {editState.profileId && !cameras.includes(editState.profileId) && (
+                        <option value={editState.profileId}>{editState.profileId} (사용 불가)</option>
+                      )}
+                      {cameras.map((name) => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </>
                 }
               </select>
             </label>

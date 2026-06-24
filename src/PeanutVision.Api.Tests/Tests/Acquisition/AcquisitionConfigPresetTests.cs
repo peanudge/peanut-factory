@@ -1,16 +1,20 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
+using PeanutVision.Api.Services;
 using PeanutVision.Api.Tests.Infrastructure;
 
 namespace PeanutVision.Api.Tests.Tests.Acquisition;
 
 public class AcquisitionConfigPresetTests : IClassFixture<PeanutVisionApiFactory>, IAsyncLifetime
 {
+    private readonly PeanutVisionApiFactory _factory;
     private readonly HttpClient _client;
     private readonly string _testPresetName = $"test-preset-{Guid.NewGuid():N}";
 
     public AcquisitionConfigPresetTests(PeanutVisionApiFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
     }
 
@@ -77,6 +81,37 @@ public class AcquisitionConfigPresetTests : IClassFixture<PeanutVisionApiFactory
         });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Update_preset_keeps_stale_profileId_after_camfile_renamed()
+    {
+        // A preset was saved while its cam file existed; the cam file was later
+        // renamed, leaving the stored profileId "stale". Seed it directly through
+        // the service to bypass create-time validation, simulating the post-rename
+        // state of an already-persisted preset.
+        var presets = _factory.Services.GetRequiredService<IAcquisitionConfigPresetService>();
+        await presets.SaveAsync(new AcquisitionConfigPreset
+        {
+            Name = _testPresetName,
+            ProfileId = "renamed-away.cam",
+            FrameCount = 1,
+        });
+
+        // Editing other fields while keeping the now-stale profileId must succeed
+        // (the profileId is grandfathered because an existing preset already uses it).
+        var response = await _client.PutJsonAsync("/api/presets", new
+        {
+            name = _testPresetName,
+            profileId = "renamed-away.cam",
+            frameCount = 42,
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var getResp = await _client.GetAsync($"/api/presets/{Uri.EscapeDataString(_testPresetName)}");
+        using var doc = JsonDocument.Parse(await getResp.Content.ReadAsStringAsync());
+        Assert.Equal(42, doc.RootElement.GetProperty("frameCount").GetInt32());
     }
 
     [Fact]
