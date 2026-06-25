@@ -45,7 +45,7 @@ public class SystemCamerasTests : IClassFixture<PeanutVisionApiFactory>, IAsyncL
         using var doc = await response.ReadJsonDocumentAsync();
         foreach (var entry in doc.RootElement.EnumerateArray())
         {
-            Assert.Equal(System.Text.Json.JsonValueKind.String, entry.ValueKind);
+            Assert.Equal(JsonValueKind.String, entry.ValueKind);
             Assert.EndsWith(".cam", entry.GetString(), StringComparison.OrdinalIgnoreCase);
         }
     }

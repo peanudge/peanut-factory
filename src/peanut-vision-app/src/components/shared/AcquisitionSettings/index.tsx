@@ -87,9 +87,14 @@ export default function AcquisitionSettings({
           >
             {camerasLoading
               ? <option>로딩 중…</option>
-              : cameras.map((name) => (
-                  <option key={name} value={name}>{name}</option>
-                ))
+              : <>
+                  {config.profileId && !cameras.includes(config.profileId) && (
+                    <option value={config.profileId}>{config.profileId} (사용 불가)</option>
+                  )}
+                  {cameras.map((name) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </>
             }
           </select>
         </label>

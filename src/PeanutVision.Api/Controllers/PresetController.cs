@@ -35,12 +35,18 @@ public class PresetController : ControllerBase
             return BadRequest(new { error = "Preset name is required" });
         if (string.IsNullOrWhiteSpace(preset.ProfileId))
             return BadRequest(new { error = "ProfileId is required" });
-        if (!_camFileService.TryGetByFileName(preset.ProfileId, out _))
+        // A new profileId must reference a known cam file, but an existing preset
+        // whose cam file was renamed afterward is grandfathered in so its other
+        // fields stay editable (the profileId is already persisted on a preset).
+        if (!_camFileService.TryGetByFileName(preset.ProfileId, out _) && !IsProfileIdUsedByExistingPreset(preset.ProfileId))
             return BadRequest(new { error = $"Camera profile '{preset.ProfileId}' not found." });
 
         await _presets.SaveAsync(preset);
         return Ok(preset);
     }
+
+    private bool IsProfileIdUsedByExistingPreset(string profileId)
+        => _presets.GetAll().Any(p => string.Equals(p.ProfileId, profileId, StringComparison.OrdinalIgnoreCase));
 
     [HttpDelete("{name}")]
     public async Task<ActionResult> Delete(string name)
